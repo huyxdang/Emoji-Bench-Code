@@ -25,10 +25,10 @@ Emoji-Bench `E-CONTINUE` simulates that directly:
 
 1. **Turn 1 user:** rules of a novel formal system + the expression to simplify + a format instruction.
 2. **Turn 1 assistant (prefilled):** steps `1..Y` of a derivation, where step `Y` contains a cascading wrong-result error.
-3. **Turn 2 user:** `Please continue.`
+3. **Turn 2 user:** `Please continue.` (the default unprompted condition; the evaluator also supports a locked prompting-strength axis with soft-, moderate-, and explicit-hint variants for ablation work — see `--turn-2-prompt-level` below).
 4. **Turn 2 assistant (generated):** what we score.
 
-The whole signal the model gets that something might be off is the bad step itself — nothing in the prompts asks it to verify.
+The whole signal the model gets that something might be off, under the default unprompted condition, is the bad step itself — nothing in the prompts asks it to verify.
 
 Two things make the task hard to game:
 
@@ -182,6 +182,8 @@ python scripts/evaluate_continuation.py \
 Additional useful flags:
 
 - `--no-native-prefill` forces the 3-message fallback on prefill-capable models so you can isolate the mode effect from model strength.
+- `--turn-2-prompt-level {0,1,2,3}` picks the Turn 2 user message from a locked prompting-strength axis: `0` = unprompted `"Please continue."` (default, preserves original pilot behavior), `1` = soft hint, `2` = moderate hint, `3` = explicit error-check request. Levels > 0 add a `-lvlN` suffix to the default output directory so reruns don't collide.
+- `--turn-2-prompt "<string>"` overrides the level with an arbitrary custom Turn 2 user message. Useful for one-off prompting-strength variants outside the registered levels.
 - `--max-output-tokens` — bump for reasoning runs so thinking has room (the registry's 1024-token thinking budget eats into this).
 
 ### Score predictions
@@ -230,7 +232,7 @@ artifacts/<dataset>/
 | `has_prefill_error` | always `True` for pilot rows; reserved for future control rows |
 | `turn_1_user` | first user message (rules + expression + format instruction) |
 | `turn_1_assistant_prefill` | prefilled assistant message, steps `1..Y` with the bad step at `Y` |
-| `turn_2_user` | the literal `Please continue.` |
+| `turn_2_user` | the literal `Please continue.` baked into the dataset at generation time (the evaluator can override it at request time via `--turn-2-prompt-level` / `--turn-2-prompt` without re-generating) |
 | `ground_truth_final_output` | the correct symbol from the clean chain |
 | `wrong_branch_final_output` | the symbol reached by blindly continuing from the bad state |
 | `chain_length_x` | total steps `X` in the clean derivation |
@@ -270,7 +272,7 @@ Useful notes:
 - Model configs live in `emoji_bench/model_registry.py`.
 - Each config carries a `supports_assistant_prefill` flag — currently only `claude-haiku-4-5` advertises it. `claude-sonnet-4-6` (and its reasoning variant) return a 400 for assistant prefill on the current API, so they auto-fall-through to the 3-message conversation when `--mode prefill` is requested.
 - Re-runs resume from any existing `predictions.jsonl` unless you pass `--no-resume`.
-- Default output path: `artifacts/evals/<dataset>-<model>-<mode>/`.
+- Default output path: `artifacts/evals/<dataset>-<model>-<mode>[-3msg][-lvlN]/` — the `-3msg` suffix appears when `--no-native-prefill` is set on a prefill-capable model, and the `-lvlN` suffix appears when `--turn-2-prompt-level` is greater than `0`.
 
 ## Scoring & Reports
 
@@ -297,7 +299,7 @@ Core modules (`emoji_bench/`):
 - `continuation_formatter.py` — turn-1/prefill/turn-2 formatters plus the `format_continuation_single_turn` view used by `--mode single_turn`
 - `continuation_dataset.py` — dataset-level generator with rejection logging
 - `continuation_provider.py` — `request_continuation` dispatcher across OpenAI / Anthropic / Gemini / Mistral, both modes
-- `continuation_scorer.py` — `extract_final_output`, loose/strict detection regex, 5-bucket classifier, `ScoredContinuation` dataclass
+- `continuation_scorer.py` — `extract_final_output`, loose/strict detection regex, 6-bucket outcome classifier, `ScoredContinuation` dataclass
 - `model_registry.py` — model configs including the `supports_assistant_prefill` capability flag
 
 CLI scripts (`scripts/`):
@@ -326,7 +328,7 @@ The `E-RECONV` machinery is still in the repo (`reconvergent_error_injector.py`,
 
 Issues and pull requests welcome, especially around:
 
-- scoring refinements (the detection regex is tuned against a 400-prediction pilot and will grow)
+- scoring refinements (the detection regex is tuned against real pilot output and will grow as coverage expands)
 - provider integrations
 - new error variants or cutoff-policy ablations
 - analysis of model behavior on `E-CONTINUE`
