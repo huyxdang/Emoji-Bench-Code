@@ -22,6 +22,32 @@ Final Output: <single symbol>"""
 TURN_2_USER: str = "Please continue."
 
 
+# The prompting-strength axis from codex_plan.md. Level 0 is the unprompted
+# baseline (identical to TURN_2_USER). Levels 1 and 2 add progressively
+# stronger self-check hints without explicitly asking the model to look for
+# errors. Level 3 is the explicit ceiling condition — reserved for upper-
+# bound ablation, not part of the initial pilot curve.
+TURN_2_PROMPT_LEVELS: dict[int, str] = {
+    0: "Please continue.",
+    1: "Please continue. Double-check any step you're unsure about.",
+    2: "Please continue. Verify each prior step against the rules before proceeding.",
+    3: (
+        "Check the working out above for errors. "
+        "If you find one, correct it. Then continue."
+    ),
+}
+
+
+def get_turn_2_prompt(level: int) -> str:
+    """Return the Turn-2 user message for a given prompting-strength level."""
+    if level not in TURN_2_PROMPT_LEVELS:
+        valid = sorted(TURN_2_PROMPT_LEVELS)
+        raise ValueError(
+            f"unknown turn_2 prompt level {level}; expected one of {valid}"
+        )
+    return TURN_2_PROMPT_LEVELS[level]
+
+
 SINGLE_TURN_WORK_HEADER = """\
 === WORK SO FAR ===
 You have already produced the following partial working out. Continue from where you left off and produce the remaining steps, ending with the Final Output line."""

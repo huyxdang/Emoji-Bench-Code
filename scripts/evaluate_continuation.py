@@ -26,6 +26,7 @@ from typing import Any
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from emoji_bench.continuation_formatter import TURN_2_PROMPT_LEVELS, get_turn_2_prompt
 from emoji_bench.continuation_provider import (
     ContinuationMode,
     request_continuation,
@@ -85,6 +86,7 @@ def _default_output_dir(
     mode: ContinuationMode,
     *,
     no_native_prefill: bool = False,
+    turn_2_level: int = 0,
 ) -> Path:
     dataset_name = (
         input_path.parent.name if input_path.name == "test.jsonl" else input_path.stem
@@ -93,7 +95,11 @@ def _default_output_dir(
     mode_slug = mode
     if mode == "prefill" and no_native_prefill:
         mode_slug = "prefill-3msg"
-    return Path("artifacts") / "evals" / f"{dataset_name}-{slug}-{mode_slug}"
+    # Level 0 stays un-suffixed so existing Level-0 output paths from earlier
+    # runs remain stable. Levels 1..N add a suffix so a rerun with a stronger
+    # prompt lands in a different directory.
+    level_suffix = "" if turn_2_level == 0 else f"-lvl{turn_2_level}"
+    return Path("artifacts") / "evals" / f"{dataset_name}-{slug}-{mode_slug}{level_suffix}"
 
 
 def _load_existing(path: Path) -> tuple[set[str], list[dict[str, Any]]]:
@@ -201,6 +207,26 @@ def main() -> None:
             "model (e.g. comparing Haiku shape A vs shape B)."
         ),
     )
+    parser.add_argument(
+        "--turn-2-prompt-level",
+        type=int,
+        default=0,
+        choices=sorted(TURN_2_PROMPT_LEVELS),
+        help=(
+            "Prompting-strength level for the Turn 2 user message (0=unprompted "
+            "'Please continue.', 1=soft hint, 2=moderate hint, 3=explicit "
+            "error-check). Ignored when --turn-2-prompt is also passed."
+        ),
+    )
+    parser.add_argument(
+        "--turn-2-prompt",
+        default=None,
+        help=(
+            "Optional raw Turn 2 user-message string. Overrides "
+            "--turn-2-prompt-level. Use to run a custom prompting-strength "
+            "variant outside the registered levels."
+        ),
+    )
     args = parser.parse_args()
 
     if args.list_models:
@@ -237,6 +263,7 @@ def main() -> None:
             model_config.key,
             args.mode,
             no_native_prefill=args.no_native_prefill,
+            turn_2_level=args.turn_2_prompt_level,
         )
     )
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -250,6 +277,14 @@ def main() -> None:
     client = make_client(model_config.provider, api_key=api_key)
     n_done = len(seen)
     n_total = len(records)
+
+    # Resolve the Turn 2 user message. Custom string wins over level.
+    if args.turn_2_prompt is not None:
+        turn_2_user_override = args.turn_2_prompt
+        turn_2_level = None
+    else:
+        turn_2_user_override = get_turn_2_prompt(args.turn_2_prompt_level)
+        turn_2_level = args.turn_2_prompt_level
 
     for record in records:
         if record["example_id"] in seen:
@@ -265,7 +300,7 @@ def main() -> None:
                     model_config=model_config,
                     turn_1_user=record["turn_1_user"],
                     turn_1_assistant_prefill=record["turn_1_assistant_prefill"],
-                    turn_2_user=record["turn_2_user"],
+                    turn_2_user=turn_2_user_override,
                     max_output_tokens=max_output_tokens,
                     mode=args.mode,
                 )
@@ -286,6 +321,8 @@ def main() -> None:
                     "raw_continuation_text": response.raw_continuation_text,
                     "mode": response.mode,
                     "used_native_prefill": response.used_native_prefill,
+                    "turn_2_user_sent": turn_2_user_override,
+                    "turn_2_level": turn_2_level,
                     "response_id": response.response_id,
                     "request_latency_seconds": latency,
                     # Model identity.
@@ -323,6 +360,8 @@ def main() -> None:
         "provider": model_config.provider,
         "api_model": model_config.api_model,
         "mode": args.mode,
+        "turn_2_level": turn_2_level,
+        "turn_2_user_sent": turn_2_user_override,
         "input_path": str(input_path.resolve()),
         "output_dir": str(output_dir.resolve()),
         "predictions_path": str(predictions_path.resolve()),
