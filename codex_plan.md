@@ -35,6 +35,7 @@ Pivot Emoji-Bench from a single-turn "audit this full derivation" benchmark into
 - [ ] **Prefill capability:** first pilot is Anthropic-only (native assistant prefill). Add a `supports_assistant_prefill` flag in the model registry before extending to OpenAI / Gemini / Mistral; report those separately so the asymmetry is visible, not hidden.
 - [ ] **Prefill formatting:** cutoff must not end on a terminal marker (`Final Output:`, trailing blank line) — the prefill ends mid-derivation so the model's continuation is forced.
 - [ ] **Turn-2 user message:** fixed as `Please continue.` for the pilot. Logged as a variable, not a final decision — candidate for a later ablation.
+- [ ] **Single-turn rendering is a view, not a field.** For evaluation channels that don't support assistant prefill (e.g. Kaggle Benchmark, which only accepts a single user prompt), the multi-turn record is collapsed into one prompt at request time via a formatter helper — `turn_1_user` body + a `=== WORK SO FAR ===` block carrying the prefill. The dataset row stores only the multi-turn pieces; the single-turn string is derived from them. Avoids schema duplication and keeps prefill / single-turn results comparable per row but reported as separate runs (the meta-frame differs: "I am extending my own thought" vs. "I am being shown my prior thought by someone else").
 
 ## Phase 0: Baseline Hygiene
 
@@ -73,15 +74,17 @@ Pivot Emoji-Bench from a single-turn "audit this full derivation" benchmark into
 - [ ] Ensure the prefix ends before the full chain finishes, with at least `⌈X/2⌉` steps remaining. _Partial: the cascading injector guarantees ≥ 1 remaining step, but the `⌈X/2⌉` runway floor is not yet enforced — deferred to Phase 3 as a rejection filter alongside `chain_too_short`._
 - [x] Ensure the prefill string does not end on a terminal marker (`Final Output:`, trailing blank line) that would short-circuit continuation. _(Covered by `test_prefill_string_does_not_end_on_terminal_marker`.)_
 
-## Phase 3: Generate the Right Kind of Error
+## Phase 3: Generate the Right Kind of Error — DONE (commit `cfa5ea6`)
 
-- [ ] Reuse cascading wrong-result injection as the primary mechanism.
-- [ ] Do not use reconvergent injection for the main benchmark.
-- [ ] Add validation that the erroneous recomputed suffix ends at a different final symbol than the clean chain.
-- [ ] Save both the clean full chain and the erroneous full chain for offline inspection and scoring.
-- [ ] Reject unusable examples where the error appears too late or leaves no meaningful continuation after step `Y`.
-- [ ] Simulate the erroneous continuation to its terminal symbol inside the injector and reject on convergence before emitting the row (don't only filter post-hoc).
-- [ ] Over-generate ~2× the target sample size and log per-attempt rejection reasons (too-early / too-late / convergent / cascade-dies / no-eligible-step) so we can tune yield by difficulty.
+- [x] Reuse cascading wrong-result injection as the primary mechanism. _(Via `inject_cascading_wrong_result` in [emoji_bench/error_injector.py](/Users/huydang/Desktop/Emoji-Bench/emoji_bench/error_injector.py:255), wired through `generate_continuation_instance`.)_
+- [x] Do not use reconvergent injection for the main benchmark.
+- [x] Add validation that the erroneous recomputed suffix ends at a different final symbol than the clean chain. _(Guaranteed at injection time by the cascading injector itself; rejected as `cascade_convergent` if no non-convergent slot exists for the chosen seed.)_
+- [x] Save both the clean full chain and the erroneous full chain for offline inspection and scoring. _(The full mutated chain lives on `ContinuationInstance.mutated_chain`; the dataset record carries `wrong_branch_final_output` and the seeds needed to reconstruct the full chains.)_
+- [x] Reject unusable examples where the error appears too late or leaves no meaningful continuation after step `Y`. _(Runway floor of `⌈X/2⌉` enforced as `R_INSUFFICIENT_RUNWAY` in [emoji_bench/continuation_dataset.py](/Users/huydang/Desktop/Emoji-Bench/emoji_bench/continuation_dataset.py).)_
+- [x] Simulate the erroneous continuation to its terminal symbol inside the injector and reject on convergence before emitting the row (don't only filter post-hoc). _(The cascading injector reduces the candidate suffix internally and only returns mutations whose final symbol differs from the clean final symbol — see `inject_cascading_wrong_result:288–296`.)_
+- [x] Over-generate ~2× the target sample size and log per-attempt rejection reasons. _(`generate_continuation_dataset_records` tracks 6 reasons per difficulty: `chain_too_short`, `insufficient_runway`, `no_eligible_in_chain`, `no_eligible_in_window`, `cascade_convergent`, `other_injector_error`. Counts surfaced through the new optional `DatasetManifest.rejection_counts` field.)_
+
+**Pilot smoke (count=100, master_seed=20260413):** 100/100 produced (25 per difficulty), ~31% rejection. `chain_too_short` = 0 across all difficulties (target bumps work); `insufficient_runway` is dominant on medium (19); `cascade_convergent` is rare (1–5 per difficulty); `no_eligible_in_*` = 0.
 
 ## Phase 4: Add Multi-Turn Evaluation Support
 
@@ -132,10 +135,11 @@ Pivot Emoji-Bench from a single-turn "audit this full derivation" benchmark into
 ## Recommended Execution Order
 
 - [x] First: fix the current failing test. _(Commit `12076b8`.)_
-- [x] Second: add the new dataset schema and continuation formatter. _(Commit `12076b8` — Phase 1 complete; Phase 2 complete apart from the `⌈X/2⌉` runway floor, deferred to Phase 3.)_
-- [ ] Third: add multi-turn provider evaluation support.
-- [ ] Fourth: add scoring and reporting.
-- [ ] Fifth: generate the 100-example pilot and run initial models.
+- [x] Second: add the new dataset schema and continuation formatter. _(Commit `12076b8` — Phase 1 complete; Phase 2 complete apart from the `⌈X/2⌉` runway floor, addressed in Phase 3.)_
+- [x] Third: dataset-level generation with rejection logging. _(Commit `cfa5ea6` — Phase 3 complete. 100-row pilot generates clean.)_
+- [ ] Fourth: add multi-turn provider evaluation support.
+- [ ] Fifth: add scoring and reporting.
+- [ ] Sixth: run the 100-example pilot against models.
 
 ## Notes
 
