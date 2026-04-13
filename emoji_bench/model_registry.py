@@ -109,7 +109,11 @@ MODEL_CONFIGS: dict[str, ModelConfig] = {
         default_max_output_tokens=DEFAULT_MAX_OUTPUT_TOKENS,
         provider_max_output_tokens=64_000,
         anthropic_thinking=AnthropicThinkingConfig(enabled=False),
-        supports_assistant_prefill=True,
+        # Empirically rejected at request time on 2026-04-13 with
+        # "This model does not support assistant message prefill. The
+        # conversation must end with a user message." Use --mode single_turn
+        # for E-CONTINUE on this model.
+        supports_assistant_prefill=False,
         notes="Extended thinking is supported by the model, but disabled by default in this evaluator.",
     ),
     "claude-sonnet-4-6-reasoning": ModelConfig(
@@ -122,7 +126,9 @@ MODEL_CONFIGS: dict[str, ModelConfig] = {
         default_max_output_tokens=DEFAULT_MAX_OUTPUT_TOKENS,
         provider_max_output_tokens=64_000,
         anthropic_thinking=AnthropicThinkingConfig(enabled=True, budget_tokens=1024),
-        supports_assistant_prefill=True,
+        # Same prefill rejection as the non-reasoning sonnet config above —
+        # both share api_model="claude-sonnet-4-6".
+        supports_assistant_prefill=False,
         notes=(
             "Uses Claude Sonnet 4.6 with Anthropic extended thinking enabled. "
             "Configured with the minimum 1024-token thinking budget by default."

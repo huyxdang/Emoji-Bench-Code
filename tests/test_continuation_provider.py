@@ -355,14 +355,24 @@ def test_anthropic_with_supports_assistant_prefill_false_falls_back_to_three_mes
 # --- All claude-* models advertise the prefill capability -----------------
 
 
-def test_all_claude_configs_set_supports_assistant_prefill():
+def test_supports_assistant_prefill_matches_empirical_anthropic_capability():
+    """Per-model truth from the Anthropic API as of 2026-04-13.
+
+    Both Sonnet 4.6 entries (the reasoning variant shares ``api_model``)
+    return a 400 for assistant-message prefill: "This model does not
+    support assistant message prefill. The conversation must end with a
+    user message." Haiku 4.5 accepts prefill normally. The flag is what
+    the dispatcher reads, so it must reflect reality, not aspiration.
+    """
     from emoji_bench.model_registry import MODEL_CONFIGS
-    claude_configs = [c for c in MODEL_CONFIGS.values() if c.provider == "anthropic"]
-    assert claude_configs, "expected at least one Anthropic config"
-    for config in claude_configs:
-        assert config.supports_assistant_prefill is True, (
-            f"{config.key} should advertise supports_assistant_prefill=True"
-        )
+    expected = {
+        "claude-haiku-4-5": True,
+        "claude-sonnet-4-6": False,
+        "claude-sonnet-4-6-reasoning": False,
+    }
+    for key, want in expected.items():
+        got = MODEL_CONFIGS[key].supports_assistant_prefill
+        assert got is want, f"{key}: expected supports_assistant_prefill={want}, got {got}"
 
 
 def test_non_anthropic_configs_default_to_no_prefill():
