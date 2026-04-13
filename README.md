@@ -182,7 +182,7 @@ python scripts/evaluate_continuation.py \
 Additional useful flags:
 
 - `--no-native-prefill` forces the 3-message fallback on prefill-capable models so you can isolate the mode effect from model strength.
-- `--turn-2-prompt-level {0,1,2,3}` picks the Turn 2 user message from a locked prompting-strength axis: `0` = unprompted `"Please continue."` (default, preserves original pilot behavior), `1` = soft hint, `2` = moderate hint, `3` = explicit error-check request. Levels > 0 add a `-lvlN` suffix to the default output directory so reruns don't collide.
+- `--turn-2-prompt-level {0,1,2,3}` picks the Turn 2 user message from a prompting-strength axis. **Headline levels:** `0` = unprompted `"Please continue."` (default, preserves original pilot behavior), `1` = soft hint. **Saturation / optional levels** kept in code for ablations but not part of the headline curve: `2` = moderate hint (both Sonnet B and GPT-4.1 B hit ~97–99% detection here, so it no longer discriminates), `3` = explicit error-check request. Levels > 0 add a `-lvlN` suffix to the default output directory so reruns don't collide.
 - `--turn-2-prompt "<string>"` overrides the level with an arbitrary custom Turn 2 user message. Useful for one-off prompting-strength variants outside the registered levels.
 - `--max-output-tokens` — bump for reasoning runs so thinking has room (the registry's 1024-token thinking budget eats into this).
 
