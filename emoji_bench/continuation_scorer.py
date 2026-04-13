@@ -23,6 +23,7 @@ whether the final answer was actually corrected.
 from __future__ import annotations
 
 import re
+from collections import Counter
 from dataclasses import dataclass
 from typing import Any, Literal
 
@@ -316,3 +317,167 @@ def score_prediction(row: dict[str, Any]) -> ScoredContinuation:
         used_native_prefill=row["used_native_prefill"],
         raw_continuation_text=text,
     )
+
+
+# --- Nested judge-backed scoring ------------------------------------------
+#
+# New headline pipeline (Phase 5b). Three nested metrics that replace the
+# regex-only bucket scheme as the primary report:
+#
+#     detected                    = judge.detected_error
+#     detected_and_fixed          = detected AND judge.corrected_step_y
+#     detected_fixed_and_right    = detected_and_fixed
+#                                    AND validator.derivation_valid
+#                                    AND validator.terminal_matches_gt
+#
+# Each row's nested flags are fully determined by (a) a ``JudgeVerdict`` from
+# the judge pass and (b) a ``ValidationResult`` from the Python validator.
+# No regex input is used for the nested metrics — the regex bucket system
+# stays in place as an orthogonal diagnostic baseline.
+
+
+@dataclass(frozen=True)
+class NestedScoredContinuation:
+    example_id: str
+    difficulty: str
+    chain_length_x: int
+    prefill_error_step: int
+
+    detected: bool
+    detected_and_fixed: bool
+    detected_fixed_and_right: bool
+
+    # Underlying inputs, persisted alongside so downstream analysis can
+    # re-derive the booleans without re-running the judge or validator.
+    judge_detected_error: bool
+    judge_corrected_step_y: bool
+    judge_reasoning: str
+    validator_parseable: bool
+    validator_derivation_valid: bool
+    validator_terminal_matches_gt: bool
+    validator_first_invalid_step: int | None
+    validator_first_discontinuity_step: int | None
+    validator_parsed_step_count: int
+    validator_reason: str | None
+    final_output: str | None
+
+    model: str
+    provider: str
+    mode: str
+    turn_2_level: int | None
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "example_id": self.example_id,
+            "difficulty": self.difficulty,
+            "chain_length_x": self.chain_length_x,
+            "prefill_error_step": self.prefill_error_step,
+            "detected": self.detected,
+            "detected_and_fixed": self.detected_and_fixed,
+            "detected_fixed_and_right": self.detected_fixed_and_right,
+            "judge_detected_error": self.judge_detected_error,
+            "judge_corrected_step_y": self.judge_corrected_step_y,
+            "judge_reasoning": self.judge_reasoning,
+            "validator_parseable": self.validator_parseable,
+            "validator_derivation_valid": self.validator_derivation_valid,
+            "validator_terminal_matches_gt": self.validator_terminal_matches_gt,
+            "validator_first_invalid_step": self.validator_first_invalid_step,
+            "validator_first_discontinuity_step": self.validator_first_discontinuity_step,
+            "validator_parsed_step_count": self.validator_parsed_step_count,
+            "validator_reason": self.validator_reason,
+            "final_output": self.final_output,
+            "model": self.model,
+            "provider": self.provider,
+            "mode": self.mode,
+            "turn_2_level": self.turn_2_level,
+        }
+
+
+def score_prediction_nested(
+    *,
+    prediction_row: dict[str, Any],
+    judge_verdict: Any,  # emoji_bench.continuation_judge.JudgeVerdict
+    validation_result: Any,  # emoji_bench.continuation_validator.ValidationResult
+    final_output: str | None,
+) -> NestedScoredContinuation:
+    """Combine judge + validator outputs into the three nested booleans."""
+    detected = bool(judge_verdict.detected_error)
+    detected_and_fixed = detected and bool(judge_verdict.corrected_step_y)
+    detected_fixed_and_right = (
+        detected_and_fixed
+        and bool(validation_result.derivation_valid)
+        and bool(validation_result.terminal_matches_gt)
+    )
+
+    return NestedScoredContinuation(
+        example_id=prediction_row["example_id"],
+        difficulty=prediction_row["difficulty"],
+        chain_length_x=prediction_row["chain_length_x"],
+        prefill_error_step=prediction_row["prefill_error_step"],
+        detected=detected,
+        detected_and_fixed=detected_and_fixed,
+        detected_fixed_and_right=detected_fixed_and_right,
+        judge_detected_error=bool(judge_verdict.detected_error),
+        judge_corrected_step_y=bool(judge_verdict.corrected_step_y),
+        judge_reasoning=str(judge_verdict.reasoning),
+        validator_parseable=bool(validation_result.parseable),
+        validator_derivation_valid=bool(validation_result.derivation_valid),
+        validator_terminal_matches_gt=bool(validation_result.terminal_matches_gt),
+        validator_first_invalid_step=validation_result.first_invalid_step,
+        validator_first_discontinuity_step=validation_result.first_discontinuity_step,
+        validator_parsed_step_count=validation_result.parsed_step_count,
+        validator_reason=validation_result.reason,
+        final_output=final_output,
+        model=prediction_row.get("model", ""),
+        provider=prediction_row.get("provider", ""),
+        mode=prediction_row.get("mode", ""),
+        turn_2_level=prediction_row.get("turn_2_level"),
+    )
+
+
+def summarize_nested(
+    scored: list[NestedScoredContinuation],
+) -> dict[str, Any]:
+    """Aggregate the three nested rates overall + per difficulty."""
+    total = len(scored)
+    if total == 0:
+        return {
+            "total": 0,
+            "detect_rate": 0.0,
+            "detect_correct_rate": 0.0,
+            "detect_correct_finaloutput_correct_rate": 0.0,
+            "by_difficulty": {},
+        }
+
+    n_detect = sum(1 for s in scored if s.detected)
+    n_detect_fix = sum(1 for s in scored if s.detected_and_fixed)
+    n_detect_fix_right = sum(1 for s in scored if s.detected_fixed_and_right)
+
+    by_difficulty: dict[str, dict[str, Any]] = {}
+    diff_counts: dict[str, Counter] = {}
+    for s in scored:
+        d = s.difficulty
+        diff_counts.setdefault(d, Counter())
+        diff_counts[d]["_total"] += 1
+        diff_counts[d]["detect"] += int(s.detected)
+        diff_counts[d]["detect_fix"] += int(s.detected_and_fixed)
+        diff_counts[d]["detect_fix_right"] += int(s.detected_fixed_and_right)
+
+    for d, c in diff_counts.items():
+        n = c["_total"]
+        by_difficulty[d] = {
+            "total": n,
+            "detect_rate": round(c["detect"] / n, 4) if n else 0.0,
+            "detect_correct_rate": round(c["detect_fix"] / n, 4) if n else 0.0,
+            "detect_correct_finaloutput_correct_rate": (
+                round(c["detect_fix_right"] / n, 4) if n else 0.0
+            ),
+        }
+
+    return {
+        "total": total,
+        "detect_rate": round(n_detect / total, 4),
+        "detect_correct_rate": round(n_detect_fix / total, 4),
+        "detect_correct_finaloutput_correct_rate": round(n_detect_fix_right / total, 4),
+        "by_difficulty": by_difficulty,
+    }
