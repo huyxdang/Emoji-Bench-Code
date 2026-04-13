@@ -18,6 +18,7 @@ import json
 import os
 import sys
 import time
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
@@ -78,12 +79,21 @@ def _resolve_input_path(raw_path: str) -> Path:
     return path
 
 
-def _default_output_dir(input_path: Path, model_key: str, mode: ContinuationMode) -> Path:
+def _default_output_dir(
+    input_path: Path,
+    model_key: str,
+    mode: ContinuationMode,
+    *,
+    no_native_prefill: bool = False,
+) -> Path:
     dataset_name = (
         input_path.parent.name if input_path.name == "test.jsonl" else input_path.stem
     )
     slug = model_key.replace("/", "-")
-    return Path("artifacts") / "evals" / f"{dataset_name}-{slug}-{mode}"
+    mode_slug = mode
+    if mode == "prefill" and no_native_prefill:
+        mode_slug = "prefill-3msg"
+    return Path("artifacts") / "evals" / f"{dataset_name}-{slug}-{mode_slug}"
 
 
 def _load_existing(path: Path) -> tuple[set[str], list[dict[str, Any]]]:
@@ -181,6 +191,16 @@ def main() -> None:
         action="store_true",
         help="Do not resume from an existing predictions.jsonl file.",
     )
+    parser.add_argument(
+        "--no-native-prefill",
+        action="store_true",
+        help=(
+            "Force the 3-message [user, assistant, user] fallback for --mode "
+            "prefill even on models that advertise native prefill. Useful for "
+            "isolating the effect of the assistant-prefill framing on a single "
+            "model (e.g. comparing Haiku shape A vs shape B)."
+        ),
+    )
     args = parser.parse_args()
 
     if args.list_models:
@@ -193,6 +213,10 @@ def main() -> None:
     _load_dotenv(repo_root / ".env")
 
     model_config = get_model_config(args.model)
+    if args.no_native_prefill and model_config.supports_assistant_prefill:
+        # Override the capability flag so request_continuation falls through
+        # to the 3-message conversation path. The registry stays untouched.
+        model_config = replace(model_config, supports_assistant_prefill=False)
     api_key = resolve_api_key(
         model_config=model_config,
         explicit_api_key=args.api_key,
@@ -208,7 +232,12 @@ def main() -> None:
     output_dir = (
         Path(args.output_dir)
         if args.output_dir is not None
-        else _default_output_dir(input_path, model_config.key, args.mode)
+        else _default_output_dir(
+            input_path,
+            model_config.key,
+            args.mode,
+            no_native_prefill=args.no_native_prefill,
+        )
     )
     output_dir.mkdir(parents=True, exist_ok=True)
     predictions_path = output_dir / "predictions.jsonl"
