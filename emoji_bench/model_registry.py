@@ -34,6 +34,12 @@ class ModelConfig:
     provider_max_output_tokens: int | None = None
     openai_reasoning: OpenAIReasoningConfig | None = None
     anthropic_thinking: AnthropicThinkingConfig | None = None
+    # True when the provider exposes a way to literally extend a prior
+    # assistant message (Anthropic's trailing assistant-message prefill).
+    # When False, the E-CONTINUE evaluator falls back to either a 3-message
+    # conversation list or the single-turn rendering, depending on --mode,
+    # and tags the run as not using native prefill so reports can split.
+    supports_assistant_prefill: bool = False
     notes: str | None = None
 
     def to_dict(self) -> dict[str, object]:
@@ -103,6 +109,7 @@ MODEL_CONFIGS: dict[str, ModelConfig] = {
         default_max_output_tokens=DEFAULT_MAX_OUTPUT_TOKENS,
         provider_max_output_tokens=64_000,
         anthropic_thinking=AnthropicThinkingConfig(enabled=False),
+        supports_assistant_prefill=True,
         notes="Extended thinking is supported by the model, but disabled by default in this evaluator.",
     ),
     "claude-sonnet-4-6-reasoning": ModelConfig(
@@ -115,6 +122,7 @@ MODEL_CONFIGS: dict[str, ModelConfig] = {
         default_max_output_tokens=DEFAULT_MAX_OUTPUT_TOKENS,
         provider_max_output_tokens=64_000,
         anthropic_thinking=AnthropicThinkingConfig(enabled=True, budget_tokens=1024),
+        supports_assistant_prefill=True,
         notes=(
             "Uses Claude Sonnet 4.6 with Anthropic extended thinking enabled. "
             "Configured with the minimum 1024-token thinking budget by default."
@@ -130,6 +138,7 @@ MODEL_CONFIGS: dict[str, ModelConfig] = {
         default_max_output_tokens=DEFAULT_MAX_OUTPUT_TOKENS,
         provider_max_output_tokens=64_000,
         anthropic_thinking=AnthropicThinkingConfig(enabled=False),
+        supports_assistant_prefill=True,
         notes=(
             "Anthropic's official docs list claude-haiku-4-5 as the alias and "
             "claude-haiku-4-5-20251001 as the snapshot ID."

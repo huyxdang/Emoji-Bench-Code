@@ -86,18 +86,19 @@ Pivot Emoji-Bench from a single-turn "audit this full derivation" benchmark into
 
 **Pilot smoke (count=100, master_seed=20260413):** 100/100 produced (25 per difficulty), ~31% rejection. `chain_too_short` = 0 across all difficulties (target bumps work); `insufficient_runway` is dominant on medium (19); `cascade_convergent` is rare (1–5 per difficulty); `no_eligible_in_*` = 0.
 
-## Phase 4: Add Multi-Turn Evaluation Support
+## Phase 4: Add Multi-Turn Evaluation Support — DONE
 
-- [ ] Extend provider request building so evaluators can send message lists, not just one prompt string.
-- [ ] Add a `supports_assistant_prefill` capability flag to the model registry. Pilot is Anthropic-only; other providers ship behind the flag and their results are reported separately so the prefill asymmetry is visible in the numbers, not hidden.
-- [ ] Support the conversation shape:
-  - system prompt
+- [x] Extend provider request building so evaluators can send message lists, not just one prompt string. _(`emoji_bench/continuation_provider.py`.)_
+- [x] Add a `supports_assistant_prefill` capability flag to the model registry. Pilot is Anthropic-only; other providers ship behind the flag and their results are reported separately so the prefill asymmetry is visible in the numbers, not hidden. _(All `claude-*` configs set the flag to `True`; everyone else defaults to `False`.)_
+- [x] Support the conversation shape:
   - user turn 1
-  - assistant prefill
-  - user turn 2 (`Please continue.`)
-- [ ] Capture raw continuation text from the model.
-- [ ] Keep the old structured-output evaluator intact for the legacy benchmark.
-- [ ] Add a separate continuation evaluator path rather than overloading the current `has_error/error_step` path.
+  - assistant prefill (Anthropic native via 2-message [user, assistant] continuation; non-Anthropic via 3-message [user, assistant, user] conversation)
+  - user turn 2 (`Please continue.`) — for non-native-prefill providers
+  - **No system prompt** — the format instruction lives in `turn_1_user`, and a system prompt asking the model to be careful would contaminate the unprompted self-detection signal.
+- [x] Capture raw continuation text from the model. _(No JSON schema, no structured output — Phase 5 runs against raw text.)_
+- [x] Keep the old structured-output evaluator intact for the legacy benchmark. _(`provider_eval.py` is untouched. The new module imports its usage extractors and HTTP plumbing but does not modify it.)_
+- [x] Add a separate continuation evaluator path rather than overloading the current `has_error/error_step` path. _(`scripts/evaluate_continuation.py` is a standalone CLI; it does not go through `eval_cli.py` or `request_prediction`.)_
+- [x] **Bonus from the Kaggle pivot:** `--mode {prefill, single_turn}` flag. `prefill` (default) is the native multi-turn path; `single_turn` collapses the conversation via `format_continuation_single_turn` for channels that don't accept assistant prefill (Kaggle Benchmark, OpenAI single-prompt eval workflows). Both modes live behind one CLI and one provider entry point so reports can slice on `mode` later.
 
 ## Phase 5: Define Scoring
 
@@ -137,7 +138,7 @@ Pivot Emoji-Bench from a single-turn "audit this full derivation" benchmark into
 - [x] First: fix the current failing test. _(Commit `12076b8`.)_
 - [x] Second: add the new dataset schema and continuation formatter. _(Commit `12076b8` — Phase 1 complete; Phase 2 complete apart from the `⌈X/2⌉` runway floor, addressed in Phase 3.)_
 - [x] Third: dataset-level generation with rejection logging. _(Commit `cfa5ea6` — Phase 3 complete. 100-row pilot generates clean.)_
-- [ ] Fourth: add multi-turn provider evaluation support.
+- [x] Fourth: add multi-turn provider evaluation support. _(Phase 4 complete; `--mode {prefill, single_turn}` covers both API and Kaggle channels.)_
 - [ ] Fifth: add scoring and reporting.
 - [ ] Sixth: run the 100-example pilot against models.
 

@@ -22,6 +22,36 @@ Final Output: <single symbol>"""
 TURN_2_USER: str = "Please continue."
 
 
+SINGLE_TURN_WORK_HEADER = """\
+=== WORK SO FAR ===
+You have already produced the following partial working out. Continue from where you left off and produce the remaining steps, ending with the Final Output line."""
+
+
+def format_continuation_single_turn(
+    *,
+    turn_1_user: str,
+    turn_1_assistant_prefill: str,
+) -> str:
+    """Collapse the multi-turn continuation conversation into one user prompt.
+
+    Used by evaluation channels that don't support assistant prefill — most
+    chat-completions APIs and Kaggle Benchmark. The single-turn rendering
+    is a *view* over the existing multi-turn record fields, not a separate
+    schema field, so it stays in sync with the prefill formatting by
+    construction.
+
+    Format: the original Turn 1 user prompt verbatim, followed by a
+    ``=== WORK SO FAR ===`` block whose body is the assistant prefill. No
+    explicit "check for errors" instruction — the unprompted self-detection
+    signal is preserved by saying only "continue from where you left off".
+    """
+    return (
+        f"{turn_1_user}\n\n"
+        f"{SINGLE_TURN_WORK_HEADER}\n\n"
+        f"{turn_1_assistant_prefill}"
+    )
+
+
 def format_continuation_turn_1_user(
     system: FormalSystem,
     chain: DerivationChain,

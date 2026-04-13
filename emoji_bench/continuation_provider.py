@@ -1,0 +1,446 @@
+"""Phase 4: multi-turn provider plumbing for the E-CONTINUE benchmark.
+
+Two request modes are supported:
+
+- ``prefill``      Anthropic uses its native trailing-assistant prefill (2
+                   messages: user → assistant-prefill, with the model
+                   continuing the assistant turn). Other providers receive
+                   a 3-message conversation list (user → assistant → user
+                   "Please continue.") since they have no native prefill.
+- ``single_turn``  Every provider receives one flat user message produced
+                   by ``format_continuation_single_turn``. This is the only
+                   mode usable on channels like Kaggle Benchmark that don't
+                   accept multi-message conversations.
+
+The path is deliberately separate from ``provider_eval.py`` so the legacy
+single-prompt + JSON-schema E-RECONV evaluator stays untouched. Continuation
+requests do NOT use a system prompt, do NOT request structured output, and
+return raw text — scoring (regex / judge / outcome bucket classification)
+runs in Phase 5 against that raw text.
+"""
+from __future__ import annotations
+
+import json
+import ssl
+from dataclasses import dataclass
+from typing import Any, Literal
+from urllib import error as urllib_error
+from urllib import request as urllib_request
+
+from emoji_bench.continuation_formatter import (
+    TURN_2_USER,
+    format_continuation_single_turn,
+)
+from emoji_bench.model_registry import ModelConfig
+from emoji_bench.provider_eval import (
+    GEMINI_API_BASE_URL,
+    MISTRAL_API_URL,
+    ProviderUsage,
+    _api_ssl_context,
+    _extract_anthropic_usage,
+    _extract_gemini_usage,
+    _extract_mistral_usage,
+    _extract_openai_usage,
+)
+
+
+ContinuationMode = Literal["prefill", "single_turn"]
+
+
+@dataclass(frozen=True)
+class ContinuationResponse:
+    raw_continuation_text: str
+    response_id: str | None
+    usage: ProviderUsage | None
+    mode: ContinuationMode
+    used_native_prefill: bool
+
+
+# --- Public entry point -----------------------------------------------------
+
+
+def request_continuation(
+    *,
+    client: Any,
+    model_config: ModelConfig,
+    turn_1_user: str,
+    turn_1_assistant_prefill: str,
+    max_output_tokens: int,
+    mode: ContinuationMode = "prefill",
+    turn_2_user: str = TURN_2_USER,
+) -> ContinuationResponse:
+    """Send a continuation request to a provider and return raw output text."""
+    if mode == "single_turn":
+        prompt = format_continuation_single_turn(
+            turn_1_user=turn_1_user,
+            turn_1_assistant_prefill=turn_1_assistant_prefill,
+        )
+        return _dispatch_single_turn(
+            client=client,
+            model_config=model_config,
+            prompt=prompt,
+            max_output_tokens=max_output_tokens,
+        )
+
+    if mode == "prefill":
+        if model_config.supports_assistant_prefill:
+            if model_config.provider != "anthropic":
+                # Currently only Anthropic exposes a true assistant-message
+                # prefill on its API. If new providers gain this, register
+                # them by name here rather than treating the flag as a free
+                # capability.
+                raise NotImplementedError(
+                    f"supports_assistant_prefill=True on {model_config.provider} "
+                    "is not yet implemented in continuation_provider.py"
+                )
+            return _request_anthropic_native_prefill(
+                client=client,
+                model_config=model_config,
+                turn_1_user=turn_1_user,
+                turn_1_assistant_prefill=turn_1_assistant_prefill,
+                max_output_tokens=max_output_tokens,
+            )
+        return _dispatch_three_message_list(
+            client=client,
+            model_config=model_config,
+            turn_1_user=turn_1_user,
+            turn_1_assistant_prefill=turn_1_assistant_prefill,
+            turn_2_user=turn_2_user,
+            max_output_tokens=max_output_tokens,
+        )
+
+    raise ValueError(f"Unsupported continuation mode: {mode}")
+
+
+# --- Anthropic native prefill ----------------------------------------------
+
+
+def build_anthropic_prefill_options(
+    *,
+    model_config: ModelConfig,
+    turn_1_user: str,
+    turn_1_assistant_prefill: str,
+    max_output_tokens: int,
+) -> dict[str, Any]:
+    return {
+        "model": model_config.api_model,
+        "messages": [
+            {"role": "user", "content": turn_1_user},
+            {"role": "assistant", "content": turn_1_assistant_prefill},
+        ],
+        "max_tokens": max_output_tokens,
+    }
+
+
+def _request_anthropic_native_prefill(
+    *,
+    client: Any,
+    model_config: ModelConfig,
+    turn_1_user: str,
+    turn_1_assistant_prefill: str,
+    max_output_tokens: int,
+) -> ContinuationResponse:
+    options = build_anthropic_prefill_options(
+        model_config=model_config,
+        turn_1_user=turn_1_user,
+        turn_1_assistant_prefill=turn_1_assistant_prefill,
+        max_output_tokens=max_output_tokens,
+    )
+    response = client.messages.create(**options)
+    return ContinuationResponse(
+        raw_continuation_text=_anthropic_text(response),
+        response_id=getattr(response, "id", None),
+        usage=_extract_anthropic_usage(response),
+        mode="prefill",
+        used_native_prefill=True,
+    )
+
+
+# --- 3-message conversation list (non-Anthropic prefill mode) --------------
+
+
+def _dispatch_three_message_list(
+    *,
+    client: Any,
+    model_config: ModelConfig,
+    turn_1_user: str,
+    turn_1_assistant_prefill: str,
+    turn_2_user: str,
+    max_output_tokens: int,
+) -> ContinuationResponse:
+    provider = model_config.provider
+    if provider == "openai":
+        return _request_openai_messages(
+            client=client,
+            model_config=model_config,
+            messages=[
+                {"role": "user", "content": turn_1_user},
+                {"role": "assistant", "content": turn_1_assistant_prefill},
+                {"role": "user", "content": turn_2_user},
+            ],
+            max_output_tokens=max_output_tokens,
+            mode="prefill",
+        )
+    if provider == "mistral":
+        return _request_mistral_messages(
+            client=client,
+            model_config=model_config,
+            messages=[
+                {"role": "user", "content": turn_1_user},
+                {"role": "assistant", "content": turn_1_assistant_prefill},
+                {"role": "user", "content": turn_2_user},
+            ],
+            max_output_tokens=max_output_tokens,
+            mode="prefill",
+        )
+    if provider == "gemini":
+        return _request_gemini_messages(
+            client=client,
+            model_config=model_config,
+            contents=[
+                {"role": "user", "parts": [{"text": turn_1_user}]},
+                {"role": "model", "parts": [{"text": turn_1_assistant_prefill}]},
+                {"role": "user", "parts": [{"text": turn_2_user}]},
+            ],
+            max_output_tokens=max_output_tokens,
+            mode="prefill",
+        )
+    if provider == "anthropic":
+        # Reachable only if a future Anthropic model has
+        # supports_assistant_prefill=False; treat as a 3-message conversation.
+        return _request_anthropic_messages(
+            client=client,
+            model_config=model_config,
+            messages=[
+                {"role": "user", "content": turn_1_user},
+                {"role": "assistant", "content": turn_1_assistant_prefill},
+                {"role": "user", "content": turn_2_user},
+            ],
+            max_output_tokens=max_output_tokens,
+            mode="prefill",
+        )
+    raise ValueError(f"Unsupported provider: {provider}")
+
+
+# --- Single-turn dispatch --------------------------------------------------
+
+
+def _dispatch_single_turn(
+    *,
+    client: Any,
+    model_config: ModelConfig,
+    prompt: str,
+    max_output_tokens: int,
+) -> ContinuationResponse:
+    provider = model_config.provider
+    if provider == "openai":
+        return _request_openai_messages(
+            client=client,
+            model_config=model_config,
+            messages=[{"role": "user", "content": prompt}],
+            max_output_tokens=max_output_tokens,
+            mode="single_turn",
+        )
+    if provider == "anthropic":
+        return _request_anthropic_messages(
+            client=client,
+            model_config=model_config,
+            messages=[{"role": "user", "content": prompt}],
+            max_output_tokens=max_output_tokens,
+            mode="single_turn",
+        )
+    if provider == "mistral":
+        return _request_mistral_messages(
+            client=client,
+            model_config=model_config,
+            messages=[{"role": "user", "content": prompt}],
+            max_output_tokens=max_output_tokens,
+            mode="single_turn",
+        )
+    if provider == "gemini":
+        return _request_gemini_messages(
+            client=client,
+            model_config=model_config,
+            contents=[{"role": "user", "parts": [{"text": prompt}]}],
+            max_output_tokens=max_output_tokens,
+            mode="single_turn",
+        )
+    raise ValueError(f"Unsupported provider: {provider}")
+
+
+# --- Per-provider message senders ------------------------------------------
+
+
+def _request_openai_messages(
+    *,
+    client: Any,
+    model_config: ModelConfig,
+    messages: list[dict[str, Any]],
+    max_output_tokens: int,
+    mode: ContinuationMode,
+) -> ContinuationResponse:
+    options: dict[str, Any] = {
+        "model": model_config.api_model,
+        "input": messages,
+        "max_output_tokens": max_output_tokens,
+    }
+    if model_config.openai_reasoning is not None:
+        reasoning: dict[str, str] = {"effort": model_config.openai_reasoning.effort}
+        if model_config.openai_reasoning.summary:
+            reasoning["summary"] = model_config.openai_reasoning.summary
+        options["reasoning"] = reasoning
+
+    response = client.responses.create(**options)
+    return ContinuationResponse(
+        raw_continuation_text=_openai_text(response),
+        response_id=getattr(response, "id", None),
+        usage=_extract_openai_usage(response),
+        mode=mode,
+        used_native_prefill=False,
+    )
+
+
+def _request_anthropic_messages(
+    *,
+    client: Any,
+    model_config: ModelConfig,
+    messages: list[dict[str, Any]],
+    max_output_tokens: int,
+    mode: ContinuationMode,
+) -> ContinuationResponse:
+    options: dict[str, Any] = {
+        "model": model_config.api_model,
+        "messages": messages,
+        "max_tokens": max_output_tokens,
+    }
+    if (
+        model_config.anthropic_thinking is not None
+        and model_config.anthropic_thinking.enabled
+        and model_config.anthropic_thinking.budget_tokens is not None
+    ):
+        if model_config.anthropic_thinking.budget_tokens >= max_output_tokens:
+            raise ValueError("Anthropic thinking budget must be less than max_output_tokens")
+        options["thinking"] = {
+            "type": "enabled",
+            "budget_tokens": model_config.anthropic_thinking.budget_tokens,
+        }
+
+    response = client.messages.create(**options)
+    return ContinuationResponse(
+        raw_continuation_text=_anthropic_text(response),
+        response_id=getattr(response, "id", None),
+        usage=_extract_anthropic_usage(response),
+        mode=mode,
+        used_native_prefill=False,
+    )
+
+
+def _request_mistral_messages(
+    *,
+    client: Any,
+    model_config: ModelConfig,
+    messages: list[dict[str, Any]],
+    max_output_tokens: int,
+    mode: ContinuationMode,
+) -> ContinuationResponse:
+    options: dict[str, Any] = {
+        "model": model_config.api_model,
+        "messages": messages,
+        "max_tokens": max_output_tokens,
+        "temperature": 0,
+    }
+    response = client.chat_complete(options)
+    return ContinuationResponse(
+        raw_continuation_text=_mistral_text(response),
+        response_id=response.get("id"),
+        usage=_extract_mistral_usage(response),
+        mode=mode,
+        used_native_prefill=False,
+    )
+
+
+def _request_gemini_messages(
+    *,
+    client: Any,
+    model_config: ModelConfig,
+    contents: list[dict[str, Any]],
+    max_output_tokens: int,
+    mode: ContinuationMode,
+) -> ContinuationResponse:
+    options: dict[str, Any] = {
+        "contents": contents,
+        "generationConfig": {
+            "maxOutputTokens": max_output_tokens,
+        },
+    }
+    response = client.generate_content(model=model_config.api_model, options=options)
+    return ContinuationResponse(
+        raw_continuation_text=_gemini_text(response),
+        response_id=response.get("responseId"),
+        usage=_extract_gemini_usage(response),
+        mode=mode,
+        used_native_prefill=False,
+    )
+
+
+# --- Output extraction (text only — no JSON schema) ------------------------
+
+
+def _anthropic_text(response: Any) -> str:
+    blocks = getattr(response, "content", None) or ()
+    parts: list[str] = []
+    for block in blocks:
+        if getattr(block, "type", None) == "text" and hasattr(block, "text"):
+            parts.append(block.text)
+    return "".join(parts)
+
+
+def _openai_text(response: Any) -> str:
+    direct = getattr(response, "output_text", "")
+    if direct:
+        return direct
+
+    parts: list[str] = []
+    for output in getattr(response, "output", ()) or ():
+        if getattr(output, "type", None) != "message":
+            continue
+        for content in getattr(output, "content", ()) or ():
+            if getattr(content, "type", None) == "output_text" and hasattr(content, "text"):
+                parts.append(content.text)
+    return "".join(parts)
+
+
+def _mistral_text(response: dict[str, Any]) -> str:
+    choices = response.get("choices") or ()
+    if not choices:
+        return ""
+    message = choices[0].get("message") or {}
+    content = message.get("content")
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        parts: list[str] = []
+        for block in content:
+            if isinstance(block, dict) and block.get("type") == "text":
+                text = block.get("text")
+                if isinstance(text, str):
+                    parts.append(text)
+        return "".join(parts)
+    return ""
+
+
+def _gemini_text(response: dict[str, Any]) -> str:
+    candidates = response.get("candidates") or ()
+    if not candidates:
+        return ""
+    content = candidates[0].get("content") or {}
+    parts = content.get("parts")
+    if not isinstance(parts, list):
+        return ""
+    pieces: list[str] = []
+    for part in parts:
+        if isinstance(part, dict):
+            text = part.get("text")
+            if isinstance(text, str):
+                pieces.append(text)
+    return "".join(pieces)
