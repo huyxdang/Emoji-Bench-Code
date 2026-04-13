@@ -110,23 +110,29 @@ Difficulty scales by both system complexity and chain length:
 
 ## Metrics
 
-Every prediction gets classified into one of six outcome buckets:
+The headline scoring is **three nested rates**, each a strict refinement of the previous:
 
-| Bucket | Verbalized doubt? | Final answer | Interpretation |
-|---|---|---|---|
-| `detect_recover` | yes | ground truth | Caught the error AND corrected it |
-| `detect_only` | yes | anything else | Flagged doubt but didn't recover |
-| `silent_recovery` | no | ground truth | Reached correct answer without verbalizing — either silent correction or lucky compensating error |
-| `blind_wrong_branch` | no | wrong branch | Trusted the bad step and cascaded — the canonical failure mode |
-| `off_rails` | no | neither | Introduced additional new errors along the way |
-| `extraction_failed` | — | no marker | Model didn't emit a `Final Output:` line |
+| Metric | Definition |
+|---|---|
+| **detect_rate** | Did the model express awareness that some step was wrong? |
+| **detect_correct_rate** | Did it also explicitly restate step `Y` with the correct value? |
+| **detect_correct_finaloutput_correct_rate** | Did it also produce a derivation that is mathematically valid all the way to the correct final answer? |
 
-Two detection definitions are reported side-by-side:
+By construction `detect_correct_finaloutput_correct ⊆ detect_correct ⊆ detect`. Each metric isolates a specific failure mode: a model can notice without fixing, fix the named step but make later math errors, or fix the named step and ride a coincidence to a correct-looking but wrong derivation.
+
+### How each metric is computed
+
+- **`detect_rate`** and **`detect_correct_rate`** come from a single LLM-as-judge call per prediction (default model: `gpt-4.1-mini`, cross-family from Claude). The judge is a reading-comprehension task — it's given the correct value for the bad step and asked yes/no whether the continuation acknowledged the error and whether it explicitly restated step `Y` with the correct value. The judge never has to do the formal-system math itself.
+- **`detect_correct_finaloutput_correct_rate`** combines the judge's `corrected_step_y` with a deterministic Python validator. The validator parses the model's `Step N: <before> = <after>` lines, evaluates each step against the operation table (catching wrong reductions), checks consecutive-step continuity, and verifies the terminal symbol equals `ground_truth_final_output`. This closes the **compensating-error loophole**: a model that writes two wrong steps that cancel out to ground truth is caught by the validator's per-step check before terminal match is even considered.
+
+The narrow definition of "fix" is deliberate: implicit corrections (continuing from a different state without naming step `Y`) do **not** count for `detect_correct_rate`. That keeps the judge task purely a reading task and lets metric (3)'s validator be the authority on whether the model's downstream work was actually consistent.
+
+### Regex baseline (diagnostic)
+
+The original six-bucket regex classifier (`detect_recover` / `detect_only` / `silent_recovery` / `blind_wrong_branch` / `off_rails` / `extraction_failed`) is preserved as a diagnostic baseline. It runs offline with no API calls, ships in `score_summary.json` under `regex_baseline`, and is useful for cheap iteration and cross-checking the judge. Two regex detection variants are computed:
 
 - **Loose** — regex for verbalized uncertainty anywhere in the continuation (`wait`, `mistake`, `let me recheck`, `actually,`, `should be`, …).
 - **Strict** — loose detection that co-occurs with a reference to a specific numbered step, optionally the bad one.
-
-The headline aggregate rates are `self_detection_loose`, `self_detection_strict`, `final_answer_recovery`, and `blind_cascade`.
 
 ## Quick Start
 
@@ -186,14 +192,33 @@ Additional useful flags:
 - `--turn-2-prompt "<string>"` overrides the level with an arbitrary custom Turn 2 user message. Useful for one-off prompting-strength variants outside the registered levels.
 - `--max-output-tokens` — bump for reasoning runs so thinking has room (the registry's 1024-token thinking budget eats into this).
 
-### Score predictions
+### Judge + score predictions
+
+The headline nested metrics require an LLM-as-judge pass first. Two-step:
 
 ```bash
+# 1. Run the judge over a predictions directory (one OpenAI call per row).
+python scripts/judge_continuation.py \
+  artifacts/evals/emoji-bench-e-continue-pilot-claude-haiku-4-5-prefill
+
+# 2. Score: emits both nested headline (judge + validator) and regex baseline.
 python scripts/score_continuation.py \
   artifacts/evals/emoji-bench-e-continue-pilot-claude-haiku-4-5-prefill
 ```
 
-Writes `scores.jsonl` (per-row classification) and `score_summary.json` (aggregate rates + per-difficulty breakdown) in the same directory.
+If you skip step 1, `score_continuation.py` falls back to the regex-only baseline (with a note that nested metrics are unavailable).
+
+Outputs (all written next to the predictions):
+- `judge.jsonl` — one row per prediction with the judge's two booleans + reasoning. Resumable: re-running the judge skips already-judged rows.
+- `scores.jsonl` — per-row regex classification (six-bucket).
+- `nested_scores.jsonl` — per-row nested booleans + the judge & validator payloads. Only written when `judge.jsonl` is present.
+- `score_summary.json` — aggregate rates. The `headline` block is the three nested rates when the judge ran, otherwise the regex rates. The `regex_baseline` block is always present.
+
+Useful judge flags:
+
+- `--judge-model` — defaults to `gpt-4.1-mini`. Must be an OpenAI-provider model (the judge uses Responses-API structured output).
+- `--no-resume` — re-judge every row, ignoring an existing `judge.jsonl`.
+- `--limit N` — judge only the first N pending rows. Handy for cost-bounded smoke runs before scaling up.
 
 ## Dataset
 
@@ -276,17 +301,14 @@ Useful notes:
 
 ## Scoring & Reports
 
-Scoring is deliberately separate from inference so a predictions file can be **rescored** as the detection rules evolve, without new API calls:
+Inference, judge, and scoring are three deliberately separate steps so any of them can be re-run without re-spending the others. The judge pass costs ~1¢ per 100 rows on `gpt-4.1-mini` and is rerunnable; the validator and the regex baseline are pure Python with no API cost. To rescore as the metrics evolve, you only need to re-run `score_continuation.py` — predictions and judge verdicts are reused from disk.
 
 ```bash
-python scripts/score_continuation.py <predictions-dir>
+python scripts/judge_continuation.py <predictions-dir>     # judge.jsonl
+python scripts/score_continuation.py <predictions-dir>     # scores.jsonl + nested_scores.jsonl + score_summary.json
 ```
 
-The summary JSON contains:
-
-- counts per outcome bucket (overall + per difficulty)
-- `self_detection_loose`, `self_detection_strict`, `final_answer_recovery`, `blind_cascade`, `extraction_ok` rates
-- paths to the predictions and scores files for audit
+The `score_summary.json` `headline` block always reports the three nested rates when the judge has run (with per-difficulty breakdown), and the `regex_baseline` block always reports the six-bucket counts and rates for diagnostic comparison.
 
 ## Repo Map
 
@@ -299,7 +321,9 @@ Core modules (`emoji_bench/`):
 - `continuation_formatter.py` — turn-1/prefill/turn-2 formatters plus the `format_continuation_single_turn` view used by `--mode single_turn`
 - `continuation_dataset.py` — dataset-level generator with rejection logging
 - `continuation_provider.py` — `request_continuation` dispatcher across OpenAI / Anthropic / Gemini / Mistral, both modes
-- `continuation_scorer.py` — `extract_final_output`, loose/strict detection regex, 6-bucket outcome classifier, `ScoredContinuation` dataclass
+- `continuation_judge.py` — judge prompt builder, deterministic `compute_step_values` (regenerates the correct/injected step values from the dataset's seeds), single-shot OpenAI Responses-API call returning structured JSON
+- `continuation_validator.py` — recursive-descent parser for the `Step N: <before> = <after>` format plus a deterministic per-step + continuity + terminal validator that closes the compensating-error loophole in metric (3)
+- `continuation_scorer.py` — both the legacy regex bucket scorer and the new `score_prediction_nested` / `summarize_nested` combinator that turns judge + validator outputs into the three nested headline metrics
 - `model_registry.py` — model configs including the `supports_assistant_prefill` capability flag
 
 CLI scripts (`scripts/`):
@@ -308,6 +332,7 @@ CLI scripts (`scripts/`):
 - `evaluate_continuation.py`
 - `score_continuation.py`
 - `preview_dataset.py` — terminal-friendly row preview
+- `judge_continuation.py` — runs the LLM judge over a predictions directory and emits `judge.jsonl`
 - `generate_reconvergent_dataset.py`, `evaluate_model.py` — legacy `E-RECONV` pipeline
 
 ## Why Emojis?
@@ -328,7 +353,7 @@ The `E-RECONV` machinery is still in the repo (`reconvergent_error_injector.py`,
 
 Issues and pull requests welcome, especially around:
 
-- scoring refinements (the detection regex is tuned against real pilot output and will grow as coverage expands)
+- judge prompt + validator refinements (the judge prompt is tuned against real pilot output; the regex baseline is preserved as a diagnostic)
 - provider integrations
 - new error variants or cutoff-policy ablations
 - analysis of model behavior on `E-CONTINUE`
