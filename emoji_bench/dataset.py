@@ -102,6 +102,7 @@ class DatasetManifest:
     condition_counts: dict[str, int]
     error_type_counts: dict[str, int]
     generator_commit: str | None
+    rejection_counts: dict[str, dict[str, int]] | None = None
 
 
 MAX_CHAIN_SEED_ATTEMPTS = 100

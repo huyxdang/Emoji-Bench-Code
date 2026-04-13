@@ -22,11 +22,12 @@ Pivot Emoji-Bench from a single-turn "audit this full derivation" benchmark into
 - [ ] **Y-offset policy:** `error_step ≈ ⌊X/2⌋`, with a ±1 jitter tolerance so the injector has room to find a valid cascading slot. `prefill_cutoff_step = error_step` — the error is always the last prefilled step, and the model's first generated step is the one that would either propagate or catch it.
 - [ ] **Remaining runway:** always at least `⌈X/2⌉` steps left after the cutoff, so "Please continue." has genuine work to do.
 - [ ] **Chain length targets (bumped from reconvergent defaults so the midpoint is meaningful):**
-  - easy: `X = 4`
-  - medium: `X = 6`
-  - hard: `X = 8`
-  - expert: `X = 10`
-- [ ] **Over-generate** by roughly 2× the final dataset size and log rejection reasons per attempt (too-early / too-late error_step, convergent wrong branch, cascade-dies-immediately, no valid eligible step in window).
+  - easy: `X = 6`
+  - medium: `X = 8`
+  - hard: `X = 10`
+  - expert: `X = 14`
+- [ ] **Realized-X floor of 4.** `chain_generator.generate_chain` is best-effort (`±2` early-exit at [chain_generator.py:348](/Users/huydang/Desktop/Emoji-Bench/emoji_bench/chain_generator.py:348)), so a target of 6 can return anything in `[4, 8]` and — if the sampler never hits the `±2` window in 50 attempts — occasionally lower. At dataset-generation time, reject any row with `chain_length_x < 4` with reason `chain_too_short` so the midpoint policy never collapses to `Y = 1`. The rejection counter per difficulty tells us whether easy is viable or needs to be dropped.
+- [ ] **Over-generate** by roughly 2× the final dataset size and log rejection reasons per attempt (too-early / too-late error_step, convergent wrong branch, cascade-dies-immediately, no valid eligible step in window, chain_too_short).
 - [ ] **Self-detection definition:** score two variants and report both.
   - Loose: any expressed doubt anywhere in the continuation (regex on `wait|error|mistake|wrong|correction|let me (re)?check|actually`).
   - Strict: explicitly flags the bad prefix step (judge or structured check).
@@ -40,21 +41,21 @@ Pivot Emoji-Bench from a single-turn "audit this full derivation" benchmark into
 - [x] Fix the existing failing test caused by the stray leading character in [scripts/evaluate_anthropic.py](/Users/huydang/Desktop/Emoji-Bench/scripts/evaluate_anthropic.py:1).
 - [x] Re-run `pytest` to get back to a clean baseline before the pivot work continues.
 
-## Phase 1: Define the New Dataset Schema
+## Phase 1: Define the New Dataset Schema — DONE (commit `12076b8`)
 
-- [ ] Add a continuation-style dataset record format instead of relying on a single `prompt` string.
-- [ ] Store the turn structure explicitly:
+- [x] Add a continuation-style dataset record format instead of relying on a single `prompt` string. _(See `continuation_record` in [emoji_bench/continuation_benchmark.py](/Users/huydang/Desktop/Emoji-Bench/emoji_bench/continuation_benchmark.py).)_
+- [x] Store the turn structure explicitly:
   - `turn_1_user`
   - `turn_1_assistant_prefill`
   - `turn_2_user`
-- [ ] Store evaluation ground truth explicitly:
+- [x] Store evaluation ground truth explicitly:
   - `ground_truth_final_output`
   - `wrong_branch_final_output`
   - `chain_length_x` (total steps `X` in the clean chain)
   - `prefill_error_step` (the `error_step`)
   - `prefill_cutoff_step` (equal to `error_step` under the locked policy, kept as a separate column so the policy can loosen later without a schema migration)
   - `has_prefill_error`
-- [ ] Preserve debug/repro fields already used by the repo:
+- [x] Preserve debug/repro fields already used by the repo:
   - `system_json`
   - `system_seed`
   - `chain_seed`
@@ -62,15 +63,15 @@ Pivot Emoji-Bench from a single-turn "audit this full derivation" benchmark into
   - `difficulty`
   - `error_type`
 
-## Phase 2: Build the Prefill/Continuation Generator
+## Phase 2: Build the Prefill/Continuation Generator — MOSTLY DONE (commit `12076b8`)
 
-- [ ] Add a formatter for the first user turn: rules + original expression only.
-- [ ] Add a formatter for the assistant prefill: steps `1..Y` only.
-- [ ] Keep the prefill in the current numbered-step format first, instead of adding freeform "natural CoT" prose.
-- [ ] Choose the cutoff step `Y` per the locked policy: `error_step ≈ ⌊X/2⌋ ± 1`, `prefill_cutoff_step = error_step`.
-- [ ] Ensure the injected error occurs within the visible prefix (it is the last prefilled step by construction).
-- [ ] Ensure the prefix ends before the full chain finishes, with at least `⌈X/2⌉` steps remaining.
-- [ ] Ensure the prefill string does not end on a terminal marker (`Final Output:`, trailing blank line) that would short-circuit continuation.
+- [x] Add a formatter for the first user turn: rules + original expression only. _(`format_continuation_turn_1_user` in [emoji_bench/continuation_formatter.py](/Users/huydang/Desktop/Emoji-Bench/emoji_bench/continuation_formatter.py).)_ Includes an explicit `Step N: ... [by <rule>]` format instruction so the prefill format is primed, not just observed.
+- [x] Add a formatter for the assistant prefill: steps `1..Y` only. _(`format_continuation_prefill` in the same module.)_
+- [x] Keep the prefill in the current numbered-step format first, instead of adding freeform "natural CoT" prose.
+- [x] Choose the cutoff step `Y` per the locked policy: `error_step ≈ ⌊X/2⌋ ± 1`, `prefill_cutoff_step = error_step`. _(`_preferred_error_steps` + `generate_continuation_instance` in [emoji_bench/continuation_benchmark.py](/Users/huydang/Desktop/Emoji-Bench/emoji_bench/continuation_benchmark.py).)_
+- [x] Ensure the injected error occurs within the visible prefix (it is the last prefilled step by construction).
+- [ ] Ensure the prefix ends before the full chain finishes, with at least `⌈X/2⌉` steps remaining. _Partial: the cascading injector guarantees ≥ 1 remaining step, but the `⌈X/2⌉` runway floor is not yet enforced — deferred to Phase 3 as a rejection filter alongside `chain_too_short`._
+- [x] Ensure the prefill string does not end on a terminal marker (`Final Output:`, trailing blank line) that would short-circuit continuation. _(Covered by `test_prefill_string_does_not_end_on_terminal_marker`.)_
 
 ## Phase 3: Generate the Right Kind of Error
 
@@ -130,8 +131,8 @@ Pivot Emoji-Bench from a single-turn "audit this full derivation" benchmark into
 
 ## Recommended Execution Order
 
-- [x] First: fix the current failing test.
-- [ ] Second: add the new dataset schema and continuation formatter.
+- [x] First: fix the current failing test. _(Commit `12076b8`.)_
+- [x] Second: add the new dataset schema and continuation formatter. _(Commit `12076b8` — Phase 1 complete; Phase 2 complete apart from the `⌈X/2⌉` runway floor, deferred to Phase 3.)_
 - [ ] Third: add multi-turn provider evaluation support.
 - [ ] Fourth: add scoring and reporting.
 - [ ] Fifth: generate the 100-example pilot and run initial models.
