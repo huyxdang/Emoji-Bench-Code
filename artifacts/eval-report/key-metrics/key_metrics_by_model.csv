@@ -1,9 +1,0 @@
-scope,model,difficulty,detection_rate,joint_detection,false_positives
-model,claude-haiku-4-5,,0.706707,0.483984,307
-model,claude-sonnet-4-6,,0.611612,0.484484,75
-model,gpt-4.1-mini,,0.679179,0.494995,276
-model,gpt-5.4,,0.874875,0.874875,0
-model,gpt-5.4-mini,,0.745245,0.717217,13
-model,gpt-5.4-nano,,0.753754,0.742743,13
-model,mistral-large-2512,,0.642643,0.487487,204
-model,mistral-medium-2508,,0.629129,0.486486,128
