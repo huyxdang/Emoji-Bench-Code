@@ -1,5 +1,4 @@
-⏺ Say the word and I'll call TaskStop on bc029grhz and bp4zc0r6c.                                                                                                                     
-                                                                                                                                                                                    
+                                                                                                                                                
   To resume later (just rerun the original commands — resume is automatic):                                                                                                           
                                           
   set -a && source .env && set +a                                                                                                                                                     
