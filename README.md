@@ -2,6 +2,13 @@
   <img src="public/emoji-bench.png" alt="Emoji-Bench" width="100%" />
 </p>
 
+# Focus (Single Condition)
+L0 (please continue) && Condition B (3 message, pre-filled)
+
+More, for the pleasure of it: 
+- L1 (some hint to check error)
+- Condition C: Single-prompt (may not even need this, since Kaggle Benchmark may support this)
+
 # Emoji-Bench
 
 Emoji-Bench is a benchmark for **unprompted self-detection** during derivation continuation in novel formal systems. It asks a narrow question:
@@ -380,3 +387,32 @@ MIT. See `LICENSE`.
 
 ## TODO
 - [ ] Add control (no-error)
+
+## Note: Kaggle Benchmarks supports Condition B
+
+The `kaggle-benchmarks` Python library (the harness behind Kaggle Benchmarks evaluations) supports manual construction of a pre-filled assistant turn, so **Condition B (3-message fallback)** is runnable there without falling back to Condition C.
+
+Relevant API surface:
+
+- `Chat.append(item: Message)` is public — messages can be appended to a `Chat` manually before calling the LLM.
+- `Message(content, sender)` is a plain dataclass with no role restriction on construction; an assistant-authored message can be built without the LLM generating it, as long as the `sender` is an `LLMChat`-shaped actor so the serializer maps it to `role: "assistant"` upstream.
+- `LLMChat.respond()` reads the entire visible chat history (`raw_messages = [msg for msg in chat.messages if msg.is_visible_to_llm] + temp_messages`) and sends it to the provider. It does not assume the last turn was user-generated — the conversation just needs to end on a user turn for providers (like Anthropic) that reject trailing-assistant prompts.
+
+The L0 + Condition B run therefore looks like:
+
+```python
+with chats.new("run"):
+    chats.send(Message(content=turn_1_user, sender=user_actor))
+    chats.send(Message(content=prefilled_steps_1_to_Y, sender=llm))  # pre-filled assistant turn
+    chats.send(Message(content="Please continue.", sender=user_actor))
+    result = llm.respond()
+```
+
+Worth a 10-row smoke test against a cheap model before a full run — the Kaggle harness may impose task-shape constraints (e.g., single `prompt()` call per task) that limit manual message-list construction, and the assistant-role serialization for the pre-filled turn should be verified end-to-end on the specific provider backing each model.
+
+Condition A (Anthropic native *trailing-assistant* prefill) remains unsupported, since that requires the request itself to end with an assistant message; that API field is not exposed by the harness.
+
+References:
+
+- [Kaggle/kaggle-benchmarks (GitHub)](https://github.com/Kaggle/kaggle-benchmarks)
+- [kaggle-benchmarks on DeepWiki](https://deepwiki.com/Kaggle/kaggle-benchmarks)
