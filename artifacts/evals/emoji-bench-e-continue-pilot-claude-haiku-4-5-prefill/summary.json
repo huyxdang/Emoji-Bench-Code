@@ -1,0 +1,11 @@
+{
+  "model": "claude-haiku-4-5",
+  "provider": "anthropic",
+  "api_model": "claude-haiku-4-5",
+  "mode": "prefill",
+  "input_path": "/Users/huydang/Desktop/Emoji-Bench/artifacts/emoji-bench-e-continue-pilot/test.jsonl",
+  "output_dir": "/Users/huydang/Desktop/Emoji-Bench/artifacts/evals/emoji-bench-e-continue-pilot-claude-haiku-4-5-prefill",
+  "predictions_path": "/Users/huydang/Desktop/Emoji-Bench/artifacts/evals/emoji-bench-e-continue-pilot-claude-haiku-4-5-prefill/predictions.jsonl",
+  "total_examples": 100,
+  "completed_examples": 100
+}

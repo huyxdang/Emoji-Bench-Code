@@ -1,0 +1,13 @@
+{
+  "model": "gpt-4.1-mini",
+  "provider": "openai",
+  "api_model": "gpt-4.1-mini",
+  "mode": "single_turn",
+  "turn_2_level": 2,
+  "turn_2_user_sent": "Please continue. Verify each prior step against the rules before proceeding.",
+  "input_path": "/Users/huydang/Desktop/Emoji-Bench/artifacts/emoji-bench-e-continue-pilot/test.jsonl",
+  "output_dir": "/Users/huydang/Desktop/Emoji-Bench/artifacts/evals/emoji-bench-e-continue-pilot-gpt-4.1-mini-single_turn-lvl2",
+  "predictions_path": "/Users/huydang/Desktop/Emoji-Bench/artifacts/evals/emoji-bench-e-continue-pilot-gpt-4.1-mini-single_turn-lvl2/predictions.jsonl",
+  "total_examples": 100,
+  "completed_examples": 100
+}

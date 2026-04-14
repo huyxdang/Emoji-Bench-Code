@@ -1,0 +1,63 @@
+{
+  "dataset_name": "emoji-bench-e-continue",
+  "total_examples": 100,
+  "bases_per_difficulty": 25,
+  "target_lengths": {
+    "easy": 6,
+    "medium": 8,
+    "hard": 10,
+    "expert": 14
+  },
+  "split_counts": {
+    "train": 0,
+    "validation": 0,
+    "test": 100
+  },
+  "difficulty_counts": {
+    "easy": 25,
+    "medium": 25,
+    "hard": 25,
+    "expert": 25
+  },
+  "condition_counts": {
+    "error_injected": 100
+  },
+  "error_type_counts": {
+    "E-CONTINUE": 100
+  },
+  "generator_commit": "033b20f56e9786d29b688e552063f306fee73c31",
+  "rejection_counts": {
+    "easy": {
+      "chain_too_short": 0,
+      "insufficient_runway": 4,
+      "no_eligible_in_chain": 0,
+      "no_eligible_in_window": 0,
+      "cascade_convergent": 2,
+      "other_injector_error": 0
+    },
+    "medium": {
+      "chain_too_short": 0,
+      "insufficient_runway": 19,
+      "no_eligible_in_chain": 0,
+      "no_eligible_in_window": 0,
+      "cascade_convergent": 5,
+      "other_injector_error": 0
+    },
+    "hard": {
+      "chain_too_short": 0,
+      "insufficient_runway": 6,
+      "no_eligible_in_chain": 0,
+      "no_eligible_in_window": 0,
+      "cascade_convergent": 1,
+      "other_injector_error": 0
+    },
+    "expert": {
+      "chain_too_short": 0,
+      "insufficient_runway": 5,
+      "no_eligible_in_chain": 0,
+      "no_eligible_in_window": 0,
+      "cascade_convergent": 3,
+      "other_injector_error": 0
+    }
+  }
+}

@@ -170,6 +170,15 @@ def main() -> None:
         help="Optional override for the configured default max output tokens.",
     )
     parser.add_argument(
+        "--reasoning-effort",
+        choices=("none", "minimal", "low", "medium", "high", "xhigh"),
+        default=None,
+        help=(
+            "Override the configured OpenAI reasoning effort. Applies only to "
+            "models whose registry entry already declares openai_reasoning."
+        ),
+    )
+    parser.add_argument(
         "--max-retries",
         type=int,
         default=3,
@@ -243,6 +252,19 @@ def main() -> None:
         # Override the capability flag so request_continuation falls through
         # to the 3-message conversation path. The registry stays untouched.
         model_config = replace(model_config, supports_assistant_prefill=False)
+    if args.reasoning_effort is not None:
+        if model_config.openai_reasoning is None:
+            parser.error(
+                f"--reasoning-effort requires a model with openai_reasoning "
+                f"configured; {model_config.key} is not a reasoning model."
+            )
+        model_config = replace(
+            model_config,
+            openai_reasoning=replace(
+                model_config.openai_reasoning,
+                effort=args.reasoning_effort,
+            ),
+        )
     api_key = resolve_api_key(
         model_config=model_config,
         explicit_api_key=args.api_key,

@@ -1,0 +1,11 @@
+{
+  "model": "claude-sonnet-4-6",
+  "provider": "anthropic",
+  "api_model": "claude-sonnet-4-6",
+  "mode": "prefill",
+  "input_path": "/Users/huydang/Desktop/Emoji-Bench/artifacts/emoji-bench-e-continue-pilot/test.jsonl",
+  "output_dir": "/Users/huydang/Desktop/Emoji-Bench/artifacts/evals/emoji-bench-e-continue-pilot-claude-sonnet-4-6-prefill",
+  "predictions_path": "/Users/huydang/Desktop/Emoji-Bench/artifacts/evals/emoji-bench-e-continue-pilot-claude-sonnet-4-6-prefill/predictions.jsonl",
+  "total_examples": 100,
+  "completed_examples": 100
+}
