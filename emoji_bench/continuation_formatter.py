@@ -26,7 +26,7 @@ TURN_2_USER: str = "Please continue."
 # baseline (identical to TURN_2_USER). Levels 1 and 2 add progressively
 # stronger self-check hints without explicitly asking the model to look for
 # errors. Level 3 is the explicit ceiling condition — reserved for upper-
-# bound ablation, not part of the initial pilot curve.
+# bound ablation, not part of the initial headline curve.
 TURN_2_PROMPT_LEVELS: dict[int, str] = {
     0: "Please continue.",
     1: "Please continue. Double-check any step you're unsure about.",

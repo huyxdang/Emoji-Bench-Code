@@ -165,12 +165,12 @@ Run tests:
 pytest
 ```
 
-### Generate a pilot dataset
+### Generate the benchmark dataset
 
 ```bash
 python scripts/generate_continuation_dataset.py \
   --count 100 \
-  --output-dir artifacts/emoji-bench-e-continue-pilot
+  --output-dir artifacts/emoji-bench-dataset-100
 ```
 
 The generator over-generates and rejects rows that fail any of: realized `X < 4`, runway `< ⌈X/2⌉`, convergent wrong branch, no eligible error step in the midpoint window. Rejection counts per difficulty/reason are surfaced in `manifest.json`.
@@ -179,7 +179,7 @@ The generator over-generates and rejects rows that fail any of: realized `X < 4`
 
 ```bash
 python scripts/evaluate_continuation.py \
-  artifacts/emoji-bench-e-continue-pilot \
+  artifacts/emoji-bench-dataset-100 \
   --model claude-haiku-4-5 \
   --mode prefill \
   --limit 10
@@ -194,7 +194,7 @@ python scripts/evaluate_continuation.py \
 Additional useful flags:
 
 - `--no-native-prefill` forces the 3-message fallback on prefill-capable models. Required on Haiku for any Kaggle-comparable run.
-- `--turn-2-prompt-level {0,1,2,3}` picks the Turn 2 user message from a prompting-strength axis. **Headline levels:** `0` = unprompted `"Please continue."` (default, preserves original pilot behavior), `1` = soft hint. **Saturation / optional levels** kept in code for ablations but not part of the headline curve: `2` = moderate hint (both Sonnet B and GPT-4.1 B hit ~97–99% detection here, so it no longer discriminates), `3` = explicit error-check request. Levels > 0 add a `-lvlN` suffix to the default output directory so reruns don't collide.
+- `--turn-2-prompt-level {0,1,2,3}` picks the Turn 2 user message from a prompting-strength axis. **Headline levels:** `0` = unprompted `"Please continue."` (default), `1` = soft hint. **Saturation / optional levels** kept in code for ablations but not part of the headline curve: `2` = moderate hint (both Sonnet B and GPT-4.1 B hit ~97–99% detection here, so it no longer discriminates), `3` = explicit error-check request. Levels > 0 add a `-lvlN` suffix to the default output directory so reruns don't collide.
 - `--turn-2-prompt "<string>"` overrides the level with an arbitrary custom Turn 2 user message. Useful for one-off prompting-strength variants outside the registered levels.
 - `--max-output-tokens` — bump for reasoning runs so thinking has room (the registry's 1024-token thinking budget eats into this).
 
@@ -221,11 +221,11 @@ The headline nested metrics require an LLM-as-judge pass first. Two-step:
 ```bash
 # 1. Run the judge over a predictions directory (one OpenAI call per row).
 python scripts/judge_continuation.py \
-  artifacts/evals/emoji-bench-e-continue-pilot-claude-haiku-4-5-prefill
+  artifacts/evals/emoji-bench-dataset-100-claude-haiku-4-5-prefill
 
 # 2. Score: emits both nested headline (judge + validator) and regex baseline.
 python scripts/score_continuation.py \
-  artifacts/evals/emoji-bench-e-continue-pilot-claude-haiku-4-5-prefill
+  artifacts/evals/emoji-bench-dataset-100-claude-haiku-4-5-prefill
 ```
 
 If you skip step 1, `score_continuation.py` falls back to the regex-only baseline (with a note that nested metrics are unavailable).
@@ -276,7 +276,7 @@ artifacts/<dataset>/
 | `example_id` / `base_id` / `split` | identity |
 | `difficulty` | `easy` / `medium` / `hard` / `expert` |
 | `error_type` | identifier for the error variant (a single value in this release) |
-| `has_prefill_error` | always `True` for pilot rows; reserved for future control rows |
+| `has_prefill_error` | always `True` in the current dataset; reserved for future control rows |
 | `turn_1_user` | first user message (rules + expression + format instruction) |
 | `turn_1_assistant_prefill` | prefilled assistant message, steps `1..Y` with the bad step at `Y` |
 | `turn_2_user` | the literal `Please continue.` baked into the dataset at generation time (the evaluator can override it at request time via `--turn-2-prompt-level` / `--turn-2-prompt` without re-generating) |
@@ -299,17 +299,17 @@ Run a small smoke test:
 
 ```bash
 python scripts/evaluate_continuation.py \
-  artifacts/emoji-bench-e-continue-pilot \
+  artifacts/emoji-bench-dataset-100 \
   --model claude-haiku-4-5 \
   --mode prefill \
   --limit 5
 ```
 
-Run the full 100-row pilot:
+Run the full 100-row benchmark:
 
 ```bash
 python scripts/evaluate_continuation.py \
-  artifacts/emoji-bench-e-continue-pilot \
+  artifacts/emoji-bench-dataset-100 \
   --model claude-haiku-4-5 \
   --mode prefill
 ```
@@ -375,7 +375,7 @@ Earlier experiments in this repo tested alternative error types and an "audit th
 
 Issues and pull requests welcome, especially around:
 
-- judge prompt + validator refinements (the judge prompt is tuned against real pilot output; the regex baseline is preserved as a diagnostic)
+- judge prompt + validator refinements (the judge prompt is tuned against real benchmark output; the regex baseline is preserved as a diagnostic)
 - provider integrations
 - new error variants or cutoff-policy ablations
 - analysis of model behavior on the benchmark
