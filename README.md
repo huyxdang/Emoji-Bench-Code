@@ -8,8 +8,6 @@ Emoji-Bench is a benchmark for **unprompted self-detection** during derivation c
 
 **When a model is handed a partially-completed derivation whose last step is wrong, and told only to "continue," will it notice — or will it trust the transcript and cascade?**
 
-This repository is now focused on a single benchmark condition: **`E-CONTINUE`**.
-
 ## TL;DR
 
 - Each task gives the model a procedurally-generated formal system and a partial derivation where step `Y` (the last step the model sees) is a cascading error.
@@ -21,7 +19,7 @@ This repository is now focused on a single benchmark condition: **`E-CONTINUE`**
 
 Most self-error-detection benchmarks explicitly ask "does this contain an error?" That over-cues the model. Real-world failure happens when a model is in the middle of a long task, doesn't notice its own earlier mistake, and keeps building on it.
 
-Emoji-Bench `E-CONTINUE` simulates that directly:
+Emoji-Bench simulates that directly:
 
 1. **Turn 1 user:** rules of a novel formal system + the expression to simplify + a format instruction.
 2. **Turn 1 assistant (prefilled):** steps `1..Y` of a derivation, where step `Y` contains a cascading wrong-result error.
@@ -35,9 +33,9 @@ Two things make the task hard to game:
 - **Procedurally-generated novel formal systems** — emoji symbols and fresh operation tables mean there's nothing to pattern-match from training data.
 - **Non-convergent injection** — the wrong step would cascade to a different final answer than the clean derivation, so just "recompute the end and compare" doesn't help.
 
-## What Is `E-CONTINUE`?
+## What Each Row Looks Like
 
-Each row of the benchmark carries a three-turn conversation plus two scoring targets:
+Each row carries a three-turn conversation plus two scoring targets:
 
 - `ground_truth_final_output` — the symbol a clean, error-free derivation reaches.
 - `wrong_branch_final_output` — the symbol a model reaches if it mechanically continues from the bad state. Always different from `ground_truth_final_output` by construction.
@@ -46,7 +44,7 @@ We score the model's `Final Output: <symbol>` line against those two targets, an
 
 ### Example
 
-Below is a minimal `E-CONTINUE` example (easy difficulty, `X = 4` total steps in the clean chain, cutoff `Y = 2`):
+Below is a minimal example (easy difficulty, `X = 4` total steps in the clean chain, cutoff `Y = 2`):
 
 ```text
 === Turn 1 (user) ===
@@ -180,17 +178,34 @@ python scripts/evaluate_continuation.py \
   --limit 10
 ```
 
-`--mode` picks how the conversation is sent:
+`--mode` picks how the conversation is sent. Three delivery options exist; only **B** and **C** are in the headline grid (see [Headline run grid](#headline-run-grid-kaggle-benchmark-compatible) below):
 
-- `prefill` (default) — Anthropic native trailing-assistant prefill where supported (currently Haiku 4.5); other providers receive a 3-message `[user, assistant, user]` conversation ending with `Please continue.`
-- `single_turn` — one flat user message with a `=== WORK SO FAR ===` block. Works everywhere, including channels that don't accept multi-message conversations.
+- **Option A — native prefill** (`--mode prefill` on `claude-haiku-4-5`): Anthropic trailing-assistant prefill. Excluded from the headline because the Kaggle Benchmark harness does not expose this API field.
+- **Option B — 3-message fallback** (`--mode prefill` on non-Haiku models, or `--mode prefill --no-native-prefill` on Haiku): `[user, assistant(prefilled_steps), user("Please continue.")]`. The default headline delivery.
+- **Option C — single-prompt** (`--mode single_turn`): one flat user message with a `=== WORK SO FAR ===` block. Works everywhere, including channels that don't accept multi-message conversations.
 
 Additional useful flags:
 
-- `--no-native-prefill` forces the 3-message fallback on prefill-capable models so you can isolate the mode effect from model strength.
+- `--no-native-prefill` forces the 3-message fallback on prefill-capable models. Required on Haiku for any Kaggle-comparable run.
 - `--turn-2-prompt-level {0,1,2,3}` picks the Turn 2 user message from a prompting-strength axis. **Headline levels:** `0` = unprompted `"Please continue."` (default, preserves original pilot behavior), `1` = soft hint. **Saturation / optional levels** kept in code for ablations but not part of the headline curve: `2` = moderate hint (both Sonnet B and GPT-4.1 B hit ~97–99% detection here, so it no longer discriminates), `3` = explicit error-check request. Levels > 0 add a `-lvlN` suffix to the default output directory so reruns don't collide.
 - `--turn-2-prompt "<string>"` overrides the level with an arbitrary custom Turn 2 user message. Useful for one-off prompting-strength variants outside the registered levels.
 - `--max-output-tokens` — bump for reasoning runs so thinking has room (the registry's 1024-token thinking budget eats into this).
+
+### Headline run grid (Kaggle Benchmark compatible)
+
+Headline results are reported on a 2×2 grid that matches what the Kaggle Benchmark harness can execute:
+
+| | **Option B — 3-message fallback** | **Option C — single-prompt** |
+|---|---|---|
+| **L0 (unprompted)** | `--mode prefill` [`--no-native-prefill`] | `--mode single_turn` |
+| **L1 (soft hint)**  | `--mode prefill --turn-2-prompt-level 1` [`--no-native-prefill`] | `--mode single_turn --turn-2-prompt-level 1` |
+
+Rules:
+
+- **Only L0 and L1** are in the headline. L2 saturates near 97–99% detection on mid-tier models and L3 is an explicit error-check request; both remain in code for ablations.
+- **Only Options B and C** are in the headline. Option A (native assistant prefill) is not reproducible on Kaggle Benchmark.
+- For `claude-haiku-4-5`, always add `--no-native-prefill` — otherwise `--mode prefill` silently upgrades to Option A and the run is off-distribution for Kaggle.
+- Every other model in `model_registry.py` already falls through to Option B under `--mode prefill` (no extra flag needed).
 
 ### Judge + score predictions
 
@@ -253,7 +268,7 @@ artifacts/<dataset>/
 |---|---|
 | `example_id` / `base_id` / `split` | identity |
 | `difficulty` | `easy` / `medium` / `hard` / `expert` |
-| `error_type` | always `E-CONTINUE` |
+| `error_type` | identifier for the error variant (a single value in this release) |
 | `has_prefill_error` | always `True` for pilot rows; reserved for future control rows |
 | `turn_1_user` | first user message (rules + expression + format instruction) |
 | `turn_1_assistant_prefill` | prefilled assistant message, steps `1..Y` with the bad step at `Y` |
@@ -315,9 +330,9 @@ The `score_summary.json` `headline` block always reports the three nested rates 
 Core modules (`emoji_bench/`):
 
 - `generator.py`, `chain_generator.py`, `expressions.py`, `interpreter.py` — formal-system and derivation generation
-- `error_injector.py` — cascading (non-convergent) wrong-result injector used by `E-CONTINUE`
-- `reconvergent_error_injector.py` — legacy `E-RECONV` injector, preserved but not the focus
-- `continuation_benchmark.py` — single-instance `E-CONTINUE` generator + `ContinuationInstance` dataclass + JSONL record serializer
+- `error_injector.py` — cascading (non-convergent) wrong-result injector
+- `reconvergent_error_injector.py` — legacy reconvergent-error injector from an earlier experiment, preserved but unused
+- `continuation_benchmark.py` — single-instance benchmark generator + `ContinuationInstance` dataclass + JSONL record serializer
 - `continuation_formatter.py` — turn-1/prefill/turn-2 formatters plus the `format_continuation_single_turn` view used by `--mode single_turn`
 - `continuation_dataset.py` — dataset-level generator with rejection logging
 - `continuation_provider.py` — `request_continuation` dispatcher across OpenAI / Anthropic / Gemini / Mistral, both modes
@@ -333,21 +348,21 @@ CLI scripts (`scripts/`):
 - `score_continuation.py`
 - `preview_dataset.py` — terminal-friendly row preview
 - `judge_continuation.py` — runs the LLM judge over a predictions directory and emits `judge.jsonl`
-- `generate_reconvergent_dataset.py`, `evaluate_model.py` — legacy `E-RECONV` pipeline
+- `generate_reconvergent_dataset.py`, `evaluate_model.py` — legacy reconvergent pipeline (earlier experiment, preserved but unused)
 
 ## Why Emojis?
 
 Emoji symbols make the formal systems visually legible while keeping them novel. A model may know `1 + 1 = 2` from training, but it does not come pre-trained on a fresh symbolic system such as `🌸 (+) 🤗 = 👋`. The benchmark could use any abstract labels (earlier numeric relabelings produced similar behavior) but emojis make the tasks easier to inspect and discuss.
 
-## Why `E-CONTINUE`?
+## Design Choices
 
-Earlier versions of this project tested multiple error types and an "audit this full derivation" interface (`E-RECONV`, a reconvergent error where the final answer stays correct). The project has shifted to `E-CONTINUE` because:
+Three choices shape the task and together keep it from being gameable:
 
-- **Continuation is the real-world failure mode** — agents keep working on tasks without being prompted to check for errors.
+- **Continuation is the real-world failure mode** — agents keep working on tasks without being prompted to check for errors. We simulate that directly rather than asking "find the mistake."
 - **No explicit `check-for-errors` instruction** preserves the unprompted self-detection signal.
 - **Non-convergent injection** forces the model to actually examine the transcript rather than comparing endpoints.
 
-The `E-RECONV` machinery is still in the repo (`reconvergent_error_injector.py`, `reconvergent_dataset.py`, `evaluate_model.py`) because the prior published Hugging Face dataset `huyxdang/emoji-bench-e-reconv-1000` is still usable with it. New work targets `E-CONTINUE`.
+Earlier experiments in this repo tested alternative error types and an "audit this full derivation" interface; the corresponding generator/evaluator modules (`reconvergent_error_injector.py`, `reconvergent_dataset.py`, `evaluate_model.py`) are preserved but not part of the current benchmark.
 
 ## Contributing
 
@@ -356,8 +371,12 @@ Issues and pull requests welcome, especially around:
 - judge prompt + validator refinements (the judge prompt is tuned against real pilot output; the regex baseline is preserved as a diagnostic)
 - provider integrations
 - new error variants or cutoff-policy ablations
-- analysis of model behavior on `E-CONTINUE`
+- analysis of model behavior on the benchmark
 
 ## License
 
 MIT. See `LICENSE`.
+
+
+## TODO
+- [ ] Add control (no-error)
