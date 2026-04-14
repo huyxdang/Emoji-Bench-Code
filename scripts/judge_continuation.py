@@ -25,7 +25,9 @@ import argparse
 import json
 import os
 import sys
+import threading
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any
 
@@ -153,6 +155,16 @@ def main() -> None:
         default=0.0,
     )
     parser.add_argument(
+        "--max-concurrent",
+        type=int,
+        default=1,
+        help=(
+            "Number of concurrent judge calls to run at once. Default 1 "
+            "(serial). Thread-safe writes behind a lock. Raise to 10+ for "
+            "faster passes; OpenAI rate limits on gpt-4.1-mini are generous."
+        ),
+    )
+    parser.add_argument(
         "--api-key",
         default=None,
     )
@@ -230,7 +242,11 @@ def main() -> None:
         )
     )
 
-    for pred in pending:
+    write_lock = threading.Lock()
+    state_lock = threading.Lock()
+    progress_counter = [n_done]
+
+    def process_one(pred: dict[str, Any]) -> None:
         eid = pred["example_id"]
         ds_row = dataset_rows.get(eid)
         if ds_row is None:
@@ -260,17 +276,20 @@ def main() -> None:
                     "judge_api_model": judge_model_config.api_model,
                     "request_latency_seconds": latency,
                 }
-                append_jsonl(judge_path, row)
-                judged.add(eid)
-                n_done += 1
+                with write_lock:
+                    append_jsonl(judge_path, row)
+                with state_lock:
+                    judged.add(eid)
+                    progress_counter[0] += 1
+                    done_now = progress_counter[0]
                 print(
-                    f"[{n_done}/{n_total}] {eid} "
+                    f"[{done_now}/{n_total}] {eid} "
                     f"detected={verdict.detected_error} "
                     f"corrected={verdict.corrected_step_y}"
                 )
                 if args.request_delay_seconds > 0:
                     time.sleep(args.request_delay_seconds)
-                break
+                return
             except Exception as exc:
                 last_error = exc
                 if attempt == args.max_retries:
@@ -279,6 +298,15 @@ def main() -> None:
 
         if last_error is not None and eid not in judged:
             raise last_error
+
+    if args.max_concurrent <= 1:
+        for pred in pending:
+            process_one(pred)
+    else:
+        with ThreadPoolExecutor(max_workers=args.max_concurrent) as pool:
+            futures = {pool.submit(process_one, p): p for p in pending}
+            for fut in as_completed(futures):
+                fut.result()
 
 
 if __name__ == "__main__":

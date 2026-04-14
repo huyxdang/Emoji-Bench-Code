@@ -17,7 +17,9 @@ import argparse
 import json
 import os
 import sys
+import threading
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import replace
 from pathlib import Path
 from typing import Any
@@ -179,6 +181,18 @@ def main() -> None:
         ),
     )
     parser.add_argument(
+        "--max-concurrent",
+        type=int,
+        default=1,
+        help=(
+            "Number of concurrent API calls to run at once. Default 1 "
+            "(serial). Thread-safe: writes to predictions.jsonl are "
+            "serialized behind a lock, and the 'seen' set is guarded. Raise "
+            "to 5-20 for reasoning models where the per-call latency "
+            "dominates throughput."
+        ),
+    )
+    parser.add_argument(
         "--max-retries",
         type=int,
         default=3,
@@ -308,11 +322,15 @@ def main() -> None:
         turn_2_user_override = get_turn_2_prompt(args.turn_2_prompt_level)
         turn_2_level = args.turn_2_prompt_level
 
-    for record in records:
-        if record["example_id"] in seen:
-            continue
+    pending = [r for r in records if r["example_id"] not in seen]
+    for record in pending:
         _validate_record(record)
 
+    write_lock = threading.Lock()
+    state_lock = threading.Lock()
+    progress_counter = [n_done]  # box so closure can mutate
+
+    def process_one(record: dict[str, Any]) -> None:
         last_error: Exception | None = None
         for attempt in range(1, args.max_retries + 1):
             try:
@@ -328,7 +346,6 @@ def main() -> None:
                 )
                 latency = time.perf_counter() - started
                 row: dict[str, Any] = {
-                    # Identity + structural metadata carried through for scoring.
                     "example_id": record["example_id"],
                     "base_id": record.get("base_id"),
                     "difficulty": record["difficulty"],
@@ -339,7 +356,6 @@ def main() -> None:
                     "chain_length_x": record["chain_length_x"],
                     "prefill_error_step": record["prefill_error_step"],
                     "prefill_cutoff_step": record["prefill_cutoff_step"],
-                    # Provider response.
                     "raw_continuation_text": response.raw_continuation_text,
                     "mode": response.mode,
                     "used_native_prefill": response.used_native_prefill,
@@ -347,7 +363,6 @@ def main() -> None:
                     "turn_2_level": turn_2_level,
                     "response_id": response.response_id,
                     "request_latency_seconds": latency,
-                    # Model identity.
                     "model": model_config.key,
                     "provider": model_config.provider,
                     "api_model": model_config.api_model,
@@ -357,25 +372,42 @@ def main() -> None:
                 row["output_tokens"] = None if usage is None else usage.output_tokens
                 row["reasoning_tokens"] = None if usage is None else usage.reasoning_tokens
                 row["total_tokens"] = None if usage is None else usage.total_tokens
-                append_jsonl(predictions_path, row)
-                seen.add(record["example_id"])
-                n_done += 1
+                with write_lock:
+                    append_jsonl(predictions_path, row)
+                with state_lock:
+                    seen.add(record["example_id"])
+                    progress_counter[0] += 1
+                    done_now = progress_counter[0]
                 print(
-                    f"[{n_done}/{n_total}] {record['example_id']} "
+                    f"[{done_now}/{n_total}] {record['example_id']} "
                     f"({response.mode}, native_prefill={response.used_native_prefill}, "
                     f"len={len(response.raw_continuation_text)})"
                 )
                 if args.request_delay_seconds > 0:
                     time.sleep(args.request_delay_seconds)
-                break
+                return
             except Exception as exc:
                 last_error = exc
                 if attempt == args.max_retries:
                     raise
                 time.sleep(args.retry_delay_seconds)
-
         if last_error is not None and record["example_id"] not in seen:
             raise last_error
+
+    if args.max_concurrent <= 1:
+        for record in pending:
+            process_one(record)
+    else:
+        # ThreadPoolExecutor so the I/O-bound HTTP calls can overlap. The
+        # OpenAI SDK's client is thread-safe for concurrent requests.
+        with ThreadPoolExecutor(max_workers=args.max_concurrent) as pool:
+            futures = {pool.submit(process_one, r): r for r in pending}
+            for fut in as_completed(futures):
+                # Re-raise the first failure so we don't silently swallow
+                # provider errors when running many concurrent calls.
+                fut.result()
+
+    n_done = progress_counter[0]
 
     summary = {
         "model": model_config.key,
