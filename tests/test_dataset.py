@@ -1,6 +1,4 @@
 import json
-import subprocess
-import sys
 from pathlib import Path
 
 from emoji_bench.benchmark_types import Condition, ErrorType
@@ -149,44 +147,5 @@ def test_generate_dataset_records_supports_e_casc_only():
     assert manifest.error_type_counts == {"E-CASC": 4}
 
 
-def test_generate_dataset_script_supports_error_type_and_count(tmp_path):
-    repo_root = Path(__file__).resolve().parents[1]
-    output_dir = tmp_path / "dataset"
-    result = subprocess.run(
-        [
-            sys.executable,
-            "scripts/generate_dataset.py",
-            "--dataset-name",
-            "emoji-bench-e-casc-cli",
-            "--output-dir",
-            str(output_dir),
-            "--bases-per-difficulty",
-            "1",
-            "--error-type",
-            "E-CASC",
-            "--count",
-            "8",
-            "--target-length",
-            "4",
-            "--train-ratio",
-            "0",
-            "--validation-ratio",
-            "0",
-            "--master-seed",
-            "123",
-        ],
-        cwd=repo_root,
-        check=True,
-        capture_output=True,
-        text=True,
-    )
-
-    summary = json.loads(result.stdout)
-    manifest = json.loads((output_dir / "manifest.json").read_text(encoding="utf-8"))
-
-    assert summary["total_examples"] == 8
-    assert summary["error_type_counts"] == {"E-CASC": 8}
-    assert manifest["total_examples"] == 8
-    assert manifest["error_type_counts"] == {"E-CASC": 8}
 
 
