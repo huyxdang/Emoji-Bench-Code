@@ -18,8 +18,8 @@ from dataclasses import dataclass
 from typing import Any, Literal
 
 from emoji_bench.continuation_formatter import (
-    TURN_2_USER,
     format_continuation_single_turn,
+    get_turn_2_prompt,
 )
 from emoji_bench.model_registry import ModelConfig
 from emoji_bench.provider_clients import (
@@ -53,7 +53,7 @@ def request_continuation(
     turn_1_assistant_prefill: str,
     max_output_tokens: int,
     mode: ContinuationMode = "prefill",
-    turn_2_user: str = TURN_2_USER,
+    turn_2_user: str = get_turn_2_prompt(0),
 ) -> ContinuationResponse:
     """Send a continuation request to a provider and return raw output text."""
     if mode == "single_turn":

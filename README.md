@@ -140,6 +140,11 @@ Outputs written next to predictions:
 - `nested_scores.jsonl` when judge output is available
 - `score_summary.json`
 
+Judge artifacts are now fingerprinted against `predictions.jsonl`. If you
+change predictions in place, rerun `judge_continuation.py --no-resume`.
+`score_continuation.py` rejects stale, duplicate, or partial `judge.jsonl`
+files instead of silently scoring a subset.
+
 ## Metrics
 
 Headline reporting uses three nested rates:

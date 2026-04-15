@@ -10,13 +10,14 @@ resumable.
 Output schema (one JSON object per row in ``judge.jsonl``):
 
     {
-        "example_id":            str,
-        "detected_error":        bool,   # judge metric (1)
-        "corrected_step_y":      bool,   # judge metric (2), narrow definition
-        "reasoning":             str,    # judge's one-sentence rationale
-        "raw_response_text":     str,    # untruncated judge output for audit
-        "judge_model":           str,
-        "judge_api_model":       str,
+        "example_id":             str,
+        "prediction_fingerprint": str,   # stale-resume guard over the judged prediction
+        "detected_error":         bool,  # judge metric (1)
+        "corrected_step_y":       bool,  # judge metric (2), narrow definition
+        "reasoning":              str,   # judge's one-sentence rationale
+        "raw_response_text":      str,   # untruncated judge output for audit
+        "judge_model":            str,
+        "judge_api_model":        str,
     }
 """
 from __future__ import annotations
@@ -35,6 +36,10 @@ if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from emoji_bench.continuation_judge import judge_continuation
+from emoji_bench.judge_artifacts import (
+    build_prediction_fingerprint_map,
+    load_validated_judge_rows,
+)
 from emoji_bench.jsonl_io import append_jsonl, load_jsonl_records
 from emoji_bench.model_registry import (
     get_model_config,
@@ -93,12 +98,6 @@ def _resolve_dataset_path(
         "or ensure summary.json exists alongside predictions.jsonl with a "
         "valid 'input_path' field."
     )
-
-
-def _load_existing_judgments(path: Path) -> set[str]:
-    if not path.exists():
-        return set()
-    return {row["example_id"] for row in load_jsonl_records(path)}
 
 
 def main() -> None:
@@ -214,11 +213,20 @@ def main() -> None:
     client = make_client(judge_model_config.provider, api_key=api_key)
 
     predictions = load_jsonl_records(predictions_path)
+    prediction_fingerprints = build_prediction_fingerprint_map(predictions)
     dataset_rows = {row["example_id"]: row for row in load_jsonl_records(dataset_path)}
 
     if args.no_resume and judge_path.exists():
         judge_path.unlink()
-    judged = _load_existing_judgments(judge_path)
+    existing_judgments = (
+        load_validated_judge_rows(
+            judge_path,
+            expected_fingerprints=prediction_fingerprints,
+        )
+        if judge_path.exists()
+        else {}
+    )
+    judged = set(existing_judgments)
 
     pending = [p for p in predictions if p["example_id"] not in judged]
     if args.limit is not None:
@@ -268,6 +276,7 @@ def main() -> None:
                 latency = time.perf_counter() - started
                 row: dict[str, Any] = {
                     "example_id": eid,
+                    "prediction_fingerprint": prediction_fingerprints[eid],
                     "detected_error": verdict.detected_error,
                     "corrected_step_y": verdict.corrected_step_y,
                     "reasoning": verdict.reasoning,

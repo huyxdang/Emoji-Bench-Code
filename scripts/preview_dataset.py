@@ -11,7 +11,7 @@ from typing import Any
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from emoji_bench.continuation_formatter import TURN_2_USER
+from emoji_bench.continuation_formatter import get_turn_2_prompt
 from emoji_bench.jsonl_io import load_jsonl_records
 
 
@@ -93,7 +93,7 @@ def _render_conversation(record: dict[str, Any]) -> str:
         "=== TURN 1 ASSISTANT PREFILL ===\n"
         f"{record['turn_1_assistant_prefill']}\n\n"
         "=== TURN 2 USER ===\n"
-        f"{TURN_2_USER}"
+        f"{get_turn_2_prompt(0)}"
     )
 
 

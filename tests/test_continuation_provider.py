@@ -5,8 +5,8 @@ import pytest
 from emoji_bench.continuation_formatter import (
     SINGLE_TURN_NEXT_MESSAGE_HEADER,
     SINGLE_TURN_WORK_HEADER,
-    TURN_2_USER,
     format_continuation_single_turn,
+    get_turn_2_prompt,
 )
 from emoji_bench.continuation_provider import (
     ContinuationResponse,
@@ -87,19 +87,21 @@ def _make_openai_response(text: str) -> SimpleNamespace:
 
 
 def test_single_turn_format_contains_turn_1_then_work_header_then_prefill():
+    level_0 = get_turn_2_prompt(0)
     rendered = format_continuation_single_turn(
         turn_1_user="[T1U]",
         turn_1_assistant_prefill="Start: x\nStep 1: x = y    [by ⊕ table]",
-        turn_2_user=TURN_2_USER,
+        turn_2_user=level_0,
     )
 
     assert rendered.startswith("[T1U]\n\n")
     assert SINGLE_TURN_WORK_HEADER in rendered
     assert SINGLE_TURN_NEXT_MESSAGE_HEADER in rendered
-    assert rendered.endswith(f"{SINGLE_TURN_NEXT_MESSAGE_HEADER}\n{TURN_2_USER}")
+    assert rendered.endswith(f"{SINGLE_TURN_NEXT_MESSAGE_HEADER}\n{level_0}")
 
 
 def test_request_continuation_prefill_anthropic_sends_three_message_conversation():
+    level_0 = get_turn_2_prompt(0)
     response = _make_anthropic_response(" continuing the work...")
     client = _FakeAnthropicClient(response)
     model_config = get_model_config("claude-haiku-4-5")
@@ -121,13 +123,14 @@ def test_request_continuation_prefill_anthropic_sends_three_message_conversation
     assert sent["messages"] == [
         {"role": "user", "content": "[T1U]"},
         {"role": "assistant", "content": "[PREFILL]"},
-        {"role": "user", "content": TURN_2_USER},
+        {"role": "user", "content": level_0},
     ]
     assert "system" not in sent
     assert "output_config" not in sent
 
 
 def test_request_continuation_single_turn_anthropic_sends_one_user_message():
+    level_0 = get_turn_2_prompt(0)
     response = _make_anthropic_response("Step 3: ...")
     client = _FakeAnthropicClient(response)
     model_config = get_model_config("claude-haiku-4-5")
@@ -150,7 +153,7 @@ def test_request_continuation_single_turn_anthropic_sends_one_user_message():
     assert "[T1U]" in messages[0]["content"]
     assert SINGLE_TURN_WORK_HEADER in messages[0]["content"]
     assert "[PREFILL]" in messages[0]["content"]
-    assert TURN_2_USER in messages[0]["content"]
+    assert level_0 in messages[0]["content"]
 
 
 def test_request_continuation_single_turn_uses_custom_turn_2_prompt():
@@ -174,6 +177,7 @@ def test_request_continuation_single_turn_uses_custom_turn_2_prompt():
 
 
 def test_request_continuation_prefill_openai_sends_three_message_conversation():
+    level_0 = get_turn_2_prompt(0)
     response = _make_openai_response("(continuation)")
     client = _FakeOpenAIClient(response)
     model_config = get_model_config("gpt-5.4-mini")
@@ -195,12 +199,13 @@ def test_request_continuation_prefill_openai_sends_three_message_conversation():
     assert sent["input"] == [
         {"role": "user", "content": "[T1U]"},
         {"role": "assistant", "content": "[PREFILL]"},
-        {"role": "user", "content": TURN_2_USER},
+        {"role": "user", "content": level_0},
     ]
     assert sent.get("reasoning") == {"effort": "medium"}
 
 
 def test_request_continuation_prefill_mistral_sends_three_message_conversation():
+    level_0 = get_turn_2_prompt(0)
     client = _FakeMistralClient(
         {
             "id": "mistral_id",
@@ -226,12 +231,13 @@ def test_request_continuation_prefill_mistral_sends_three_message_conversation()
     assert sent["messages"] == [
         {"role": "user", "content": "[T1U]"},
         {"role": "assistant", "content": "[PREFILL]"},
-        {"role": "user", "content": TURN_2_USER},
+        {"role": "user", "content": level_0},
     ]
     assert "response_format" not in sent
 
 
 def test_request_continuation_prefill_gemini_uses_model_role_for_prefill():
+    level_0 = get_turn_2_prompt(0)
     client = _FakeGeminiClient(
         {
             "responseId": "gem_id",
@@ -261,7 +267,7 @@ def test_request_continuation_prefill_gemini_uses_model_role_for_prefill():
     assert sent["contents"] == [
         {"role": "user", "parts": [{"text": "[T1U]"}]},
         {"role": "model", "parts": [{"text": "[PREFILL]"}]},
-        {"role": "user", "parts": [{"text": TURN_2_USER}]},
+        {"role": "user", "parts": [{"text": level_0}]},
     ]
     gen_cfg = sent["generationConfig"]
     assert "responseJsonSchema" not in gen_cfg
@@ -269,6 +275,7 @@ def test_request_continuation_prefill_gemini_uses_model_role_for_prefill():
 
 
 def test_request_continuation_single_turn_openai_one_user_message():
+    level_0 = get_turn_2_prompt(0)
     response = _make_openai_response("(single)")
     client = _FakeOpenAIClient(response)
     model_config = get_model_config("gpt-5.4-mini")
@@ -290,7 +297,7 @@ def test_request_continuation_single_turn_openai_one_user_message():
     assert "[T1U]" in msgs[0]["content"]
     assert SINGLE_TURN_WORK_HEADER in msgs[0]["content"]
     assert "[PREFILL]" in msgs[0]["content"]
-    assert TURN_2_USER in msgs[0]["content"]
+    assert level_0 in msgs[0]["content"]
 
 
 def test_request_continuation_rejects_unknown_mode():

@@ -11,6 +11,10 @@ When ``judge.jsonl`` exists alongside the predictions:
       carrying the three nested booleans (detected, detected_and_fixed,
       detected_fixed_and_right) plus the underlying judge + validator
       payloads for downstream analysis.
+    * The script validates that ``judge.jsonl`` covers every prediction
+      exactly once and that each row's ``prediction_fingerprint`` matches the
+      current ``predictions.jsonl``. Any stale, duplicate, or partial judge
+      artifact is rejected instead of being scored silently.
     * The summary's headline ``rates`` block becomes the three nested rates:
       ``detect_rate``, ``detect_correct_rate``,
       ``detect_correct_finaloutput_correct_rate``.
@@ -43,6 +47,11 @@ from emoji_bench.continuation_scorer import (
 )
 from emoji_bench.continuation_validator import validate_derivation
 from emoji_bench.formatter import system_from_json
+from emoji_bench.judge_artifacts import (
+    build_prediction_fingerprint_map,
+    ensure_full_judge_coverage,
+    load_validated_judge_rows,
+)
 from emoji_bench.jsonl_io import load_jsonl_records
 
 
@@ -163,9 +172,9 @@ def _build_nested_scores(
         eid = pred["example_id"]
         judge_row = judge_rows.get(eid)
         if judge_row is None:
-            # No judgment available -> can't compute nested metrics for this
-            # row. Skip it; the regex baseline summary still covers it.
-            continue
+            raise RuntimeError(
+                f"nested scoring invariant violated: missing judge row for {eid!r}"
+            )
         verdict = _JudgeVerdictLite(
             detected_error=bool(judge_row["detected_error"]),
             corrected_step_y=bool(judge_row["corrected_step_y"]),
@@ -251,6 +260,7 @@ def main() -> None:
     score_summary_path = output_dir / "score_summary.json"
 
     predictions = load_jsonl_records(predictions_path)
+    prediction_fingerprints = build_prediction_fingerprint_map(predictions)
     scored = [score_prediction(row) for row in predictions]
 
     with scores_path.open("w", encoding="utf-8") as fh:
@@ -272,7 +282,14 @@ def main() -> None:
             if dataset_path is not None
             else None
         )
-        judge_rows = {row["example_id"]: row for row in load_jsonl_records(judge_path)}
+        judge_rows = load_validated_judge_rows(
+            judge_path,
+            expected_fingerprints=prediction_fingerprints,
+        )
+        ensure_full_judge_coverage(
+            prediction_ids=set(prediction_fingerprints),
+            judge_rows=judge_rows,
+        )
 
         nested_scored = _build_nested_scores(
             predictions=predictions,
@@ -287,6 +304,8 @@ def main() -> None:
         summary["headline_kind"] = "judge_plus_validator"
         summary["nested_scores_path"] = str(nested_scores_path.resolve())
         summary["judge_path"] = str(judge_path.resolve())
+        summary["judged_count"] = len(judge_rows)
+        summary["judged_coverage"] = 1.0
         if dataset_path is None:
             summary["validator_status"] = (
                 "skipped — dataset path could not be located; "

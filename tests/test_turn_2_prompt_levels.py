@@ -2,13 +2,12 @@ import pytest
 
 from emoji_bench.continuation_formatter import (
     TURN_2_PROMPT_LEVELS,
-    TURN_2_USER,
     get_turn_2_prompt,
 )
 
 
-def test_level_0_matches_original_turn_2_user():
-    assert TURN_2_PROMPT_LEVELS[0] == TURN_2_USER
+def test_level_0_matches_default_continue_prompt():
+    assert TURN_2_PROMPT_LEVELS[0] == "Please continue."
     assert get_turn_2_prompt(0) == "Please continue."
 
 

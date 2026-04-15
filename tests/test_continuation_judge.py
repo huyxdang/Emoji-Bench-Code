@@ -143,6 +143,24 @@ class _FakeOpenAIClient:
         self.responses = _FakeResponsesAPI(payload=payload, raw_text=raw_text)
 
 
+class _FallbackOnlyResponsesAPI:
+    def __init__(self, *, raw_text: str):
+        self.raw_text = raw_text
+
+    def parse(self, **kwargs):
+        return SimpleNamespace(
+            id="judge_test",
+            output_parsed=None,
+            output_text=self.raw_text,
+            output=[],
+        )
+
+
+class _FallbackOnlyClient:
+    def __init__(self, *, raw_text: str):
+        self.responses = _FallbackOnlyResponsesAPI(raw_text=raw_text)
+
+
 def test_judge_continuation_returns_structured_verdict(pilot_pair):
     dataset_row, pred = pilot_pair
     pred["raw_continuation_text"] = "Step 3: ... Final Output: 🪈"
@@ -201,6 +219,25 @@ def test_judge_continuation_rejects_non_openai_provider(pilot_pair):
         judge_continuation(
             client=object(),
             judge_model_config=get_model_config("claude-haiku-4-5"),
+            prediction_row=pred,
+            dataset_row=dataset_row,
+        )
+
+
+def test_judge_continuation_rejects_non_boolean_fallback_fields(pilot_pair):
+    dataset_row, pred = pilot_pair
+    pred["raw_continuation_text"] = "Step 3: ... Final Output: 🪈"
+
+    client = _FallbackOnlyClient(
+        raw_text=(
+            '{"detected_error": "false", "corrected_step_y": false, '
+            '"reasoning": "bad types"}'
+        ),
+    )
+    with pytest.raises(ValueError, match="must be a JSON boolean"):
+        judge_continuation(
+            client=client,
+            judge_model_config=get_model_config("gpt-4.1-mini"),
             prediction_row=pred,
             dataset_row=dataset_row,
         )

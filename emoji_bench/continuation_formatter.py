@@ -17,10 +17,6 @@ Continue producing steps until the expression is a single symbol. Then, on its o
 
 Final Output: <single symbol>"""
 
-
-TURN_2_USER: str = "Please continue."
-
-
 # Locked prompting axis for the benchmark's 2x2 matrix:
 #   B/C delivery shape x L0/L1 prompting strength.
 TURN_2_PROMPT_LEVELS: dict[int, str] = {

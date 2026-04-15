@@ -189,6 +189,27 @@ def _judge_pydantic_model():
     return JudgeResponse
 
 
+def _require_bool(payload: dict[str, Any], key: str) -> bool:
+    value = payload.get(key)
+    if not isinstance(value, bool):
+        raise ValueError(
+            f"judge response field {key!r} must be a JSON boolean, got "
+            f"{value!r} ({type(value).__name__})"
+        )
+    return value
+
+
+def _normalize_reasoning(payload: dict[str, Any]) -> str:
+    value = payload.get("reasoning", "")
+    if value is None:
+        return ""
+    if not isinstance(value, str):
+        raise ValueError(
+            "judge response field 'reasoning' must be a string when present"
+        )
+    return value
+
+
 def judge_continuation(
     *,
     client: Any,
@@ -240,9 +261,9 @@ def judge_continuation(
 
     raw_text = _openai_output_text_fallback(response)
     return JudgeVerdict(
-        detected_error=bool(payload["detected_error"]),
-        corrected_step_y=bool(payload["corrected_step_y"]),
-        reasoning=str(payload.get("reasoning", "")),
+        detected_error=_require_bool(payload, "detected_error"),
+        corrected_step_y=_require_bool(payload, "corrected_step_y"),
+        reasoning=_normalize_reasoning(payload),
         raw_response_text=raw_text,
     )
 
