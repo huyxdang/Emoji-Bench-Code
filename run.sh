@@ -4,18 +4,19 @@ set -euo pipefail
 if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
   cat <<'EOF'
 Usage:
-  ./run_32_model_matrix.sh [dataset_path] [-- extra evaluate_continuation.py args...]
+  ./run.sh [dataset_path] [-- extra evaluate_continuation.py args...]
 
 Examples:
-  ./run_32_model_matrix.sh
-  ./run_32_model_matrix.sh artifacts/emoji-bench-dataset-100
-  ./run_32_model_matrix.sh artifacts/emoji-bench-dataset-100 -- --max-concurrent 8
+  ./run.sh
+  ./run.sh artifacts/emoji-bench-dataset-100
+  ./run.sh artifacts/emoji-bench-dataset-100 -- --max-concurrent 8
 
 Notes:
   - Defaults to artifacts/emoji-bench-dataset-100
   - Runs the full 32-run matrix:
       8 models x 2 modes (prefill, single_turn) x 2 prompt levels (L0, L1)
   - Any args after -- are forwarded to every evaluate_continuation.py call
+  - Continues past failed cells and prints a final failure summary
 EOF
   exit 0
 fi
@@ -50,17 +51,37 @@ MODES=("prefill" "single_turn")
 LEVELS=("0" "1")
 TOTAL_RUNS=$(( ${#MODELS[@]} * ${#MODES[@]} * ${#LEVELS[@]} ))
 RUN_INDEX=0
+SUCCESS_COUNT=0
+FAILED_RUNS=()
 
 for model in "${MODELS[@]}"; do
   for mode in "${MODES[@]}"; do
     for level in "${LEVELS[@]}"; do
       RUN_INDEX=$((RUN_INDEX + 1))
       echo "[$RUN_INDEX/$TOTAL_RUNS] model=$model mode=$mode turn_2_level=$level"
-      "$PYTHON_BIN" scripts/evaluate_continuation.py "$DATASET" \
+      if "$PYTHON_BIN" scripts/evaluate_continuation.py "$DATASET" \
         --model "$model" \
         --mode "$mode" \
         --turn-2-prompt-level "$level" \
-        "${EXTRA_ARGS[@]}"
+        "${EXTRA_ARGS[@]}"; then
+        SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
+      else
+        FAILED_RUNS+=("model=$model mode=$mode turn_2_level=$level")
+        echo "FAILED: model=$model mode=$mode turn_2_level=$level" >&2
+      fi
     done
   done
 done
+
+echo
+echo "Completed $SUCCESS_COUNT/$TOTAL_RUNS runs successfully."
+
+if (( ${#FAILED_RUNS[@]} > 0 )); then
+  echo "Failed runs:"
+  for failed in "${FAILED_RUNS[@]}"; do
+    echo "  - $failed"
+  done
+  exit 1
+fi
+
+echo "All runs completed successfully."
