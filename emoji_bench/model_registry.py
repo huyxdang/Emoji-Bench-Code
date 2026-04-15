@@ -267,6 +267,20 @@ MODEL_CONFIGS: dict[str, ModelConfig] = {
             "via the Chat Completions API."
         ),
     ),
+    "magistral-medium-2509": ModelConfig(
+        key="magistral-medium-2509",
+        label="Magistral Medium 1.2",
+        provider="mistral",
+        api_model="magistral-medium-2509",
+        docs_url="https://docs.mistral.ai/models/magistral-medium-1-2-25-09",
+        api_key_env_var="MISTRAL_API_KEY",
+        default_max_output_tokens=DEFAULT_MAX_OUTPUT_TOKENS,
+        notes=(
+            "Magistral Medium 1.2 v25.09 is Mistral's frontier-class multimodal "
+            "reasoning model and supports chat completions and structured outputs "
+            "via the Chat Completions API."
+        ),
+    ),
     "mistral-medium-2508": ModelConfig(
         key="mistral-medium-2508",
         label="Mistral Medium 3.1",
@@ -289,6 +303,8 @@ _MODEL_ORDER: tuple[str, ...] = (
     "gpt-5.4-mini-reasoning-xhigh",
     "gemini-3.1-pro-preview-thinking-high",
     "gemini-3-flash-preview-thinking-high",
+    "mistral-large-2512",
+    "magistral-medium-2509",
 )
 _MODEL_ORDER_INDEX: dict[str, int] = {
     key: index for index, key in enumerate(_MODEL_ORDER)

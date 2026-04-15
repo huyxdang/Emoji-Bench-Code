@@ -26,6 +26,7 @@ def test_requested_model_configs_are_present():
         "gpt-5.4-mini-reasoning-xhigh",
         "gpt-5.4-mini",
         "gpt-5.4-nano",
+        "magistral-medium-2509",
         "mistral-large-2512",
         "mistral-medium-2508",
     }.issubset(set(model_choices()))
@@ -99,6 +100,7 @@ def test_model_choices_put_stronger_claude_and_gemini_variants_first():
     assert choices.index("gemini-3.1-pro-preview-thinking-high") < choices.index(
         "gemini-3-flash-preview-thinking-high"
     )
+    assert choices.index("mistral-large-2512") < choices.index("magistral-medium-2509")
 
 
 def test_all_configured_models_use_expected_default_max_output_tokens():
