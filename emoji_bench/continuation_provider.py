@@ -243,7 +243,7 @@ def _request_anthropic_messages(
         if model_config.anthropic_thinking.budget_tokens >= max_output_tokens:
             raise ValueError("Anthropic thinking budget must be less than max_output_tokens")
         options["thinking"] = {
-            "type": "enabled",
+            "type": "adaptive",
             "budget_tokens": model_config.anthropic_thinking.budget_tokens,
         }
     if model_config.anthropic_effort is not None:
