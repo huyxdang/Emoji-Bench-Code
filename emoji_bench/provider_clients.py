@@ -116,7 +116,21 @@ def make_client(provider: ProviderName, *, api_key: str) -> Any:
                 "The anthropic package is required for Anthropic evaluation. "
                 'Install with `pip install -e ".[anthropic]"`.'
             ) from exc
-        return Anthropic(api_key=api_key)
+        try:
+            return Anthropic(api_key=api_key)
+        except TypeError as exc:
+            if "unexpected keyword argument 'proxies'" in str(exc):
+                raise RuntimeError(
+                    "Anthropic client initialization failed because the installed "
+                    "`anthropic` package is incompatible with the installed `httpx` "
+                    "version. This environment currently has an older Anthropic SDK "
+                    "that still passes `proxies=...` into `httpx.Client`, which "
+                    "breaks on httpx>=0.28.\n\n"
+                    "Fix one of these ways:\n"
+                    "1. Upgrade Anthropic: `python -m pip install -U anthropic`\n"
+                    "2. Or downgrade httpx: `python -m pip install \"httpx<0.28\"`"
+                ) from exc
+            raise
 
     if provider == "mistral":
         return _MistralClient(api_key=api_key)
