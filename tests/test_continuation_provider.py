@@ -4,6 +4,7 @@ from types import SimpleNamespace
 import pytest
 
 from emoji_bench.continuation_formatter import (
+    SINGLE_TURN_NEXT_MESSAGE_HEADER,
     SINGLE_TURN_WORK_HEADER,
     TURN_2_USER,
     format_continuation_single_turn,
@@ -96,14 +97,14 @@ def test_single_turn_format_contains_turn_1_then_work_header_then_prefill():
     rendered = format_continuation_single_turn(
         turn_1_user="[T1U]",
         turn_1_assistant_prefill="Start: x\nStep 1: x = y    [by ⊕ table]",
+        turn_2_user=TURN_2_USER,
     )
-    # Order is: T1U, blank line, header, blank line, prefill.
+    # Order is: T1U, blank line, work header, blank line, prefill, blank line,
+    # next-message header, then the Turn 2 user message.
     assert rendered.startswith("[T1U]\n\n")
     assert SINGLE_TURN_WORK_HEADER in rendered
-    assert rendered.endswith("Start: x\nStep 1: x = y    [by ⊕ table]")
-    # No "Please continue." literal in the single-turn rendering — the WORK
-    # SO FAR header carries the same instruction without duplicating it.
-    assert TURN_2_USER not in rendered
+    assert SINGLE_TURN_NEXT_MESSAGE_HEADER in rendered
+    assert rendered.endswith(f"{SINGLE_TURN_NEXT_MESSAGE_HEADER}\n{TURN_2_USER}")
 
 
 # --- Anthropic native prefill ---------------------------------------------
@@ -166,6 +167,27 @@ def test_request_continuation_single_turn_anthropic_sends_one_user_message():
     assert "[T1U]" in messages[0]["content"]
     assert SINGLE_TURN_WORK_HEADER in messages[0]["content"]
     assert "[PREFILL]" in messages[0]["content"]
+    assert TURN_2_USER in messages[0]["content"]
+
+
+def test_request_continuation_single_turn_uses_custom_turn_2_prompt():
+    response = _make_anthropic_response("Step 3: ...")
+    client = _FakeAnthropicClient(response)
+    model_config = get_model_config("claude-haiku-4-5")
+    custom_turn_2 = "Please continue, but double-check the last step first."
+
+    request_continuation(
+        client=client,
+        model_config=model_config,
+        turn_1_user="[T1U]",
+        turn_1_assistant_prefill="[PREFILL]",
+        turn_2_user=custom_turn_2,
+        max_output_tokens=512,
+        mode="single_turn",
+    )
+
+    sent = client.messages.calls[0]
+    assert custom_turn_2 in sent["messages"][0]["content"]
 
 
 # --- Non-Anthropic providers in prefill mode (3-message list) -------------
@@ -305,6 +327,7 @@ def test_request_continuation_single_turn_openai_one_user_message():
     assert "[T1U]" in msgs[0]["content"]
     assert SINGLE_TURN_WORK_HEADER in msgs[0]["content"]
     assert "[PREFILL]" in msgs[0]["content"]
+    assert TURN_2_USER in msgs[0]["content"]
 
 
 # --- Unknown mode handling -------------------------------------------------

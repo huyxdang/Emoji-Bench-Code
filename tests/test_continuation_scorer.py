@@ -132,7 +132,6 @@ def _base_row(**overrides):
         "difficulty": "easy",
         "chain_length_x": 4,
         "prefill_error_step": 2,
-        "prefill_cutoff_step": 2,
         "ground_truth_final_output": "🪈",
         "wrong_branch_final_output": "🪵",
         "raw_continuation_text": "",

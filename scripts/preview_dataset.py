@@ -11,7 +11,8 @@ from typing import Any
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from emoji_bench.evaluation import load_jsonl_records
+from emoji_bench.continuation_formatter import TURN_2_USER
+from emoji_bench.jsonl_io import load_jsonl_records
 
 
 def _resolve_input_path(raw_path: str | Path, *, split: str) -> Path:
@@ -38,11 +39,9 @@ def _format_metadata(record: dict[str, Any]) -> list[str]:
         "base_id",
         "split",
         "difficulty",
-        "condition",
         "error_type",
-        "has_error",
-        "expected_error_step",
-        "actual_step_count",
+        "chain_length_x",
+        "prefill_error_step",
         "target_step_count",
     )
     lines: list[str] = []
@@ -87,6 +86,17 @@ def _print_manifest_summary(manifest: dict[str, Any]) -> None:
     print()
 
 
+def _render_conversation(record: dict[str, Any]) -> str:
+    return (
+        "=== TURN 1 USER ===\n"
+        f"{record['turn_1_user']}\n\n"
+        "=== TURN 1 ASSISTANT PREFILL ===\n"
+        f"{record['turn_1_assistant_prefill']}\n\n"
+        "=== TURN 2 USER ===\n"
+        f"{TURN_2_USER}"
+    )
+
+
 def _print_record(record: dict[str, Any], *, index: int, total: int, prompt_only: bool) -> None:
     print("=" * 80)
     print(f"Example {index}/{total}")
@@ -94,7 +104,7 @@ def _print_record(record: dict[str, Any], *, index: int, total: int, prompt_only
         for line in _format_metadata(record):
             print(line)
         print("-" * 80)
-    print(record["prompt"])
+    print(_render_conversation(record))
     print()
 
 

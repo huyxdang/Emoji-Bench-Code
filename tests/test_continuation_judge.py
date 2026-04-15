@@ -44,7 +44,6 @@ def pilot_pair():
     pred_scaffold = {
         "example_id": record["example_id"],
         "prefill_error_step": record["prefill_error_step"],
-        "prefill_cutoff_step": record["prefill_cutoff_step"],
         "chain_length_x": record["chain_length_x"],
         "ground_truth_final_output": record["ground_truth_final_output"],
         "wrong_branch_final_output": record["wrong_branch_final_output"],

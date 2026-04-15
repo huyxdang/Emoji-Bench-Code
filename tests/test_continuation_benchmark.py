@@ -4,7 +4,6 @@ from emoji_bench.continuation_benchmark import (
     continuation_record,
     generate_continuation_instance,
 )
-from emoji_bench.continuation_formatter import TURN_2_USER
 from emoji_bench.generator import generate_system
 
 
@@ -35,7 +34,6 @@ def test_prefill_cutoff_equals_error_step_and_lies_near_midpoint():
     )
 
     x = instance.chain_length_x
-    assert instance.prefill_cutoff_step == instance.prefill_error_step
     assert abs(instance.prefill_error_step - x // 2) <= 1
     assert 1 <= instance.prefill_error_step <= x - 1
 
@@ -52,7 +50,7 @@ def test_prefill_string_does_not_end_on_terminal_marker():
     assert "Result:" not in prefill
     # Last non-empty line must be a numbered step line.
     last_line = prefill.splitlines()[-1]
-    assert last_line.startswith(f"Step {instance.prefill_cutoff_step}:")
+    assert last_line.startswith(f"Step {instance.prefill_error_step}:")
 
 
 def test_prefill_step_count_matches_cutoff():
@@ -65,7 +63,7 @@ def test_prefill_step_count_matches_cutoff():
         line for line in instance.turn_1_assistant_prefill.splitlines()
         if line.startswith("Step ")
     ]
-    assert len(step_lines) == instance.prefill_cutoff_step
+    assert len(step_lines) == instance.prefill_error_step
 
 
 def test_turn_1_user_contains_rules_and_expression_but_no_steps():
@@ -80,7 +78,6 @@ def test_turn_1_user_contains_rules_and_expression_but_no_steps():
     assert "=== TASK ===" in turn_1
     assert "Step 1:" not in turn_1
     assert "Final Output:" in turn_1
-    assert instance.turn_2_user == TURN_2_USER
 
 
 def test_continuation_record_round_trip():
@@ -103,12 +100,10 @@ def test_continuation_record_round_trip():
     )
 
     assert record["error_type"] == "E-CONTINUE"
-    assert record["has_prefill_error"] is True
     assert record["ground_truth_final_output"] != record["wrong_branch_final_output"]
-    assert record["prefill_cutoff_step"] == record["prefill_error_step"]
     assert record["chain_length_x"] >= 2
     for key in (
-        "turn_1_user", "turn_1_assistant_prefill", "turn_2_user",
+        "turn_1_user", "turn_1_assistant_prefill",
         "system_seed", "chain_seed", "error_seed",
     ):
         assert key in record

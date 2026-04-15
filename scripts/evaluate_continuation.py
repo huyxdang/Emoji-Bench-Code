@@ -33,26 +33,23 @@ from emoji_bench.continuation_provider import (
     ContinuationMode,
     request_continuation,
 )
-from emoji_bench.evaluation import append_jsonl, load_jsonl_records
+from emoji_bench.jsonl_io import append_jsonl, load_jsonl_records
 from emoji_bench.model_registry import (
     get_model_config,
     list_model_configs,
     model_choices,
 )
-from emoji_bench.provider_eval import make_client, resolve_api_key
+from emoji_bench.provider_clients import make_client, resolve_api_key
 
 
 _REQUIRED_RECORD_FIELDS: tuple[str, ...] = (
     "example_id",
     "turn_1_user",
     "turn_1_assistant_prefill",
-    "turn_2_user",
     "ground_truth_final_output",
     "wrong_branch_final_output",
     "chain_length_x",
     "prefill_error_step",
-    "prefill_cutoff_step",
-    "has_prefill_error",
     "difficulty",
     "error_type",
 )
@@ -117,6 +114,14 @@ def _validate_record(record: dict[str, Any]) -> None:
         raise ValueError(
             f"continuation record {record.get('example_id')!r} missing fields: {missing}"
         )
+
+
+def _uses_native_prefill_path(
+    *,
+    mode: ContinuationMode,
+    supports_assistant_prefill: bool,
+) -> bool:
+    return mode == "prefill" and supports_assistant_prefill
 
 
 def main() -> None:
@@ -262,10 +267,7 @@ def main() -> None:
     _load_dotenv(repo_root / ".env")
 
     model_config = get_model_config(args.model)
-    if args.no_native_prefill and model_config.supports_assistant_prefill:
-        # Override the capability flag so request_continuation falls through
-        # to the 3-message conversation path. The registry stays untouched.
-        model_config = replace(model_config, supports_assistant_prefill=False)
+    supports_native_prefill = model_config.supports_assistant_prefill
     if args.reasoning_effort is not None:
         if model_config.openai_reasoning is None:
             parser.error(
@@ -279,6 +281,28 @@ def main() -> None:
                 effort=args.reasoning_effort,
             ),
         )
+
+    # Resolve the Turn 2 user message. Custom string wins over level.
+    if args.turn_2_prompt is not None:
+        turn_2_user_override = args.turn_2_prompt
+        turn_2_level = None
+    else:
+        turn_2_user_override = get_turn_2_prompt(args.turn_2_prompt_level)
+        turn_2_level = args.turn_2_prompt_level
+
+    forced_three_message = (
+        _uses_native_prefill_path(
+            mode=args.mode,
+            supports_assistant_prefill=supports_native_prefill,
+        )
+        and turn_2_user_override != TURN_2_PROMPT_LEVELS[0]
+    )
+    effective_no_native_prefill = args.no_native_prefill or forced_three_message
+    if effective_no_native_prefill and supports_native_prefill:
+        # Override the capability flag so request_continuation falls through
+        # to the 3-message conversation path. The registry stays untouched.
+        model_config = replace(model_config, supports_assistant_prefill=False)
+
     api_key = resolve_api_key(
         model_config=model_config,
         explicit_api_key=args.api_key,
@@ -298,8 +322,8 @@ def main() -> None:
             input_path,
             model_config.key,
             args.mode,
-            no_native_prefill=args.no_native_prefill,
-            turn_2_level=args.turn_2_prompt_level,
+            no_native_prefill=effective_no_native_prefill,
+            turn_2_level=0 if turn_2_level is None else turn_2_level,
         )
     )
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -313,14 +337,6 @@ def main() -> None:
     client = make_client(model_config.provider, api_key=api_key)
     n_done = len(seen)
     n_total = len(records)
-
-    # Resolve the Turn 2 user message. Custom string wins over level.
-    if args.turn_2_prompt is not None:
-        turn_2_user_override = args.turn_2_prompt
-        turn_2_level = None
-    else:
-        turn_2_user_override = get_turn_2_prompt(args.turn_2_prompt_level)
-        turn_2_level = args.turn_2_prompt_level
 
     pending = [r for r in records if r["example_id"] not in seen]
     for record in pending:
@@ -345,22 +361,26 @@ def main() -> None:
                     mode=args.mode,
                 )
                 latency = time.perf_counter() - started
+                turn_2_user_sent = (
+                    None if response.used_native_prefill else turn_2_user_override
+                )
+                turn_2_level_sent = (
+                    None if response.used_native_prefill else turn_2_level
+                )
                 row: dict[str, Any] = {
                     "example_id": record["example_id"],
                     "base_id": record.get("base_id"),
                     "difficulty": record["difficulty"],
                     "error_type": record["error_type"],
-                    "has_prefill_error": record["has_prefill_error"],
                     "ground_truth_final_output": record["ground_truth_final_output"],
                     "wrong_branch_final_output": record["wrong_branch_final_output"],
                     "chain_length_x": record["chain_length_x"],
                     "prefill_error_step": record["prefill_error_step"],
-                    "prefill_cutoff_step": record["prefill_cutoff_step"],
                     "raw_continuation_text": response.raw_continuation_text,
                     "mode": response.mode,
                     "used_native_prefill": response.used_native_prefill,
-                    "turn_2_user_sent": turn_2_user_override,
-                    "turn_2_level": turn_2_level,
+                    "turn_2_user_sent": turn_2_user_sent,
+                    "turn_2_level": turn_2_level_sent,
                     "response_id": response.response_id,
                     "request_latency_seconds": latency,
                     "model": model_config.key,
@@ -408,14 +428,36 @@ def main() -> None:
                 fut.result()
 
     n_done = progress_counter[0]
+    turn_2_user_sent_summary = (
+        None
+        if _uses_native_prefill_path(
+            mode=args.mode,
+            supports_assistant_prefill=model_config.supports_assistant_prefill,
+        )
+        else turn_2_user_override
+    )
+    turn_2_level_summary = (
+        None
+        if _uses_native_prefill_path(
+            mode=args.mode,
+            supports_assistant_prefill=model_config.supports_assistant_prefill,
+        )
+        else turn_2_level
+    )
 
     summary = {
         "model": model_config.key,
         "provider": model_config.provider,
         "api_model": model_config.api_model,
         "mode": args.mode,
-        "turn_2_level": turn_2_level,
-        "turn_2_user_sent": turn_2_user_override,
+        "turn_2_level": turn_2_level_summary,
+        "turn_2_user_sent": turn_2_user_sent_summary,
+        "effective_no_native_prefill": effective_no_native_prefill,
+        "native_prefill_disabled_reason": (
+            "turn_2_prompt_requested"
+            if forced_three_message
+            else ("explicit_flag" if args.no_native_prefill else None)
+        ),
         "input_path": str(input_path.resolve()),
         "output_dir": str(output_dir.resolve()),
         "predictions_path": str(predictions_path.resolve()),

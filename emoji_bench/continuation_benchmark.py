@@ -7,7 +7,6 @@ from emoji_bench.benchmark_types import ErrorInfo, ErrorType
 from emoji_bench.chain_generator import generate_chain
 from emoji_bench.chain_types import DerivationChain
 from emoji_bench.continuation_formatter import (
-    TURN_2_USER,
     format_continuation_prefill,
     format_continuation_turn_1_user,
 )
@@ -30,12 +29,10 @@ class ContinuationInstance:
     # Conversation pieces.
     turn_1_user: str
     turn_1_assistant_prefill: str
-    turn_2_user: str
 
     # Structural metadata.
     chain_length_x: int       # len(clean_chain.steps)
     prefill_error_step: int   # 1-indexed step number where the error was injected
-    prefill_cutoff_step: int  # last step included in the prefill (= prefill_error_step by policy)
 
     # Scoring axes.
     ground_truth_final_output: Symbol
@@ -79,7 +76,7 @@ def generate_continuation_instance(
       3. Inject a cascading wrong result at the first target step that
          (a) is in the cascading-eligible set and (b) the injector can
          successfully make non-convergent.
-      4. Set ``prefill_cutoff_step = prefill_error_step = Y``.
+      4. Set the prefill cutoff to the injected error step ``Y``.
 
     Non-convergence (``wrong_branch_final_output != ground_truth_final_output``)
     is guaranteed by ``inject_cascading_wrong_result`` — it only returns a
@@ -132,11 +129,10 @@ def generate_continuation_instance(
         )
 
     prefill_error_step = error_info.step_number
-    prefill_cutoff_step = prefill_error_step
 
     turn_1_user = format_continuation_turn_1_user(system, clean_chain)
     turn_1_assistant_prefill = format_continuation_prefill(
-        mutated_chain, prefill_cutoff_step, system
+        mutated_chain, prefill_error_step, system
     )
 
     return ContinuationInstance(
@@ -146,10 +142,8 @@ def generate_continuation_instance(
         error_info=error_info,
         turn_1_user=turn_1_user,
         turn_1_assistant_prefill=turn_1_assistant_prefill,
-        turn_2_user=TURN_2_USER,
         chain_length_x=chain_length_x,
         prefill_error_step=prefill_error_step,
-        prefill_cutoff_step=prefill_cutoff_step,
         ground_truth_final_output=clean_chain.final_result,
         wrong_branch_final_output=mutated_chain.final_result,
         instance_id=instance_id,
@@ -173,8 +167,8 @@ def continuation_record(
 
     The record is a flat dict ready for ``jsonl`` emission. It keeps the
     turn-structured conversation pieces, the scoring ground truth, the
-    structural metadata, and the repro fields that the rest of the repo
-    already uses for reconvergent datasets.
+    structural metadata, and the reproducibility fields needed by the
+    continuation benchmark.
     """
     return {
         # Identity.
@@ -183,12 +177,10 @@ def continuation_record(
         "split": split,
         "difficulty": difficulty,
         "error_type": ErrorType.E_CONTINUE.value,
-        "has_prefill_error": True,
 
         # Conversation.
         "turn_1_user": instance.turn_1_user,
         "turn_1_assistant_prefill": instance.turn_1_assistant_prefill,
-        "turn_2_user": instance.turn_2_user,
 
         # Scoring.
         "ground_truth_final_output": instance.ground_truth_final_output.emoji,
@@ -197,7 +189,6 @@ def continuation_record(
         # Structural metadata.
         "chain_length_x": instance.chain_length_x,
         "prefill_error_step": instance.prefill_error_step,
-        "prefill_cutoff_step": instance.prefill_cutoff_step,
         "target_step_count": target_step_count,
 
         # Repro.

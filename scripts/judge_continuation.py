@@ -35,13 +35,13 @@ if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from emoji_bench.continuation_judge import judge_continuation
-from emoji_bench.evaluation import append_jsonl, load_jsonl_records
+from emoji_bench.jsonl_io import append_jsonl, load_jsonl_records
 from emoji_bench.model_registry import (
     get_model_config,
     list_model_configs,
     model_choices,
 )
-from emoji_bench.provider_eval import make_client, resolve_api_key
+from emoji_bench.provider_clients import make_client, resolve_api_key
 
 
 def _load_dotenv(path: Path) -> None:

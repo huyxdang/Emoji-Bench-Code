@@ -219,7 +219,6 @@ class ScoredContinuation:
     difficulty: str
     chain_length_x: int
     prefill_error_step: int
-    prefill_cutoff_step: int
     ground_truth_final_output: str
     wrong_branch_final_output: str
 
@@ -242,7 +241,6 @@ class ScoredContinuation:
             "difficulty": self.difficulty,
             "chain_length_x": self.chain_length_x,
             "prefill_error_step": self.prefill_error_step,
-            "prefill_cutoff_step": self.prefill_cutoff_step,
             "ground_truth_final_output": self.ground_truth_final_output,
             "wrong_branch_final_output": self.wrong_branch_final_output,
             "final_output": self.final_output,
@@ -264,7 +262,6 @@ _REQUIRED_PREDICTION_FIELDS: tuple[str, ...] = (
     "difficulty",
     "chain_length_x",
     "prefill_error_step",
-    "prefill_cutoff_step",
     "ground_truth_final_output",
     "wrong_branch_final_output",
     "raw_continuation_text",
@@ -302,7 +299,6 @@ def score_prediction(row: dict[str, Any]) -> ScoredContinuation:
         difficulty=row["difficulty"],
         chain_length_x=row["chain_length_x"],
         prefill_error_step=row["prefill_error_step"],
-        prefill_cutoff_step=row["prefill_cutoff_step"],
         ground_truth_final_output=gt,
         wrong_branch_final_output=wb,
         final_output=final,

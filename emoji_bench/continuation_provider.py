@@ -1,46 +1,36 @@
-"""Phase 4: multi-turn provider plumbing for the E-CONTINUE benchmark.
+"""Phase 4: provider plumbing for the E-CONTINUE benchmark.
 
 Two request modes are supported:
 
 - ``prefill``      Anthropic uses its native trailing-assistant prefill (2
-                   messages: user → assistant-prefill, with the model
+                   messages: user -> assistant-prefill, with the model
                    continuing the assistant turn). Other providers receive
-                   a 3-message conversation list (user → assistant → user
+                   a 3-message conversation list (user -> assistant -> user
                    "Please continue.") since they have no native prefill.
 - ``single_turn``  Every provider receives one flat user message produced
-                   by ``format_continuation_single_turn``. This is the only
-                   mode usable on channels like Kaggle Benchmark that don't
-                   accept multi-message conversations.
+                   by ``format_continuation_single_turn``. This is the mode
+                   used on channels that do not accept multi-message chats.
 
-The path is deliberately separate from ``provider_eval.py`` so the legacy
-single-prompt + JSON-schema E-RECONV evaluator stays untouched. Continuation
-requests do NOT use a system prompt, do NOT request structured output, and
-return raw text — scoring (regex / judge / outcome bucket classification)
-runs in Phase 5 against that raw text.
+Requests do not use a system prompt, do not request structured output, and
+return raw text only. Judge and validator logic run later against that raw
+continuation.
 """
 from __future__ import annotations
 
-import json
-import ssl
 from dataclasses import dataclass
 from typing import Any, Literal
-from urllib import error as urllib_error
-from urllib import request as urllib_request
 
 from emoji_bench.continuation_formatter import (
     TURN_2_USER,
     format_continuation_single_turn,
 )
 from emoji_bench.model_registry import ModelConfig
-from emoji_bench.provider_eval import (
-    GEMINI_API_BASE_URL,
-    MISTRAL_API_URL,
+from emoji_bench.provider_clients import (
     ProviderUsage,
-    _api_ssl_context,
-    _extract_anthropic_usage,
-    _extract_gemini_usage,
-    _extract_mistral_usage,
-    _extract_openai_usage,
+    extract_anthropic_usage,
+    extract_gemini_usage,
+    extract_mistral_usage,
+    extract_openai_usage,
 )
 
 
@@ -74,6 +64,7 @@ def request_continuation(
         prompt = format_continuation_single_turn(
             turn_1_user=turn_1_user,
             turn_1_assistant_prefill=turn_1_assistant_prefill,
+            turn_2_user=turn_2_user,
         )
         return _dispatch_single_turn(
             client=client,
@@ -150,7 +141,7 @@ def _request_anthropic_native_prefill(
     return ContinuationResponse(
         raw_continuation_text=_anthropic_text(response),
         response_id=getattr(response, "id", None),
-        usage=_extract_anthropic_usage(response),
+        usage=extract_anthropic_usage(response),
         mode="prefill",
         used_native_prefill=True,
     )
@@ -294,7 +285,7 @@ def _request_openai_messages(
     return ContinuationResponse(
         raw_continuation_text=_openai_text(response),
         response_id=getattr(response, "id", None),
-        usage=_extract_openai_usage(response),
+        usage=extract_openai_usage(response),
         mode=mode,
         used_native_prefill=False,
     )
@@ -329,7 +320,7 @@ def _request_anthropic_messages(
     return ContinuationResponse(
         raw_continuation_text=_anthropic_text(response),
         response_id=getattr(response, "id", None),
-        usage=_extract_anthropic_usage(response),
+        usage=extract_anthropic_usage(response),
         mode=mode,
         used_native_prefill=False,
     )
@@ -353,7 +344,7 @@ def _request_mistral_messages(
     return ContinuationResponse(
         raw_continuation_text=_mistral_text(response),
         response_id=response.get("id"),
-        usage=_extract_mistral_usage(response),
+        usage=extract_mistral_usage(response),
         mode=mode,
         used_native_prefill=False,
     )
@@ -377,7 +368,7 @@ def _request_gemini_messages(
     return ContinuationResponse(
         raw_continuation_text=_gemini_text(response),
         response_id=response.get("responseId"),
-        usage=_extract_gemini_usage(response),
+        usage=extract_gemini_usage(response),
         mode=mode,
         used_native_prefill=False,
     )

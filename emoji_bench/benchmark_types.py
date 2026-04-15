@@ -5,19 +5,11 @@ from enum import Enum
 
 from emoji_bench.chain_types import DerivationChain
 from emoji_bench.expressions import Expression
-from emoji_bench.types import FormalSystem, Symbol
-
-
-class Condition(str, Enum):
-    CLEAN = "clean"
-    ERROR_INJECTED = "error_injected"
+from emoji_bench.types import Symbol
 
 
 class ErrorType(str, Enum):
-    E_RES = "E-RES"
-    E_INV = "E-INV"
     E_CASC = "E-CASC"
-    E_RECONV = "E-RECONV"
     E_CONTINUE = "E-CONTINUE"
 
 
@@ -32,14 +24,3 @@ class ErrorInfo:
     original_chain: DerivationChain
     correct_rule_used: str | None = None
     injected_rule_used: str | None = None
-
-
-@dataclass(frozen=True)
-class BenchmarkInstance:
-    system: FormalSystem
-    chain: DerivationChain
-    condition: Condition
-    has_error: bool
-    prompt: str
-    error_info: ErrorInfo | None = None
-    instance_id: str | None = None

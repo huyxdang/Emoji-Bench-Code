@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from emoji_bench.chain_types import DerivationChain
+from emoji_bench.chain_types import ChainStep, DerivationChain
 from emoji_bench.expressions import expr_to_str_with_system
 from emoji_bench.formatter import format_system_for_prompt
-from emoji_bench.prompt_formatter import format_step
 from emoji_bench.types import FormalSystem
 
 
@@ -50,13 +49,24 @@ def get_turn_2_prompt(level: int) -> str:
 
 SINGLE_TURN_WORK_HEADER = """\
 === WORK SO FAR ===
-You have already produced the following partial working out. Continue from where you left off and produce the remaining steps, ending with the Final Output line."""
+You have already produced the following partial working out."""
+
+
+SINGLE_TURN_NEXT_MESSAGE_HEADER = "=== NEXT MESSAGE ==="
+
+
+def format_step(step: ChainStep, system: FormalSystem) -> str:
+    """Format a single derivation step as a full-expression rewrite."""
+    before_str = expr_to_str_with_system(step.before, system)
+    after_str = expr_to_str_with_system(step.after, system)
+    return f"Step {step.step_number}: {before_str} = {after_str}    [by {step.rule_used}]"
 
 
 def format_continuation_single_turn(
     *,
     turn_1_user: str,
     turn_1_assistant_prefill: str,
+    turn_2_user: str,
 ) -> str:
     """Collapse the multi-turn continuation conversation into one user prompt.
 
@@ -67,14 +77,16 @@ def format_continuation_single_turn(
     construction.
 
     Format: the original Turn 1 user prompt verbatim, followed by a
-    ``=== WORK SO FAR ===`` block whose body is the assistant prefill. No
-    explicit "check for errors" instruction — the unprompted self-detection
-    signal is preserved by saying only "continue from where you left off".
+    ``=== WORK SO FAR ===`` block whose body is the assistant prefill, then
+    the Turn 2 user message under ``=== NEXT MESSAGE ===``. This keeps the
+    single-turn rendering faithful to the three-message conversation shape.
     """
     return (
         f"{turn_1_user}\n\n"
         f"{SINGLE_TURN_WORK_HEADER}\n\n"
-        f"{turn_1_assistant_prefill}"
+        f"{turn_1_assistant_prefill}\n\n"
+        f"{SINGLE_TURN_NEXT_MESSAGE_HEADER}\n"
+        f"{turn_2_user}"
     )
 
 

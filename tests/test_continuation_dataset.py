@@ -25,7 +25,6 @@ def test_generate_continuation_dataset_records_produces_exact_count():
     assert manifest.total_examples == 4
     assert manifest.split_counts == {"train": 0, "validation": 0, "test": 4}
     assert manifest.error_type_counts == {"E-CONTINUE": 4}
-    assert manifest.condition_counts == {"error_injected": 4}
 
 
 def test_continuation_records_have_full_schema_and_invariants():
@@ -46,18 +45,15 @@ def test_continuation_records_have_full_schema_and_invariants():
         assert not prefill.endswith("\n")
         assert "Final Output:" not in prefill
         assert "Result:" not in prefill
-        assert record["turn_2_user"] == "Please continue."
 
         # Scoring invariants.
         assert record["ground_truth_final_output"] != record["wrong_branch_final_output"]
-        assert record["has_prefill_error"] is True
         assert record["error_type"] == "E-CONTINUE"
 
         # Structural invariants.
         x = record["chain_length_x"]
         y = record["prefill_error_step"]
         assert x >= MIN_REALIZED_X
-        assert record["prefill_cutoff_step"] == y
         assert abs(y - x // 2) <= 1
         assert 1 <= y <= x - 1
 
@@ -81,7 +77,7 @@ def test_runway_floor_is_satisfied_for_every_record():
 
     for record in split_records["test"]:
         x = record["chain_length_x"]
-        y = record["prefill_cutoff_step"]
+        y = record["prefill_error_step"]
         required = math.ceil(x / 2)
         clean_remaining = x - y
         # Because Y is at the midpoint, the clean chain always has >=
@@ -144,6 +140,10 @@ def test_generate_continuation_dataset_script_supports_exact_count(tmp_path):
     assert summary["selected_variants"] == ["E-CONTINUE"]
     assert manifest["error_type_counts"] == {"E-CONTINUE": 4}
     assert manifest["rejection_counts"] is not None
+    card_text = (output_dir / "README.md").read_text(encoding="utf-8")
+    assert "turn_1_user" in card_text
+    assert "turn_1_assistant_prefill" in card_text
+    assert "ground_truth_final_output" in card_text
 
     test_jsonl = (output_dir / "test.jsonl").read_text(encoding="utf-8").splitlines()
     assert len(test_jsonl) == 4

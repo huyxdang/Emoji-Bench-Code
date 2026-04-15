@@ -42,8 +42,8 @@ from emoji_bench.continuation_scorer import (
     summarize_nested,
 )
 from emoji_bench.continuation_validator import validate_derivation
-from emoji_bench.evaluation import load_jsonl_records
 from emoji_bench.formatter import system_from_json
+from emoji_bench.jsonl_io import load_jsonl_records
 
 
 # --- Path resolution ------------------------------------------------------

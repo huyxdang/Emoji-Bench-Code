@@ -1,39 +1,26 @@
 """Phase 3: dataset-level generation for the E-CONTINUE benchmark.
 
-Mirrors ``reconvergent_dataset.py`` but:
-- uses the cascading (non-convergent) injector via
-  ``generate_continuation_instance``,
-- enforces a realized-``X`` floor of 4 and a runway floor of ``⌈X/2⌉``,
-- logs per-difficulty rejection reasons so we can tune yield by difficulty.
+This module generates exact-count continuation-only datasets, enforces the
+realized-length and runway floors, and records per-difficulty rejection
+reasons so yield can be tuned without changing the row schema.
 """
 from __future__ import annotations
 
-import subprocess
 from collections import Counter
 from typing import Any
 
-from emoji_bench.benchmark_types import Condition, ErrorType
 from emoji_bench.continuation_benchmark import (
     ContinuationInstance,
     continuation_record,
     generate_continuation_instance,
 )
-from emoji_bench.dataset import (
-    DEFAULT_TARGET_LENGTHS,
+from emoji_bench.dataset_io import (
     DIFFICULTY_CONFIGS,
     DatasetManifest,
-    DatasetVariant,
+    git_commit,
 )
 from emoji_bench.formatter import system_to_json
 from emoji_bench.generator import generate_system
-
-
-CONTINUATION_VARIANT = DatasetVariant(
-    name="e_continue",
-    condition=Condition.ERROR_INJECTED,
-    error_type=ErrorType.E_CONTINUE,
-    has_error=True,
-)
 
 
 # Locked defaults from codex_plan.md: targets chosen so the midpoint policy
@@ -44,9 +31,6 @@ DEFAULT_CONTINUATION_TARGET_LENGTHS: dict[str, int] = {
     "hard": 10,
     "expert": 14,
 }
-# Base defaults fall back to the legacy table for any unknown difficulty name.
-_FALLBACK_TARGET_LENGTHS: dict[str, int] = dict(DEFAULT_TARGET_LENGTHS)
-
 # Realized-X floor. generate_chain is a ±2 best-effort sampler, so a target
 # of 6 can return as low as 4. Anything shorter would collapse the midpoint
 # policy to Y = 1, which is not a meaningful "bad prefix" signal.
@@ -77,19 +61,6 @@ REJECTION_REASONS: tuple[str, ...] = (
 
 def _seed_root(master_seed: int, difficulty_index: int, base_index: int) -> int:
     return master_seed * 1_000_000 + difficulty_index * 10_000 + base_index * 100
-
-
-def _git_commit() -> str | None:
-    try:
-        result = subprocess.run(
-            ["git", "rev-parse", "HEAD"],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-    except (subprocess.CalledProcessError, FileNotFoundError):
-        return None
-    return result.stdout.strip() or None
 
 
 def _per_difficulty_targets(count: int) -> dict[str, int]:
@@ -140,7 +111,7 @@ def _try_generate(
     if instance.chain_length_x < MIN_REALIZED_X:
         return None, R_CHAIN_TOO_SHORT
 
-    remaining_steps = len(instance.mutated_chain.steps) - instance.prefill_cutoff_step
+    remaining_steps = len(instance.mutated_chain.steps) - instance.prefill_error_step
     required_runway = (instance.chain_length_x + 1) // 2  # ceil(X / 2)
     if remaining_steps < required_runway:
         return None, R_INSUFFICIENT_RUNWAY
@@ -179,8 +150,7 @@ def _select_instance(
 def _resolve_target_lengths(
     overrides: dict[str, int] | None,
 ) -> dict[str, int]:
-    resolved = dict(_FALLBACK_TARGET_LENGTHS)
-    resolved.update(DEFAULT_CONTINUATION_TARGET_LENGTHS)
+    resolved = dict(DEFAULT_CONTINUATION_TARGET_LENGTHS)
     if overrides:
         for key, value in overrides.items():
             if key not in DIFFICULTY_CONFIGS:
@@ -258,9 +228,6 @@ def generate_continuation_dataset_records(
                 error_seed=error_seed,
                 target_step_count=target_step_count,
             )
-            # The legacy manifest schema carries `condition`; add it here so
-            # downstream tooling that reads reconvergent records keeps working.
-            record["condition"] = CONTINUATION_VARIANT.condition.value
             split_records["test"].append(record)
 
             example_index += 1
@@ -271,11 +238,6 @@ def generate_continuation_dataset_records(
     split_counts = {split: len(records) for split, records in split_records.items()}
     difficulty_counts = Counter(
         record["difficulty"]
-        for records in split_records.values()
-        for record in records
-    )
-    condition_counts = Counter(
-        record["condition"]
         for records in split_records.values()
         for record in records
     )
@@ -291,9 +253,8 @@ def generate_continuation_dataset_records(
         target_lengths=resolved_lengths,
         split_counts=dict(split_counts),
         difficulty_counts=dict(difficulty_counts),
-        condition_counts=dict(condition_counts),
         error_type_counts=dict(error_type_counts),
-        generator_commit=_git_commit(),
+        generator_commit=git_commit(),
         rejection_counts=rejection_counts,
     )
     return split_records, manifest
