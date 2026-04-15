@@ -138,7 +138,6 @@ def _base_row(**overrides):
         "model": "claude-haiku-4-5",
         "provider": "anthropic",
         "mode": "prefill",
-        "used_native_prefill": True,
     }
     row.update(overrides)
     return row

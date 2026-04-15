@@ -2,11 +2,8 @@
 
 Two request modes are supported:
 
-- ``prefill``      Anthropic uses its native trailing-assistant prefill (2
-                   messages: user -> assistant-prefill, with the model
-                   continuing the assistant turn). Other providers receive
-                   a 3-message conversation list (user -> assistant -> user
-                   "Please continue.") since they have no native prefill.
+- ``prefill``      Every provider receives a 3-message conversation list
+                   (user -> assistant-prefill -> user "Please continue.").
 - ``single_turn``  Every provider receives one flat user message produced
                    by ``format_continuation_single_turn``. This is the mode
                    used on channels that do not accept multi-message chats.
@@ -43,7 +40,6 @@ class ContinuationResponse:
     response_id: str | None
     usage: ProviderUsage | None
     mode: ContinuationMode
-    used_native_prefill: bool
 
 
 # --- Public entry point -----------------------------------------------------
@@ -74,23 +70,6 @@ def request_continuation(
         )
 
     if mode == "prefill":
-        if model_config.supports_assistant_prefill:
-            if model_config.provider != "anthropic":
-                # Currently only Anthropic exposes a true assistant-message
-                # prefill on its API. If new providers gain this, register
-                # them by name here rather than treating the flag as a free
-                # capability.
-                raise NotImplementedError(
-                    f"supports_assistant_prefill=True on {model_config.provider} "
-                    "is not yet implemented in continuation_provider.py"
-                )
-            return _request_anthropic_native_prefill(
-                client=client,
-                model_config=model_config,
-                turn_1_user=turn_1_user,
-                turn_1_assistant_prefill=turn_1_assistant_prefill,
-                max_output_tokens=max_output_tokens,
-            )
         return _dispatch_three_message_list(
             client=client,
             model_config=model_config,
@@ -102,52 +81,7 @@ def request_continuation(
 
     raise ValueError(f"Unsupported continuation mode: {mode}")
 
-
-# --- Anthropic native prefill ----------------------------------------------
-
-
-def build_anthropic_prefill_options(
-    *,
-    model_config: ModelConfig,
-    turn_1_user: str,
-    turn_1_assistant_prefill: str,
-    max_output_tokens: int,
-) -> dict[str, Any]:
-    return {
-        "model": model_config.api_model,
-        "messages": [
-            {"role": "user", "content": turn_1_user},
-            {"role": "assistant", "content": turn_1_assistant_prefill},
-        ],
-        "max_tokens": max_output_tokens,
-    }
-
-
-def _request_anthropic_native_prefill(
-    *,
-    client: Any,
-    model_config: ModelConfig,
-    turn_1_user: str,
-    turn_1_assistant_prefill: str,
-    max_output_tokens: int,
-) -> ContinuationResponse:
-    options = build_anthropic_prefill_options(
-        model_config=model_config,
-        turn_1_user=turn_1_user,
-        turn_1_assistant_prefill=turn_1_assistant_prefill,
-        max_output_tokens=max_output_tokens,
-    )
-    response = client.messages.create(**options)
-    return ContinuationResponse(
-        raw_continuation_text=_anthropic_text(response),
-        response_id=getattr(response, "id", None),
-        usage=extract_anthropic_usage(response),
-        mode="prefill",
-        used_native_prefill=True,
-    )
-
-
-# --- 3-message conversation list (non-Anthropic prefill mode) --------------
+# --- 3-message conversation list -------------------------------------------
 
 
 def _dispatch_three_message_list(
@@ -197,8 +131,6 @@ def _dispatch_three_message_list(
             mode="prefill",
         )
     if provider == "anthropic":
-        # Reachable only if a future Anthropic model has
-        # supports_assistant_prefill=False; treat as a 3-message conversation.
         return _request_anthropic_messages(
             client=client,
             model_config=model_config,
@@ -287,7 +219,6 @@ def _request_openai_messages(
         response_id=getattr(response, "id", None),
         usage=extract_openai_usage(response),
         mode=mode,
-        used_native_prefill=False,
     )
 
 
@@ -322,7 +253,6 @@ def _request_anthropic_messages(
         response_id=getattr(response, "id", None),
         usage=extract_anthropic_usage(response),
         mode=mode,
-        used_native_prefill=False,
     )
 
 
@@ -346,7 +276,6 @@ def _request_mistral_messages(
         response_id=response.get("id"),
         usage=extract_mistral_usage(response),
         mode=mode,
-        used_native_prefill=False,
     )
 
 
@@ -370,7 +299,6 @@ def _request_gemini_messages(
         response_id=response.get("responseId"),
         usage=extract_gemini_usage(response),
         mode=mode,
-        used_native_prefill=False,
     )
 
 

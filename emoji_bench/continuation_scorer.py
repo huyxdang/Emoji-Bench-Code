@@ -232,7 +232,6 @@ class ScoredContinuation:
     model: str
     provider: str
     mode: str
-    used_native_prefill: bool
     raw_continuation_text: str
 
     def to_dict(self) -> dict[str, Any]:
@@ -252,7 +251,6 @@ class ScoredContinuation:
             "model": self.model,
             "provider": self.provider,
             "mode": self.mode,
-            "used_native_prefill": self.used_native_prefill,
             "raw_continuation_text": self.raw_continuation_text,
         }
 
@@ -268,7 +266,6 @@ _REQUIRED_PREDICTION_FIELDS: tuple[str, ...] = (
     "model",
     "provider",
     "mode",
-    "used_native_prefill",
 )
 
 
@@ -310,7 +307,6 @@ def score_prediction(row: dict[str, Any]) -> ScoredContinuation:
         model=row["model"],
         provider=row["provider"],
         mode=row["mode"],
-        used_native_prefill=row["used_native_prefill"],
         raw_continuation_text=text,
     )
 

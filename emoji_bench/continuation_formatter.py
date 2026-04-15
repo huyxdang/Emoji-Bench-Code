@@ -21,19 +21,11 @@ Final Output: <single symbol>"""
 TURN_2_USER: str = "Please continue."
 
 
-# The prompting-strength axis from codex_plan.md. Level 0 is the unprompted
-# baseline (identical to TURN_2_USER). Levels 1 and 2 add progressively
-# stronger self-check hints without explicitly asking the model to look for
-# errors. Level 3 is the explicit ceiling condition — reserved for upper-
-# bound ablation, not part of the initial headline curve.
+# Locked prompting axis for the benchmark's 2x2 matrix:
+#   B/C delivery shape x L0/L1 prompting strength.
 TURN_2_PROMPT_LEVELS: dict[int, str] = {
     0: "Please continue.",
     1: "Please continue. Double-check any step you're unsure about.",
-    2: "Please continue. Verify each prior step against the rules before proceeding.",
-    3: (
-        "Check the working out above for errors. "
-        "If you find one, correct it. Then continue."
-    ),
 }
 
 

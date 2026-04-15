@@ -91,29 +91,20 @@ python scripts/evaluate_continuation.py \
 
 Delivery modes:
 
-- `--mode prefill`: uses Anthropic native trailing-assistant prefill where the model supports it; otherwise falls back to a 3-message `[user, assistant, user]` conversation
+- `--mode prefill`: uses the 3-message `B` shape `[user, assistant, user]`
 - `--mode single_turn`: flattens the conversation into one user prompt with `=== WORK SO FAR ===` and `=== NEXT MESSAGE ===`
-
-Important behavior:
-
-- `--no-native-prefill` forces the 3-message fallback
-- any non-default Turn 2 prompt in `--mode prefill` also forces the 3-message fallback, because native trailing-assistant prefill has no Turn 2 user slot
-- `summary.json` records `effective_no_native_prefill` and `native_prefill_disabled_reason` so metadata matches what was actually sent
 
 Useful flags:
 
-- `--turn-2-prompt-level {0,1,2,3}`: prompt-strength axis for the Turn 2 user message
-- `--turn-2-prompt "..."`: custom Turn 2 message, overriding the level
+- `--turn-2-prompt-level {0,1}`: prompt-strength axis for the Turn 2 user message
 - `--max-output-tokens`: increase this for reasoning models
 - `--no-resume`: ignore existing `predictions.jsonl`
 
 Default output directories look like:
 
 ```text
-artifacts/evals/<dataset>-<model>-<mode>[-3msg][-lvlN]/
+artifacts/evals/<dataset>-<model>-<mode>[-lvl1]/
 ```
-
-`-3msg` appears whenever native prefill is effectively disabled.
 
 ### Judge and Score
 
@@ -189,7 +180,7 @@ Core modules in `emoji_bench/`:
 - `continuation_judge.py`: judge prompt and deterministic regeneration of the bad-step values
 - `continuation_validator.py`: parser and deterministic derivation validator
 - `continuation_scorer.py`: regex baseline plus nested metric aggregation
-- `model_registry.py`: configured model definitions and provider capabilities
+- `model_registry.py`: configured model definitions
 
 CLI scripts in `scripts/`:
 
@@ -201,12 +192,12 @@ CLI scripts in `scripts/`:
 
 ## Kaggle-Compatible Shapes
 
-If you need a harness-compatible non-native format:
+The benchmark is intentionally a 2x2 matrix:
 
-- use `--mode prefill --no-native-prefill` for the 3-message conversation shape
-- use `--mode single_turn` for the flat single-prompt shape
-
-Native Anthropic trailing-assistant prefill is still supported for direct API runs.
+- `B / L0`: `--mode prefill --turn-2-prompt-level 0`
+- `B / L1`: `--mode prefill --turn-2-prompt-level 1`
+- `C / L0`: `--mode single_turn --turn-2-prompt-level 0`
+- `C / L1`: `--mode single_turn --turn-2-prompt-level 1`
 
 ## Artifacts
 

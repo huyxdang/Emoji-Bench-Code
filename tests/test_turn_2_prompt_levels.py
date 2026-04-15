@@ -24,23 +24,11 @@ def test_unknown_level_raises():
         get_turn_2_prompt(42)
 
 
-def test_all_expected_levels_present():
-    assert set(TURN_2_PROMPT_LEVELS) == {0, 1, 2, 3}
+def test_only_levels_0_and_1_are_present():
+    assert set(TURN_2_PROMPT_LEVELS) == {0, 1}
 
 
 def test_level_1_is_a_soft_hint():
     level_1 = get_turn_2_prompt(1)
     assert "Please continue" in level_1
     assert "unsure" in level_1
-
-
-def test_level_2_mentions_verifying_against_the_rules():
-    level_2 = get_turn_2_prompt(2)
-    assert "Verify" in level_2 or "verify" in level_2
-    assert "rules" in level_2
-
-
-def test_level_3_is_the_explicit_error_check_variant():
-    level_3 = get_turn_2_prompt(3)
-    assert "errors" in level_3 or "error" in level_3
-    assert "correct" in level_3.lower()
