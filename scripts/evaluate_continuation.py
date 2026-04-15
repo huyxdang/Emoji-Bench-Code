@@ -396,6 +396,9 @@ def main() -> None:
             else model_config.anthropic_thinking.budget_tokens
         ),
         "anthropic_effort": model_config.anthropic_effort,
+        "gemini_thinking_level": (
+            None if model_config.gemini_thinking is None else model_config.gemini_thinking.level
+        ),
         "turn_2_level": turn_2_level,
         "turn_2_user_sent": turn_2_user_override,
         "input_path": str(input_path.resolve()),

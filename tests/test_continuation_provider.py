@@ -313,6 +313,43 @@ def test_request_continuation_prefill_gemini_uses_model_role_for_prefill():
     assert "responseMimeType" not in gen_cfg
 
 
+def test_request_continuation_prefill_gemini_thinking_high_sets_thinking_level():
+    level_0 = get_turn_2_prompt(0)
+    client = _FakeGeminiClient(
+        {
+            "responseId": "gem_id",
+            "candidates": [{"content": {"parts": [{"text": "(gemini continuation)"}]}}],
+            "usageMetadata": {
+                "promptTokenCount": 5,
+                "candidatesTokenCount": 6,
+                "totalTokenCount": 11,
+                "thoughtsTokenCount": 3,
+            },
+        }
+    )
+    model_config = get_model_config("gemini-3.1-pro-preview-thinking-high")
+
+    result = request_continuation(
+        client=client,
+        model_config=model_config,
+        turn_1_user="[T1U]",
+        turn_1_assistant_prefill="[PREFILL]",
+        max_output_tokens=512,
+        mode="prefill",
+    )
+
+    assert result.raw_continuation_text == "(gemini continuation)"
+    assert result.mode == "prefill"
+
+    sent = client.calls[0]["options"]
+    assert sent["contents"] == [
+        {"role": "user", "parts": [{"text": "[T1U]"}]},
+        {"role": "model", "parts": [{"text": "[PREFILL]"}]},
+        {"role": "user", "parts": [{"text": level_0}]},
+    ]
+    assert sent["generationConfig"]["thinkingConfig"] == {"thinkingLevel": "high"}
+
+
 def test_request_continuation_single_turn_openai_one_user_message():
     level_0 = get_turn_2_prompt(0)
     response = _make_openai_response("(single)")

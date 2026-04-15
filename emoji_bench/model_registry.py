@@ -7,6 +7,7 @@ from typing import Literal
 ProviderName = Literal["openai", "anthropic", "mistral", "gemini"]
 OpenAIReasoningEffort = Literal["none", "minimal", "low", "medium", "high", "xhigh"]
 AnthropicEffort = Literal["low", "medium", "high", "max"]
+GeminiThinkingLevel = Literal["minimal", "low", "medium", "high"]
 ReasoningEffortOverride = Literal["none", "minimal", "low", "medium", "high", "xhigh", "max"]
 
 DEFAULT_MAX_OUTPUT_TOKENS = 4096
@@ -34,6 +35,11 @@ class AnthropicThinkingConfig:
 
 
 @dataclass(frozen=True)
+class GeminiThinkingConfig:
+    level: GeminiThinkingLevel
+
+
+@dataclass(frozen=True)
 class ModelConfig:
     key: str
     label: str
@@ -45,6 +51,7 @@ class ModelConfig:
     openai_reasoning: OpenAIReasoningConfig | None = None
     anthropic_thinking: AnthropicThinkingConfig | None = None
     anthropic_effort: AnthropicEffort | None = None
+    gemini_thinking: GeminiThinkingConfig | None = None
     notes: str | None = None
 
     def to_dict(self) -> dict[str, object]:
@@ -84,6 +91,28 @@ MODEL_CONFIGS: dict[str, ModelConfig] = {
         default_max_output_tokens=DEFAULT_MAX_OUTPUT_TOKENS,
         openai_reasoning=OpenAIReasoningConfig(effort="medium"),
         notes="Configured to use medium reasoning effort for evaluation runs.",
+    ),
+    "gpt-5.4-reasoning-xhigh": ModelConfig(
+        key="gpt-5.4-reasoning-xhigh",
+        label="GPT-5.4 (reasoning xhigh)",
+        provider="openai",
+        api_model="gpt-5.4",
+        docs_url="https://developers.openai.com/api/docs/models/gpt-5.4",
+        api_key_env_var="OPENAI_API_KEY",
+        default_max_output_tokens=DEFAULT_MAX_OUTPUT_TOKENS,
+        openai_reasoning=OpenAIReasoningConfig(effort="xhigh"),
+        notes="Pinned benchmark alias for GPT-5.4 at reasoning.effort='xhigh'.",
+    ),
+    "gpt-5.4-mini-reasoning-xhigh": ModelConfig(
+        key="gpt-5.4-mini-reasoning-xhigh",
+        label="GPT-5.4 mini (reasoning xhigh)",
+        provider="openai",
+        api_model="gpt-5.4-mini",
+        docs_url="https://developers.openai.com/api/docs/models/gpt-5.4-mini",
+        api_key_env_var="OPENAI_API_KEY",
+        default_max_output_tokens=DEFAULT_MAX_OUTPUT_TOKENS,
+        openai_reasoning=OpenAIReasoningConfig(effort="xhigh"),
+        notes="Pinned benchmark alias for GPT-5.4 mini at reasoning.effort='xhigh'.",
     ),
     "gpt-5.4-nano": ModelConfig(
         key="gpt-5.4-nano",
@@ -127,6 +156,36 @@ MODEL_CONFIGS: dict[str, ModelConfig] = {
             "with Anthropic effort defaulting to high."
         ),
     ),
+    "claude-opus-4-6-reasoning-high": ModelConfig(
+        key="claude-opus-4-6-reasoning-high",
+        label="Claude Opus 4.6 (reasoning high)",
+        provider="anthropic",
+        api_model="claude-opus-4-6",
+        docs_url="https://platform.claude.com/docs/en/about-claude/models/overview",
+        api_key_env_var="ANTHROPIC_API_KEY",
+        default_max_output_tokens=DEFAULT_MAX_OUTPUT_TOKENS,
+        anthropic_thinking=AnthropicThinkingConfig(enabled=True, budget_tokens=1024),
+        anthropic_effort="high",
+        notes=(
+            "Pinned benchmark alias for Claude Opus 4.6 with extended thinking "
+            "enabled at the minimum 1024-token budget and effort='high'."
+        ),
+    ),
+    "claude-sonnet-4-6-reasoning-high": ModelConfig(
+        key="claude-sonnet-4-6-reasoning-high",
+        label="Claude Sonnet 4.6 (reasoning high)",
+        provider="anthropic",
+        api_model="claude-sonnet-4-6",
+        docs_url="https://platform.claude.com/docs/en/about-claude/models/overview",
+        api_key_env_var="ANTHROPIC_API_KEY",
+        default_max_output_tokens=DEFAULT_MAX_OUTPUT_TOKENS,
+        anthropic_thinking=AnthropicThinkingConfig(enabled=True, budget_tokens=1024),
+        anthropic_effort="high",
+        notes=(
+            "Pinned benchmark alias for Claude Sonnet 4.6 with extended thinking "
+            "enabled at the minimum 1024-token budget and effort='high'."
+        ),
+    ),
     "claude-haiku-4-5": ModelConfig(
         key="claude-haiku-4-5",
         label="Claude Haiku 4.5",
@@ -154,6 +213,20 @@ MODEL_CONFIGS: dict[str, ModelConfig] = {
             "context window, 64k max output tokens, and dynamic high thinking by default."
         ),
     ),
+    "gemini-3-flash-preview-thinking-high": ModelConfig(
+        key="gemini-3-flash-preview-thinking-high",
+        label="Gemini 3 Flash Preview (thinking high)",
+        provider="gemini",
+        api_model="gemini-3-flash-preview",
+        docs_url="https://ai.google.dev/gemini-api/docs/thinking",
+        api_key_env_var="GEMINI_API_KEY",
+        default_max_output_tokens=DEFAULT_MAX_OUTPUT_TOKENS,
+        gemini_thinking=GeminiThinkingConfig(level="high"),
+        notes=(
+            "Pinned benchmark alias for Gemini 3 Flash Preview with explicit "
+            "thinkingConfig.thinkingLevel='high'."
+        ),
+    ),
     "gemini-3.1-pro-preview": ModelConfig(
         key="gemini-3.1-pro-preview",
         label="Gemini 3.1 Pro Preview",
@@ -165,6 +238,20 @@ MODEL_CONFIGS: dict[str, ModelConfig] = {
         notes=(
             "Google's Gemini 3 guide documents Gemini 3.1 Pro Preview with a 1M token "
             "context window, 64k max output tokens, and dynamic high thinking by default."
+        ),
+    ),
+    "gemini-3.1-pro-preview-thinking-high": ModelConfig(
+        key="gemini-3.1-pro-preview-thinking-high",
+        label="Gemini 3.1 Pro Preview (thinking high)",
+        provider="gemini",
+        api_model="gemini-3.1-pro-preview",
+        docs_url="https://ai.google.dev/gemini-api/docs/thinking",
+        api_key_env_var="GEMINI_API_KEY",
+        default_max_output_tokens=DEFAULT_MAX_OUTPUT_TOKENS,
+        gemini_thinking=GeminiThinkingConfig(level="high"),
+        notes=(
+            "Pinned benchmark alias for Gemini 3.1 Pro Preview with explicit "
+            "thinkingConfig.thinkingLevel='high'."
         ),
     ),
     "mistral-large-2512": ModelConfig(

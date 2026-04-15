@@ -295,6 +295,10 @@ def _request_gemini_messages(
             "maxOutputTokens": max_output_tokens,
         },
     }
+    if model_config.gemini_thinking is not None:
+        options["generationConfig"]["thinkingConfig"] = {
+            "thinkingLevel": model_config.gemini_thinking.level,
+        }
     response = client.generate_content(model=model_config.api_model, options=options)
     return ContinuationResponse(
         raw_continuation_text=_gemini_text(response),

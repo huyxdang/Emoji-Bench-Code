@@ -12,12 +12,18 @@ from emoji_bench.provider_clients import resolve_api_key
 
 def test_requested_model_configs_are_present():
     assert {
+        "claude-opus-4-6-reasoning-high",
         "claude-haiku-4-5",
         "claude-sonnet-4-6",
         "claude-sonnet-4-6-reasoning",
+        "claude-sonnet-4-6-reasoning-high",
+        "gemini-3-flash-preview-thinking-high",
         "gemini-3-flash-preview",
+        "gemini-3.1-pro-preview-thinking-high",
         "gemini-3.1-pro-preview",
+        "gpt-5.4-reasoning-xhigh",
         "gpt-5.4",
+        "gpt-5.4-mini-reasoning-xhigh",
         "gpt-5.4-mini",
         "gpt-5.4-nano",
         "mistral-large-2512",
@@ -36,6 +42,14 @@ def test_gpt54_models_default_to_medium_reasoning():
     assert get_model_config("gpt-5.4-nano").default_max_output_tokens == DEFAULT_MAX_OUTPUT_TOKENS
 
 
+def test_pinned_openai_reasoning_xhigh_aliases_are_present():
+    for key in ("gpt-5.4-reasoning-xhigh", "gpt-5.4-mini-reasoning-xhigh"):
+        config = get_model_config(key)
+        assert config.provider == "openai"
+        assert config.openai_reasoning is not None
+        assert config.openai_reasoning.effort == "xhigh"
+
+
 def test_claude_sonnet_46_models_default_to_high_anthropic_effort():
     baseline = get_model_config("claude-sonnet-4-6")
     assert baseline.provider == "anthropic"
@@ -49,6 +63,32 @@ def test_claude_sonnet_46_models_default_to_high_anthropic_effort():
     assert reasoning.anthropic_thinking is not None
     assert reasoning.anthropic_thinking.enabled is True
     assert reasoning.anthropic_thinking.budget_tokens == 1024
+
+
+def test_pinned_claude_reasoning_high_aliases_are_present():
+    for key, api_model in (
+        ("claude-opus-4-6-reasoning-high", "claude-opus-4-6"),
+        ("claude-sonnet-4-6-reasoning-high", "claude-sonnet-4-6"),
+    ):
+        config = get_model_config(key)
+        assert config.provider == "anthropic"
+        assert config.api_model == api_model
+        assert config.anthropic_effort == "high"
+        assert config.anthropic_thinking is not None
+        assert config.anthropic_thinking.enabled is True
+        assert config.anthropic_thinking.budget_tokens == 1024
+
+
+def test_pinned_gemini_thinking_high_aliases_are_present():
+    for key, api_model in (
+        ("gemini-3.1-pro-preview-thinking-high", "gemini-3.1-pro-preview"),
+        ("gemini-3-flash-preview-thinking-high", "gemini-3-flash-preview"),
+    ):
+        config = get_model_config(key)
+        assert config.provider == "gemini"
+        assert config.api_model == api_model
+        assert config.gemini_thinking is not None
+        assert config.gemini_thinking.level == "high"
 
 
 def test_all_configured_models_use_expected_default_max_output_tokens():
