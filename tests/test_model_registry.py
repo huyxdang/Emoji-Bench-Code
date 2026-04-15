@@ -91,6 +91,16 @@ def test_pinned_gemini_thinking_high_aliases_are_present():
         assert config.gemini_thinking.level == "high"
 
 
+def test_model_choices_put_stronger_claude_and_gemini_variants_first():
+    choices = model_choices()
+    assert choices.index("claude-opus-4-6-reasoning-high") < choices.index(
+        "claude-sonnet-4-6-reasoning-high"
+    )
+    assert choices.index("gemini-3.1-pro-preview-thinking-high") < choices.index(
+        "gemini-3-flash-preview-thinking-high"
+    )
+
+
 def test_all_configured_models_use_expected_default_max_output_tokens():
     assert DEFAULT_MAX_OUTPUT_TOKENS == 4096
     for config in MODEL_CONFIGS.values():

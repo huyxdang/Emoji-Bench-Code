@@ -282,6 +282,18 @@ MODEL_CONFIGS: dict[str, ModelConfig] = {
     ),
 }
 
+_MODEL_ORDER: tuple[str, ...] = (
+    "claude-opus-4-6-reasoning-high",
+    "claude-sonnet-4-6-reasoning-high",
+    "gpt-5.4-reasoning-xhigh",
+    "gpt-5.4-mini-reasoning-xhigh",
+    "gemini-3.1-pro-preview-thinking-high",
+    "gemini-3-flash-preview-thinking-high",
+)
+_MODEL_ORDER_INDEX: dict[str, int] = {
+    key: index for index, key in enumerate(_MODEL_ORDER)
+}
+
 
 def get_model_config(key: str) -> ModelConfig:
     try:
@@ -292,7 +304,10 @@ def get_model_config(key: str) -> ModelConfig:
 
 
 def list_model_configs(*, provider: ProviderName | None = None) -> list[ModelConfig]:
-    configs = sorted(MODEL_CONFIGS.values(), key=lambda config: config.key)
+    configs = sorted(
+        MODEL_CONFIGS.values(),
+        key=lambda config: (_MODEL_ORDER_INDEX.get(config.key, len(_MODEL_ORDER)), config.key),
+    )
     if provider is None:
         return configs
     return [config for config in configs if config.provider == provider]
