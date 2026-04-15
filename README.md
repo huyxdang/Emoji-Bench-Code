@@ -103,7 +103,27 @@ Useful flags:
 Default output directories look like:
 
 ```text
-artifacts/evals/<dataset>-<model>-<mode>[-lvl1]/
+artifacts/evals/<model>-<cell>/
+```
+
+Where `<cell>` is one of:
+
+- `B-L0`
+- `B-L1`
+- `C-L0`
+- `C-L1`
+
+Example:
+
+```text
+artifacts/evals/gpt-4.1-mini-B-L0/
+artifacts/evals/gpt-4.1-mini-C-L1/
+```
+
+If you pass `--reasoning-effort`, that suffix is retained in the model slug:
+
+```text
+artifacts/evals/gpt-5.4-reasoning-high-B-L0/
 ```
 
 ### Judge and Score

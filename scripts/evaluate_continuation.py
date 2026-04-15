@@ -79,22 +79,34 @@ def _resolve_input_path(raw_path: str) -> Path:
     return path
 
 
+def _matrix_variant(mode: ContinuationMode) -> str:
+    if mode == "prefill":
+        return "B"
+    if mode == "single_turn":
+        return "C"
+    raise ValueError(f"Unsupported continuation mode: {mode}")
+
+
+def _matrix_cell(mode: ContinuationMode, turn_2_level: int) -> str:
+    return f"{_matrix_variant(mode)}-L{turn_2_level}"
+
+
+def _model_output_slug(model_key: str, reasoning_effort: str | None) -> str:
+    slug = model_key.replace("/", "-")
+    if reasoning_effort is None:
+        return slug
+    return f"{slug}-reasoning-{reasoning_effort}"
+
+
 def _default_output_dir(
-    input_path: Path,
     model_key: str,
     mode: ContinuationMode,
     *,
+    reasoning_effort: str | None = None,
     turn_2_level: int = 0,
 ) -> Path:
-    dataset_name = (
-        input_path.parent.name if input_path.name == "test.jsonl" else input_path.stem
-    )
-    slug = model_key.replace("/", "-")
-    # Level 0 stays un-suffixed so existing Level-0 output paths from earlier
-    # runs remain stable. Levels 1..N add a suffix so a rerun with a stronger
-    # prompt lands in a different directory.
-    level_suffix = "" if turn_2_level == 0 else f"-lvl{turn_2_level}"
-    return Path("artifacts") / "evals" / f"{dataset_name}-{slug}-{mode}{level_suffix}"
+    slug = _model_output_slug(model_key, reasoning_effort)
+    return Path("artifacts") / "evals" / f"{slug}-{_matrix_cell(mode, turn_2_level)}"
 
 
 def _load_existing(path: Path) -> tuple[set[str], list[dict[str, Any]]]:
@@ -267,9 +279,9 @@ def main() -> None:
         Path(args.output_dir)
         if args.output_dir is not None
         else _default_output_dir(
-            input_path,
             model_config.key,
             args.mode,
+            reasoning_effort=args.reasoning_effort,
             turn_2_level=turn_2_level,
         )
     )
@@ -372,6 +384,8 @@ def main() -> None:
         "provider": model_config.provider,
         "api_model": model_config.api_model,
         "mode": args.mode,
+        "matrix_variant": _matrix_variant(args.mode),
+        "matrix_cell": _matrix_cell(args.mode, turn_2_level),
         "turn_2_level": turn_2_level,
         "turn_2_user_sent": turn_2_user_override,
         "input_path": str(input_path.resolve()),

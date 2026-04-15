@@ -1,0 +1,13 @@
+{
+  "model": "claude-sonnet-4-6-reasoning",
+  "provider": "anthropic",
+  "api_model": "claude-sonnet-4-6",
+  "mode": "prefill",
+  "input_path": "/Users/huydang/Desktop/Emoji-Bench/artifacts/emoji-bench-e-continue-pilot/test.jsonl",
+  "output_dir": "/Users/huydang/Desktop/Emoji-Bench/artifacts/evals/claude-sonnet-4-6-reasoning-B-L0",
+  "predictions_path": "/Users/huydang/Desktop/Emoji-Bench/artifacts/evals/claude-sonnet-4-6-reasoning-B-L0/predictions.jsonl",
+  "total_examples": 100,
+  "completed_examples": 100,
+  "matrix_variant": "B",
+  "matrix_cell": "B-L0"
+}

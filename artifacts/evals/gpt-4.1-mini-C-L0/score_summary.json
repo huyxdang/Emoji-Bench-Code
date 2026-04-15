@@ -1,0 +1,97 @@
+{
+  "predictions_path": "/Users/huydang/Desktop/Emoji-Bench/artifacts/evals/gpt-4.1-mini-C-L0/predictions.jsonl",
+  "scores_path": "/Users/huydang/Desktop/Emoji-Bench/artifacts/evals/gpt-4.1-mini-C-L0/scores.jsonl",
+  "headline": {
+    "total": 100,
+    "detect_rate": 0.03,
+    "detect_correct_rate": 0.0,
+    "detect_correct_finaloutput_correct_rate": 0.0,
+    "by_difficulty": {
+      "easy": {
+        "total": 25,
+        "detect_rate": 0.0,
+        "detect_correct_rate": 0.0,
+        "detect_correct_finaloutput_correct_rate": 0.0
+      },
+      "medium": {
+        "total": 25,
+        "detect_rate": 0.04,
+        "detect_correct_rate": 0.0,
+        "detect_correct_finaloutput_correct_rate": 0.0
+      },
+      "hard": {
+        "total": 25,
+        "detect_rate": 0.08,
+        "detect_correct_rate": 0.0,
+        "detect_correct_finaloutput_correct_rate": 0.0
+      },
+      "expert": {
+        "total": 25,
+        "detect_rate": 0.0,
+        "detect_correct_rate": 0.0,
+        "detect_correct_finaloutput_correct_rate": 0.0
+      }
+    }
+  },
+  "headline_kind": "judge_plus_validator",
+  "nested_scores_path": "/Users/huydang/Desktop/Emoji-Bench/artifacts/evals/gpt-4.1-mini-C-L0/nested_scores.jsonl",
+  "judge_path": "/Users/huydang/Desktop/Emoji-Bench/artifacts/evals/gpt-4.1-mini-C-L0/judge.jsonl",
+  "validator_status": "ok",
+  "dataset_path": "/Users/huydang/Desktop/Emoji-Bench/artifacts/emoji-bench-e-continue-pilot/test.jsonl",
+  "regex_baseline": {
+    "total": 100,
+    "outcome_buckets": {
+      "detect_recover": 1,
+      "silent_recovery": 17,
+      "detect_only": 2,
+      "blind_wrong_branch": 51,
+      "off_rails": 29,
+      "extraction_failed": 0
+    },
+    "rates": {
+      "self_detection_loose": 0.03,
+      "self_detection_strict": 0.01,
+      "final_answer_recovery": 0.18,
+      "blind_cascade": 0.53,
+      "extraction_ok": 1.0
+    },
+    "by_difficulty": {
+      "easy": {
+        "detect_recover": 0,
+        "silent_recovery": 4,
+        "detect_only": 0,
+        "blind_wrong_branch": 17,
+        "off_rails": 4,
+        "extraction_failed": 0,
+        "_total": 25
+      },
+      "medium": {
+        "detect_recover": 0,
+        "silent_recovery": 2,
+        "detect_only": 1,
+        "blind_wrong_branch": 14,
+        "off_rails": 8,
+        "extraction_failed": 0,
+        "_total": 25
+      },
+      "hard": {
+        "detect_recover": 1,
+        "silent_recovery": 4,
+        "detect_only": 1,
+        "blind_wrong_branch": 9,
+        "off_rails": 10,
+        "extraction_failed": 0,
+        "_total": 25
+      },
+      "expert": {
+        "detect_recover": 0,
+        "silent_recovery": 7,
+        "detect_only": 0,
+        "blind_wrong_branch": 11,
+        "off_rails": 7,
+        "extraction_failed": 0,
+        "_total": 25
+      }
+    }
+  }
+}
