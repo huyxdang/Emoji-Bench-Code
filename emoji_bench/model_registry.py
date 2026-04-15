@@ -31,7 +31,6 @@ class ModelConfig:
     docs_url: str
     api_key_env_var: str
     default_max_output_tokens: int
-    provider_max_output_tokens: int | None = None
     openai_reasoning: OpenAIReasoningConfig | None = None
     anthropic_thinking: AnthropicThinkingConfig | None = None
     notes: str | None = None
@@ -50,7 +49,6 @@ MODEL_CONFIGS: dict[str, ModelConfig] = {
         docs_url="https://developers.openai.com/api/docs/models",
         api_key_env_var="OPENAI_API_KEY",
         default_max_output_tokens=DEFAULT_MAX_OUTPUT_TOKENS,
-        provider_max_output_tokens=None,
         notes="Legacy non-reasoning baseline kept for backward compatibility.",
     ),
     "gpt-5.4": ModelConfig(
@@ -61,7 +59,6 @@ MODEL_CONFIGS: dict[str, ModelConfig] = {
         docs_url="https://developers.openai.com/api/docs/models/gpt-5.4",
         api_key_env_var="OPENAI_API_KEY",
         default_max_output_tokens=DEFAULT_MAX_OUTPUT_TOKENS,
-        provider_max_output_tokens=128_000,
         openai_reasoning=OpenAIReasoningConfig(effort="medium"),
         notes="Configured to use medium reasoning effort for evaluation runs.",
     ),
@@ -73,7 +70,6 @@ MODEL_CONFIGS: dict[str, ModelConfig] = {
         docs_url="https://developers.openai.com/api/docs/models/gpt-5.4-mini",
         api_key_env_var="OPENAI_API_KEY",
         default_max_output_tokens=DEFAULT_MAX_OUTPUT_TOKENS,
-        provider_max_output_tokens=128_000,
         openai_reasoning=OpenAIReasoningConfig(effort="medium"),
         notes="Configured to use medium reasoning effort for evaluation runs.",
     ),
@@ -85,7 +81,6 @@ MODEL_CONFIGS: dict[str, ModelConfig] = {
         docs_url="https://developers.openai.com/api/docs/models/gpt-5.4-nano",
         api_key_env_var="OPENAI_API_KEY",
         default_max_output_tokens=2048,
-        provider_max_output_tokens=128_000,
         openai_reasoning=OpenAIReasoningConfig(effort="medium"),
         notes=(
             "Configured to use medium reasoning effort for evaluation runs. "
@@ -101,7 +96,6 @@ MODEL_CONFIGS: dict[str, ModelConfig] = {
         docs_url="https://platform.claude.com/docs/en/about-claude/models/overview",
         api_key_env_var="ANTHROPIC_API_KEY",
         default_max_output_tokens=DEFAULT_MAX_OUTPUT_TOKENS,
-        provider_max_output_tokens=64_000,
         anthropic_thinking=AnthropicThinkingConfig(enabled=False),
         notes="Extended thinking is supported by the model, but disabled by default in this evaluator.",
     ),
@@ -113,7 +107,6 @@ MODEL_CONFIGS: dict[str, ModelConfig] = {
         docs_url="https://platform.claude.com/docs/en/about-claude/models/overview",
         api_key_env_var="ANTHROPIC_API_KEY",
         default_max_output_tokens=DEFAULT_MAX_OUTPUT_TOKENS,
-        provider_max_output_tokens=64_000,
         anthropic_thinking=AnthropicThinkingConfig(enabled=True, budget_tokens=1024),
         notes=(
             "Uses Claude Sonnet 4.6 with Anthropic extended thinking enabled. "
@@ -128,7 +121,6 @@ MODEL_CONFIGS: dict[str, ModelConfig] = {
         docs_url="https://platform.claude.com/docs/en/about-claude/models/overview",
         api_key_env_var="ANTHROPIC_API_KEY",
         default_max_output_tokens=DEFAULT_MAX_OUTPUT_TOKENS,
-        provider_max_output_tokens=64_000,
         anthropic_thinking=AnthropicThinkingConfig(enabled=False),
         notes=(
             "Anthropic's official docs list claude-haiku-4-5 as the alias and "
@@ -143,7 +135,6 @@ MODEL_CONFIGS: dict[str, ModelConfig] = {
         docs_url="https://ai.google.dev/gemini-api/docs/gemini-3",
         api_key_env_var="GEMINI_API_KEY",
         default_max_output_tokens=DEFAULT_MAX_OUTPUT_TOKENS,
-        provider_max_output_tokens=64_000,
         notes=(
             "Google's Gemini 3 guide documents Gemini 3 Flash Preview with a 1M token "
             "context window, 64k max output tokens, and dynamic high thinking by default."
@@ -157,7 +148,6 @@ MODEL_CONFIGS: dict[str, ModelConfig] = {
         docs_url="https://ai.google.dev/gemini-api/docs/gemini-3",
         api_key_env_var="GEMINI_API_KEY",
         default_max_output_tokens=DEFAULT_MAX_OUTPUT_TOKENS,
-        provider_max_output_tokens=64_000,
         notes=(
             "Google's Gemini 3 guide documents Gemini 3.1 Pro Preview with a 1M token "
             "context window, 64k max output tokens, and dynamic high thinking by default."
@@ -171,7 +161,6 @@ MODEL_CONFIGS: dict[str, ModelConfig] = {
         docs_url="https://docs.mistral.ai/models/mistral-large-3-25-12",
         api_key_env_var="MISTRAL_API_KEY",
         default_max_output_tokens=DEFAULT_MAX_OUTPUT_TOKENS,
-        provider_max_output_tokens=None,
         notes=(
             "Mistral Large 3 v25.12 supports chat completions and structured outputs "
             "via the Chat Completions API."
@@ -185,7 +174,6 @@ MODEL_CONFIGS: dict[str, ModelConfig] = {
         docs_url="https://docs.mistral.ai/models/mistral-medium-3-1-25-08",
         api_key_env_var="MISTRAL_API_KEY",
         default_max_output_tokens=DEFAULT_MAX_OUTPUT_TOKENS,
-        provider_max_output_tokens=None,
         notes=(
             "Mistral Medium 3.1 v25.08 supports chat completions and structured outputs "
             "via the Chat Completions API."
