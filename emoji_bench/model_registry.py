@@ -1,18 +1,29 @@
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from typing import Literal
 
 
 ProviderName = Literal["openai", "anthropic", "mistral", "gemini"]
-ReasoningEffort = Literal["none", "minimal", "low", "medium", "high", "xhigh"]
+OpenAIReasoningEffort = Literal["none", "minimal", "low", "medium", "high", "xhigh"]
+AnthropicEffort = Literal["low", "medium", "high", "max"]
+ReasoningEffortOverride = Literal["none", "minimal", "low", "medium", "high", "xhigh", "max"]
 
-DEFAULT_MAX_OUTPUT_TOKENS = 2048
+DEFAULT_MAX_OUTPUT_TOKENS = 4096
+REASONING_EFFORT_CHOICES: tuple[ReasoningEffortOverride, ...] = (
+    "none",
+    "minimal",
+    "low",
+    "medium",
+    "high",
+    "xhigh",
+    "max",
+)
 
 
 @dataclass(frozen=True)
 class OpenAIReasoningConfig:
-    effort: ReasoningEffort
+    effort: OpenAIReasoningEffort
     summary: str | None = None
 
 
@@ -33,6 +44,7 @@ class ModelConfig:
     default_max_output_tokens: int
     openai_reasoning: OpenAIReasoningConfig | None = None
     anthropic_thinking: AnthropicThinkingConfig | None = None
+    anthropic_effort: AnthropicEffort | None = None
     notes: str | None = None
 
     def to_dict(self) -> dict[str, object]:
@@ -80,13 +92,9 @@ MODEL_CONFIGS: dict[str, ModelConfig] = {
         api_model="gpt-5.4-nano",
         docs_url="https://developers.openai.com/api/docs/models/gpt-5.4-nano",
         api_key_env_var="OPENAI_API_KEY",
-        default_max_output_tokens=2048,
+        default_max_output_tokens=DEFAULT_MAX_OUTPUT_TOKENS,
         openai_reasoning=OpenAIReasoningConfig(effort="medium"),
-        notes=(
-            "Configured to use medium reasoning effort for evaluation runs. "
-            "Default max output tokens is raised to 2048 because 512 is not enough "
-            "for structured-output completion reliability on Emoji-Bench."
-        ),
+        notes="Configured to use medium reasoning effort for evaluation runs.",
     ),
     "claude-sonnet-4-6": ModelConfig(
         key="claude-sonnet-4-6",
@@ -97,7 +105,11 @@ MODEL_CONFIGS: dict[str, ModelConfig] = {
         api_key_env_var="ANTHROPIC_API_KEY",
         default_max_output_tokens=DEFAULT_MAX_OUTPUT_TOKENS,
         anthropic_thinking=AnthropicThinkingConfig(enabled=False),
-        notes="Extended thinking is supported by the model, but disabled by default in this evaluator.",
+        anthropic_effort="high",
+        notes=(
+            "Extended thinking is supported by the model, but disabled by default in this "
+            "evaluator. Anthropic effort defaults to high unless overridden."
+        ),
     ),
     "claude-sonnet-4-6-reasoning": ModelConfig(
         key="claude-sonnet-4-6-reasoning",
@@ -108,9 +120,11 @@ MODEL_CONFIGS: dict[str, ModelConfig] = {
         api_key_env_var="ANTHROPIC_API_KEY",
         default_max_output_tokens=DEFAULT_MAX_OUTPUT_TOKENS,
         anthropic_thinking=AnthropicThinkingConfig(enabled=True, budget_tokens=1024),
+        anthropic_effort="high",
         notes=(
             "Uses Claude Sonnet 4.6 with Anthropic extended thinking enabled. "
-            "Configured with the minimum 1024-token thinking budget by default."
+            "Configured with the minimum 1024-token thinking budget by default, "
+            "with Anthropic effort defaulting to high."
         ),
     ),
     "claude-haiku-4-5": ModelConfig(
@@ -205,4 +219,63 @@ def model_choices(*, providers: tuple[ProviderName, ...] | None = None) -> tuple
         config.key
         for config in list_model_configs()
         if config.provider in allowed
+    )
+
+
+_ANTHROPIC_EFFORT_MODELS: frozenset[str] = frozenset(
+    {
+        "claude-mythos-preview",
+        "claude-opus-4-5",
+        "claude-opus-4-6",
+        "claude-sonnet-4-6",
+    }
+)
+_ANTHROPIC_MAX_EFFORT_MODELS: frozenset[str] = frozenset(
+    {
+        "claude-mythos-preview",
+        "claude-opus-4-6",
+        "claude-sonnet-4-6",
+    }
+)
+_ANTHROPIC_EFFORT_LEVELS: tuple[AnthropicEffort, ...] = ("low", "medium", "high", "max")
+
+
+def supports_anthropic_effort(model_config: ModelConfig) -> bool:
+    return model_config.provider == "anthropic" and model_config.api_model in _ANTHROPIC_EFFORT_MODELS
+
+
+def apply_reasoning_effort_override(
+    model_config: ModelConfig,
+    effort: ReasoningEffortOverride,
+) -> ModelConfig:
+    if model_config.openai_reasoning is not None:
+        if effort == "max":
+            raise ValueError(
+                f"OpenAI reasoning does not support effort={effort!r}; use one of "
+                f"{('none', 'minimal', 'low', 'medium', 'high', 'xhigh')}."
+            )
+        return replace(
+            model_config,
+            openai_reasoning=replace(model_config.openai_reasoning, effort=effort),
+        )
+
+    if supports_anthropic_effort(model_config):
+        if effort == "none":
+            return replace(model_config, anthropic_effort=None)
+        if effort in {"minimal", "xhigh"}:
+            raise ValueError(
+                f"Anthropic effort does not support {effort!r}; use one of "
+                f"{('low', 'medium', 'high', 'max')}."
+            )
+        if effort == "max" and model_config.api_model not in _ANTHROPIC_MAX_EFFORT_MODELS:
+            raise ValueError(
+                f"Anthropic effort {effort!r} is unsupported for {model_config.key}; "
+                "max is available only on Claude Mythos Preview, Claude Opus 4.6, "
+                "and Claude Sonnet 4.6."
+            )
+        return replace(model_config, anthropic_effort=effort)
+
+    raise ValueError(
+        "--reasoning-effort requires a model with OpenAI reasoning or Anthropic "
+        f"effort support; {model_config.key} does not support it."
     )

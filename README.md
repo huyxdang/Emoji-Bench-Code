@@ -97,8 +97,11 @@ Delivery modes:
 Useful flags:
 
 - `--turn-2-prompt-level {0,1}`: prompt-strength axis for the Turn 2 user message
-- `--max-output-tokens`: increase this for reasoning models
+- `--max-output-tokens`: increase this for longer continuations or reasoning-heavy runs
 - `--no-resume`: ignore existing `predictions.jsonl`
+- `--reasoning-effort`: overrides model reasoning effort
+  OpenAI accepts `none|minimal|low|medium|high|xhigh`
+  Anthropic effort-capable models accept `none|low|medium|high|max`
 
 Default output directories look like:
 
@@ -124,6 +127,7 @@ If you pass `--reasoning-effort`, that suffix is retained in the model slug:
 
 ```text
 artifacts/evals/gpt-5.4-reasoning-high-B-L0/
+artifacts/evals/claude-sonnet-4-6-reasoning-max-C-L1/
 ```
 
 ### Judge and Score

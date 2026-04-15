@@ -1,6 +1,9 @@
+import pytest
+
 from emoji_bench.model_registry import (
     DEFAULT_MAX_OUTPUT_TOKENS,
     MODEL_CONFIGS,
+    apply_reasoning_effort_override,
     get_model_config,
     model_choices,
 )
@@ -30,14 +33,28 @@ def test_gpt54_models_default_to_medium_reasoning():
         assert config.openai_reasoning.effort == "medium"
     assert get_model_config("gpt-5.4").default_max_output_tokens == DEFAULT_MAX_OUTPUT_TOKENS
     assert get_model_config("gpt-5.4-mini").default_max_output_tokens == DEFAULT_MAX_OUTPUT_TOKENS
-    assert get_model_config("gpt-5.4-nano").default_max_output_tokens == 2048
+    assert get_model_config("gpt-5.4-nano").default_max_output_tokens == DEFAULT_MAX_OUTPUT_TOKENS
+
+
+def test_claude_sonnet_46_models_default_to_high_anthropic_effort():
+    baseline = get_model_config("claude-sonnet-4-6")
+    assert baseline.provider == "anthropic"
+    assert baseline.anthropic_effort == "high"
+    assert baseline.anthropic_thinking is not None
+    assert baseline.anthropic_thinking.enabled is False
+
+    reasoning = get_model_config("claude-sonnet-4-6-reasoning")
+    assert reasoning.provider == "anthropic"
+    assert reasoning.anthropic_effort == "high"
+    assert reasoning.anthropic_thinking is not None
+    assert reasoning.anthropic_thinking.enabled is True
+    assert reasoning.anthropic_thinking.budget_tokens == 1024
 
 
 def test_all_configured_models_use_expected_default_max_output_tokens():
-    assert DEFAULT_MAX_OUTPUT_TOKENS == 2048
+    assert DEFAULT_MAX_OUTPUT_TOKENS == 4096
     for config in MODEL_CONFIGS.values():
-        expected = DEFAULT_MAX_OUTPUT_TOKENS
-        assert config.default_max_output_tokens == expected
+        assert config.default_max_output_tokens == DEFAULT_MAX_OUTPUT_TOKENS
 
 
 def test_resolve_api_key_uses_provider_specific_env_var():
@@ -58,3 +75,34 @@ def test_resolve_api_key_supports_gemini_env_var():
         env={"GEMINI_API_KEY": "test-gemini-key"},
     )
     assert api_key == "test-gemini-key"
+
+
+def test_apply_reasoning_effort_override_updates_openai_and_anthropic_configs():
+    gpt = apply_reasoning_effort_override(get_model_config("gpt-5.4"), "high")
+    assert gpt.openai_reasoning is not None
+    assert gpt.openai_reasoning.effort == "high"
+
+    sonnet = apply_reasoning_effort_override(get_model_config("claude-sonnet-4-6"), "max")
+    assert sonnet.anthropic_effort == "max"
+    assert sonnet.anthropic_thinking is not None
+    assert sonnet.anthropic_thinking.enabled is False
+
+    sonnet_reasoning = apply_reasoning_effort_override(
+        get_model_config("claude-sonnet-4-6-reasoning"),
+        "low",
+    )
+    assert sonnet_reasoning.anthropic_effort == "low"
+    assert sonnet_reasoning.anthropic_thinking is not None
+    assert sonnet_reasoning.anthropic_thinking.enabled is True
+    assert sonnet_reasoning.anthropic_thinking.budget_tokens == 1024
+
+
+def test_apply_reasoning_effort_override_rejects_unsupported_combinations():
+    with pytest.raises(ValueError, match="Anthropic effort does not support 'minimal'"):
+        apply_reasoning_effort_override(get_model_config("claude-sonnet-4-6"), "minimal")
+
+    with pytest.raises(ValueError, match="does not support it"):
+        apply_reasoning_effort_override(get_model_config("claude-haiku-4-5"), "low")
+
+    with pytest.raises(ValueError, match="OpenAI reasoning does not support effort='max'"):
+        apply_reasoning_effort_override(get_model_config("gpt-5.4"), "max")

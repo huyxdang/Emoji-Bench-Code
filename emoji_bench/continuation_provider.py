@@ -246,6 +246,8 @@ def _request_anthropic_messages(
             "type": "enabled",
             "budget_tokens": model_config.anthropic_thinking.budget_tokens,
         }
+    if model_config.anthropic_effort is not None:
+        options["output_config"] = {"effort": model_config.anthropic_effort}
 
     response = client.messages.create(**options)
     return ContinuationResponse(

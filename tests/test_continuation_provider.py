@@ -1,3 +1,4 @@
+from dataclasses import replace
 from types import SimpleNamespace
 
 import pytest
@@ -174,6 +175,44 @@ def test_request_continuation_single_turn_uses_custom_turn_2_prompt():
 
     sent = client.messages.calls[0]
     assert custom_turn_2 in sent["messages"][0]["content"]
+
+
+def test_request_continuation_sonnet_sets_default_anthropic_effort():
+    response = _make_anthropic_response("Step 3: ...")
+    client = _FakeAnthropicClient(response)
+    model_config = get_model_config("claude-sonnet-4-6")
+
+    request_continuation(
+        client=client,
+        model_config=model_config,
+        turn_1_user="[T1U]",
+        turn_1_assistant_prefill="[PREFILL]",
+        max_output_tokens=512,
+        mode="single_turn",
+    )
+
+    sent = client.messages.calls[0]
+    assert sent["output_config"] == {"effort": "high"}
+    assert "thinking" not in sent
+
+
+def test_request_continuation_sonnet_reasoning_sends_thinking_and_effort():
+    response = _make_anthropic_response("Step 3: ...")
+    client = _FakeAnthropicClient(response)
+    model_config = replace(get_model_config("claude-sonnet-4-6-reasoning"), anthropic_effort="low")
+
+    request_continuation(
+        client=client,
+        model_config=model_config,
+        turn_1_user="[T1U]",
+        turn_1_assistant_prefill="[PREFILL]",
+        max_output_tokens=2048,
+        mode="prefill",
+    )
+
+    sent = client.messages.calls[0]
+    assert sent["thinking"] == {"type": "enabled", "budget_tokens": 1024}
+    assert sent["output_config"] == {"effort": "low"}
 
 
 def test_request_continuation_prefill_openai_sends_three_message_conversation():

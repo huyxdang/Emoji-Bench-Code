@@ -20,7 +20,6 @@ import sys
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
@@ -35,6 +34,8 @@ from emoji_bench.continuation_provider import (
 )
 from emoji_bench.jsonl_io import append_jsonl, load_jsonl_records
 from emoji_bench.model_registry import (
+    REASONING_EFFORT_CHOICES,
+    apply_reasoning_effort_override,
     get_model_config,
     list_model_configs,
     model_choices,
@@ -177,11 +178,13 @@ def main() -> None:
     )
     parser.add_argument(
         "--reasoning-effort",
-        choices=("none", "minimal", "low", "medium", "high", "xhigh"),
+        choices=REASONING_EFFORT_CHOICES,
         default=None,
         help=(
-            "Override the configured OpenAI reasoning effort. Applies only to "
-            "models whose registry entry already declares openai_reasoning."
+            "Override the configured reasoning effort. OpenAI models accept "
+            "none/minimal/low/medium/high/xhigh. Anthropic effort-capable "
+            "models accept none/low/medium/high/max, where none omits "
+            "output_config.effort."
         ),
     )
     parser.add_argument(
@@ -247,18 +250,10 @@ def main() -> None:
 
     model_config = get_model_config(args.model)
     if args.reasoning_effort is not None:
-        if model_config.openai_reasoning is None:
-            parser.error(
-                f"--reasoning-effort requires a model with openai_reasoning "
-                f"configured; {model_config.key} is not a reasoning model."
-            )
-        model_config = replace(
-            model_config,
-            openai_reasoning=replace(
-                model_config.openai_reasoning,
-                effort=args.reasoning_effort,
-            ),
-        )
+        try:
+            model_config = apply_reasoning_effort_override(model_config, args.reasoning_effort)
+        except ValueError as exc:
+            parser.error(str(exc))
 
     turn_2_user_override = get_turn_2_prompt(args.turn_2_prompt_level)
     turn_2_level = args.turn_2_prompt_level
@@ -386,6 +381,21 @@ def main() -> None:
         "mode": args.mode,
         "matrix_variant": _matrix_variant(args.mode),
         "matrix_cell": _matrix_cell(args.mode, turn_2_level),
+        "reasoning_effort_requested": args.reasoning_effort,
+        "openai_reasoning_effort": (
+            None if model_config.openai_reasoning is None else model_config.openai_reasoning.effort
+        ),
+        "anthropic_thinking_enabled": (
+            None
+            if model_config.anthropic_thinking is None
+            else model_config.anthropic_thinking.enabled
+        ),
+        "anthropic_thinking_budget_tokens": (
+            None
+            if model_config.anthropic_thinking is None
+            else model_config.anthropic_thinking.budget_tokens
+        ),
+        "anthropic_effort": model_config.anthropic_effort,
         "turn_2_level": turn_2_level,
         "turn_2_user_sent": turn_2_user_override,
         "input_path": str(input_path.resolve()),
