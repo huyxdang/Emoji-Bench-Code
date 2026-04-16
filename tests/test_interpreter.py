@@ -1,8 +1,8 @@
 import pytest
 
-from emoji_bench.expressions import BinaryOp, SymbolLiteral, UnaryTransform
-from emoji_bench.interpreter import evaluate, evaluate_binary, evaluate_transform
-from emoji_bench.types import (
+from emoji_bench.domain.expressions import BinaryOp, SymbolLiteral, UnaryTransform
+from emoji_bench.domain.interpreter import evaluate, evaluate_binary, evaluate_transform
+from emoji_bench.domain.types import (
     DerivedOperation,
     FormalSystem,
     OperationTable,

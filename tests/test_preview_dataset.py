@@ -3,8 +3,8 @@ import subprocess
 import sys
 from pathlib import Path
 
-from emoji_bench.continuation_dataset import generate_continuation_dataset_records
-from emoji_bench.dataset_io import write_dataset
+from emoji_bench.dataset.continuation_dataset import generate_continuation_dataset_records
+from emoji_bench.dataset.dataset_io import write_dataset
 
 
 def test_preview_dataset_script_renders_metadata_and_prompt(tmp_path):

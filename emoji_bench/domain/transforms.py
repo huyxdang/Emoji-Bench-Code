@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import itertools
 
-from emoji_bench.types import OperationTable, Symbol, TransformationRule
+from emoji_bench.domain.types import OperationTable, Symbol, TransformationRule
 
 
 def validate_distribution_property(

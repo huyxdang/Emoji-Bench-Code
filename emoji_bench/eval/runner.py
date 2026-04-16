@@ -8,11 +8,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable
 
-from emoji_bench.continuation_provider import ContinuationMode, request_continuation
-from emoji_bench.eval_matrix import matrix_cell, matrix_variant
+from emoji_bench.eval.matrix import matrix_cell, matrix_variant
+from emoji_bench.eval.paths import EvalArtifactPaths
 from emoji_bench.jsonl_io import append_jsonl, load_jsonl_records
 from emoji_bench.model_registry import ModelConfig
-from emoji_bench.pipeline_paths import EvalArtifactPaths
+from emoji_bench.providers.continuation import ContinuationMode, request_continuation
 
 
 _REQUIRED_RECORD_FIELDS: tuple[str, ...] = (

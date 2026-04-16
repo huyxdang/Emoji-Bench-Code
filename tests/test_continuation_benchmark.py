@@ -1,10 +1,9 @@
-from emoji_bench.benchmark_types import ErrorType
-from emoji_bench.continuation_benchmark import (
+from emoji_bench.dataset.continuation_benchmark import (
     ContinuationInstance,
     continuation_record,
     generate_continuation_instance,
 )
-from emoji_bench.generator import generate_system
+from emoji_bench.domain.generator import generate_system
 
 
 def _easy_system(seed: int = 11):
@@ -21,7 +20,6 @@ def test_generate_continuation_instance_produces_non_convergent_error():
     )
 
     assert isinstance(instance, ContinuationInstance)
-    assert instance.error_info.error_type is ErrorType.E_CASC
     assert instance.ground_truth_final_output != instance.wrong_branch_final_output
     assert instance.ground_truth_final_output == instance.clean_chain.final_result
     assert instance.wrong_branch_final_output == instance.mutated_chain.final_result

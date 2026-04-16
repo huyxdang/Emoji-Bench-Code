@@ -1,12 +1,12 @@
 import random
 
-from emoji_bench.operations import (
+from emoji_bench.domain.operations import (
     generate_group_table,
     generate_operation_table,
     get_group_automorphisms,
 )
-from emoji_bench.symbols import sample_symbols
-from emoji_bench.transforms import validate_distribution_property
+from emoji_bench.domain.symbols import sample_symbols
+from emoji_bench.domain.transforms import validate_distribution_property
 
 
 def _make_symbols(n=3, seed=42):

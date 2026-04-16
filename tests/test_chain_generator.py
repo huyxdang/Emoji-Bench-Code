@@ -2,7 +2,7 @@ import random
 
 import pytest
 
-from emoji_bench.chain_generator import (
+from emoji_bench.domain.chain_generator import (
     count_reducible_nodes,
     find_leftmost_innermost,
     generate_chain,
@@ -10,15 +10,15 @@ from emoji_bench.chain_generator import (
     reduce_expression,
     replace_at_path,
 )
-from emoji_bench.expressions import (
+from emoji_bench.domain.expressions import (
     BinaryOp,
     SymbolLiteral,
     UnaryTransform,
     random_expression,
 )
-from emoji_bench.generator import generate_system
-from emoji_bench.interpreter import evaluate
-from emoji_bench.types import (
+from emoji_bench.domain.generator import generate_system
+from emoji_bench.domain.interpreter import evaluate
+from emoji_bench.domain.types import (
     DerivedOperation,
     FormalSystem,
     OperationTable,

@@ -1,21 +1,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import Enum
 
-from emoji_bench.chain_types import DerivationChain
-from emoji_bench.expressions import Expression
-from emoji_bench.types import Symbol
-
-
-class ErrorType(str, Enum):
-    E_CASC = "E-CASC"
-    E_CONTINUE = "E-CONTINUE"
+from emoji_bench.domain.chain_types import DerivationChain
+from emoji_bench.domain.expressions import Expression
+from emoji_bench.domain.types import Symbol
 
 
 @dataclass(frozen=True)
 class ErrorInfo:
-    error_type: ErrorType
     step_number: int
     correct_result: Symbol | None
     injected_result: Symbol | None

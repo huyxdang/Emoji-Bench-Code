@@ -3,7 +3,7 @@ from __future__ import annotations
 import math
 import random
 
-from emoji_bench.types import OperationTable, Symbol
+from emoji_bench.domain.types import OperationTable, Symbol
 
 
 def generate_operation_table(

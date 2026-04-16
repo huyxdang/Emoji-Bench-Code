@@ -21,11 +21,11 @@ import json
 from dataclasses import dataclass
 from typing import Any
 
-from emoji_bench.continuation_benchmark import generate_continuation_instance
-from emoji_bench.expressions import expr_to_str_with_system
-from emoji_bench.formatter import system_from_json
+from emoji_bench.dataset.continuation_benchmark import generate_continuation_instance
+from emoji_bench.domain.expressions import expr_to_str_with_system
+from emoji_bench.domain.formatter import system_from_json
 from emoji_bench.model_registry import ModelConfig
-from emoji_bench.types import Symbol
+from emoji_bench.domain.types import Symbol
 
 
 @dataclass(frozen=True)

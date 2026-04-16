@@ -4,12 +4,12 @@ import json
 
 import pytest
 
-from emoji_bench.continuation_benchmark import generate_continuation_instance
-from emoji_bench.continuation_dataset import continuation_record
 from emoji_bench.continuation_formatter import format_step
-from emoji_bench.formatter import system_to_json
-from emoji_bench.generator import generate_system
-from emoji_bench.judge_artifacts import prediction_fingerprint
+from emoji_bench.dataset.continuation_benchmark import generate_continuation_instance
+from emoji_bench.dataset.continuation_dataset import continuation_record
+from emoji_bench.domain.formatter import system_to_json
+from emoji_bench.domain.generator import generate_system
+from emoji_bench.judge.artifacts import prediction_fingerprint
 from tests.script_helpers import load_script_module, write_jsonl
 
 

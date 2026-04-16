@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from types import SimpleNamespace
 
-from emoji_bench.judge_artifacts import prediction_fingerprint
+from emoji_bench.judge.artifacts import prediction_fingerprint
 from tests.script_helpers import load_script_module, write_jsonl
 
 

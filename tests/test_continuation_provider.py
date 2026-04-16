@@ -9,7 +9,7 @@ from emoji_bench.continuation_formatter import (
     format_continuation_single_turn,
     get_turn_2_prompt,
 )
-from emoji_bench.continuation_provider import (
+from emoji_bench.providers.continuation import (
     ContinuationResponse,
     request_continuation,
 )

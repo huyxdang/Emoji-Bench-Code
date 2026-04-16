@@ -20,11 +20,11 @@ from emoji_bench.continuation_formatter import (
     format_continuation_single_turn,
     get_turn_2_prompt,
 )
-from emoji_bench.continuation_provider_anthropic import request_anthropic_messages
-from emoji_bench.continuation_provider_gemini import request_gemini_messages
-from emoji_bench.continuation_provider_mistral import request_mistral_messages
-from emoji_bench.continuation_provider_openai import request_openai_messages
-from emoji_bench.continuation_transport import ContinuationMode, ContinuationResponse
+from emoji_bench.providers.anthropic import request_anthropic_messages
+from emoji_bench.providers.gemini import request_gemini_messages
+from emoji_bench.providers.mistral import request_mistral_messages
+from emoji_bench.providers.openai import request_openai_messages
+from emoji_bench.providers.transport import ContinuationMode, ContinuationResponse
 from emoji_bench.model_registry import ModelConfig
 
 

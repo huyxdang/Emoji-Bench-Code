@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from emoji_bench.expressions import Expression, expr_to_str
-from emoji_bench.types import Symbol
+from emoji_bench.domain.expressions import Expression, expr_to_str
+from emoji_bench.domain.types import Symbol
 
 
 @dataclass(frozen=True)

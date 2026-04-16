@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from emoji_bench.chain_types import ChainStep, DerivationChain
-from emoji_bench.expressions import expr_to_str_with_system
-from emoji_bench.formatter import format_system_for_prompt
-from emoji_bench.types import FormalSystem
+from emoji_bench.domain.chain_types import ChainStep, DerivationChain
+from emoji_bench.domain.expressions import expr_to_str_with_system
+from emoji_bench.domain.formatter import format_system_for_prompt
+from emoji_bench.domain.types import FormalSystem
 
 
 CONTINUATION_TASK_PROMPT = """\

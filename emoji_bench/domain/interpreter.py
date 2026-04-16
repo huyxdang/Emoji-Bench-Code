@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from emoji_bench.expressions import BinaryOp, Expression, SymbolLiteral, UnaryTransform
-from emoji_bench.types import FormalSystem, Symbol
+from emoji_bench.domain.expressions import BinaryOp, Expression, SymbolLiteral, UnaryTransform
+from emoji_bench.domain.types import FormalSystem, Symbol
 
 
 def evaluate(expr: Expression, system: FormalSystem) -> Symbol:
@@ -58,7 +58,7 @@ def _evaluate_derived(
     system: FormalSystem,
 ) -> Symbol:
     """Expand and evaluate a derived operation template."""
-    from emoji_bench.types import DerivedOperation
+    from emoji_bench.domain.types import DerivedOperation
 
     assert isinstance(derived_op, DerivedOperation)
     base_op_name = derived_op.base_ops[0]

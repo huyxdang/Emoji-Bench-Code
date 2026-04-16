@@ -3,15 +3,15 @@ from __future__ import annotations
 import random
 from dataclasses import replace
 
-from emoji_bench.benchmark_types import ErrorInfo, ErrorType
-from emoji_bench.chain_generator import (
+from emoji_bench.dataset.error_info import ErrorInfo
+from emoji_bench.domain.chain_generator import (
     find_leftmost_innermost,
     reduce_expression,
     replace_at_path,
 )
-from emoji_bench.chain_types import ChainStep, DerivationChain
-from emoji_bench.expressions import Expression, SymbolLiteral
-from emoji_bench.types import FormalSystem, Symbol
+from emoji_bench.domain.chain_types import ChainStep, DerivationChain
+from emoji_bench.domain.expressions import Expression, SymbolLiteral
+from emoji_bench.domain.types import FormalSystem, Symbol
 
 
 def _resolve_rng(
@@ -130,7 +130,6 @@ def inject_cascading_wrong_result(
     )
 
     error_info = ErrorInfo(
-        error_type=ErrorType.E_CASC,
         step_number=target.step_number,
         correct_result=target.result_symbol,
         injected_result=injected_result,

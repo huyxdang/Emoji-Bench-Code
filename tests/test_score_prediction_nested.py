@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from emoji_bench.continuation_scorer import (
+from emoji_bench.judge.continuation_scorer import (
     NestedScoredContinuation,
     score_prediction_nested,
     summarize_nested,

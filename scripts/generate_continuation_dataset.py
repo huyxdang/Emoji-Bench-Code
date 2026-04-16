@@ -10,11 +10,11 @@ from pathlib import Path
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from emoji_bench.continuation_dataset import (
+from emoji_bench.dataset.continuation_dataset import (
     DEFAULT_CONTINUATION_TARGET_LENGTHS,
     generate_continuation_dataset_records,
 )
-from emoji_bench.dataset_io import DIFFICULTY_CONFIGS, push_dataset_to_hub, write_dataset
+from emoji_bench.dataset.dataset_io import DIFFICULTY_CONFIGS, push_dataset_to_hub, write_dataset
 
 
 def _parse_length_overrides(raw: str | None) -> dict[str, int]:

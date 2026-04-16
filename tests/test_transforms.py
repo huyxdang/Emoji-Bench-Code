@@ -1,5 +1,5 @@
-from emoji_bench.transforms import find_valid_transformations, validate_distribution_property
-from emoji_bench.types import OperationTable, Symbol
+from emoji_bench.domain.transforms import find_valid_transformations, validate_distribution_property
+from emoji_bench.domain.types import OperationTable, Symbol
 
 
 def _zelta_op():

@@ -19,14 +19,14 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-from emoji_bench.expressions import (
+from emoji_bench.domain.expressions import (
     BinaryOp,
     Expression,
     SymbolLiteral,
     UnaryTransform,
 )
-from emoji_bench.interpreter import evaluate
-from emoji_bench.types import FormalSystem
+from emoji_bench.domain.interpreter import evaluate
+from emoji_bench.domain.types import FormalSystem
 
 
 _STEP_LINE_REGEX = re.compile(

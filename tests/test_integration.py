@@ -1,9 +1,9 @@
 import random
 
-from emoji_bench.expressions import expr_to_str_with_system, random_expression
-from emoji_bench.formatter import format_system_for_prompt, system_from_json, system_to_json
-from emoji_bench.generator import generate_system
-from emoji_bench.interpreter import evaluate
+from emoji_bench.domain.expressions import expr_to_str_with_system, random_expression
+from emoji_bench.domain.formatter import format_system_for_prompt, system_from_json, system_to_json
+from emoji_bench.domain.generator import generate_system
+from emoji_bench.domain.interpreter import evaluate
 
 
 def test_generated_system_round_trip_preserves_expression_results():

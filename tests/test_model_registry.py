@@ -7,7 +7,7 @@ from emoji_bench.model_registry import (
     get_model_config,
     model_choices,
 )
-from emoji_bench.provider_clients import resolve_api_key
+from emoji_bench.providers.clients import resolve_api_key
 
 
 def test_requested_model_configs_are_present():

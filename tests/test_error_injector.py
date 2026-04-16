@@ -2,19 +2,18 @@ import random
 
 import pytest
 
-from emoji_bench.benchmark_types import ErrorType
-from emoji_bench.chain_generator import (
+from emoji_bench.dataset.error_injector import (
+    get_cascading_eligible_steps,
+    inject_cascading_wrong_result,
+)
+from emoji_bench.domain.chain_generator import (
     find_leftmost_innermost,
     generate_chain,
     replace_at_path,
 )
-from emoji_bench.error_injector import (
-    get_cascading_eligible_steps,
-    inject_cascading_wrong_result,
-)
-from emoji_bench.expressions import SymbolLiteral
-from emoji_bench.generator import generate_system
-from emoji_bench.interpreter import evaluate
+from emoji_bench.domain.expressions import SymbolLiteral
+from emoji_bench.domain.generator import generate_system
+from emoji_bench.domain.interpreter import evaluate
 
 
 def _system():
@@ -69,7 +68,6 @@ def test_inject_cascading_wrong_result_recomputes_locally_valid_suffix():
     )
 
     root_step = injected_chain.steps[step_number - 1]
-    assert error_info.error_type is ErrorType.E_CASC
     assert evaluate(root_step.reduced_subexpr, system) == error_info.correct_result
     assert root_step.result_symbol == error_info.injected_result
     assert root_step.result_symbol != evaluate(root_step.reduced_subexpr, system)

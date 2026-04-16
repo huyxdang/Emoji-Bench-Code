@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 
-from emoji_bench.types import (
+from emoji_bench.domain.types import (
     DerivedOperation,
     FormalSystem,
     OperationTable,

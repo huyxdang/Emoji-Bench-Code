@@ -1,13 +1,13 @@
 import pytest
 
-from emoji_bench.continuation_validator import (
+from emoji_bench.domain.continuation_validator import (
     ParseError,
     _parse_expression,
     parse_continuation_steps,
     validate_derivation,
 )
-from emoji_bench.expressions import BinaryOp, SymbolLiteral, UnaryTransform
-from emoji_bench.generator import generate_system
+from emoji_bench.domain.expressions import BinaryOp, SymbolLiteral, UnaryTransform
+from emoji_bench.domain.generator import generate_system
 
 
 @pytest.fixture

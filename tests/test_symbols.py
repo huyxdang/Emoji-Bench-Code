@@ -1,6 +1,6 @@
 import random
 
-from emoji_bench.symbols import EMOJI_POOL, sample_symbols
+from emoji_bench.domain.symbols import EMOJI_POOL, sample_symbols
 
 
 def test_sample_symbols_count():

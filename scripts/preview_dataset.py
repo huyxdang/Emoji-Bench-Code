@@ -13,7 +13,7 @@ if __package__ in {None, ""}:
 
 from emoji_bench.continuation_formatter import get_turn_2_prompt
 from emoji_bench.jsonl_io import load_jsonl_records
-from emoji_bench.pipeline_paths import resolve_dataset_split_path as _resolve_input_path
+from emoji_bench.eval.paths import resolve_dataset_split_path as _resolve_input_path
 
 
 def _load_manifest(dataset_path: Path) -> dict[str, Any] | None:

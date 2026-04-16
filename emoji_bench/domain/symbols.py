@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import random
 
-from emoji_bench.types import Symbol
+from emoji_bench.domain.types import Symbol
 
 # Curated pool of ~30 emoji with no mathematical/logical associations.
 # Each must tokenize as a single token across major model families.

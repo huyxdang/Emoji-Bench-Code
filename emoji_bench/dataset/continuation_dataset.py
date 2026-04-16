@@ -9,18 +9,18 @@ from __future__ import annotations
 from collections import Counter
 from typing import Any
 
-from emoji_bench.continuation_benchmark import (
+from emoji_bench.dataset.continuation_benchmark import (
     ContinuationInstance,
     continuation_record,
     generate_continuation_instance,
 )
-from emoji_bench.dataset_io import (
+from emoji_bench.dataset.dataset_io import (
     DIFFICULTY_CONFIGS,
     DatasetManifest,
     git_commit,
 )
-from emoji_bench.formatter import system_to_json
-from emoji_bench.generator import generate_system
+from emoji_bench.domain.formatter import system_to_json
+from emoji_bench.domain.generator import generate_system
 
 
 # Locked defaults from codex_plan.md: targets chosen so the midpoint policy

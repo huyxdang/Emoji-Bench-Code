@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Literal
 
-from emoji_bench.provider_clients import ProviderUsage
+from emoji_bench.providers.clients import ProviderUsage
 
 
 ContinuationMode = Literal["prefill", "single_turn"]

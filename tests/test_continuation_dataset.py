@@ -4,7 +4,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from emoji_bench.continuation_dataset import (
+from emoji_bench.dataset.continuation_dataset import (
     DEFAULT_CONTINUATION_TARGET_LENGTHS,
     MIN_REALIZED_X,
     REJECTION_REASONS,

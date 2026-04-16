@@ -4,8 +4,8 @@ import json
 from pathlib import Path
 
 from emoji_bench.continuation_formatter import get_turn_2_prompt
-from emoji_bench.continuation_provider import ContinuationResponse
-from emoji_bench.provider_clients import ProviderUsage
+from emoji_bench.providers.clients import ProviderUsage
+from emoji_bench.providers.transport import ContinuationResponse
 from tests.script_helpers import load_script_module, write_jsonl
 
 

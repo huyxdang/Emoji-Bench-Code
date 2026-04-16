@@ -2,15 +2,15 @@ from __future__ import annotations
 
 import random
 
-from emoji_bench.chain_types import ChainStep, DerivationChain
-from emoji_bench.expressions import (
+from emoji_bench.domain.chain_types import ChainStep, DerivationChain
+from emoji_bench.domain.expressions import (
     BinaryOp,
     Expression,
     SymbolLiteral,
     UnaryTransform,
     random_expression,
 )
-from emoji_bench.types import DerivedOperation, FormalSystem
+from emoji_bench.domain.types import DerivedOperation, FormalSystem
 
 # Path is a tuple of ints: 0 = left/operand, 1 = right (for BinaryOp)
 Path = tuple[int, ...]
@@ -209,7 +209,7 @@ def reduce_expression(
                     continue
 
                 # Base operation: evaluate directly
-                from emoji_bench.interpreter import evaluate_binary
+                from emoji_bench.domain.interpreter import evaluate_binary
                 result = evaluate_binary(op_name, left.symbol, right.symbol, system)
                 replacement = SymbolLiteral(result)
                 after = replace_at_path(current, path, replacement)
@@ -225,7 +225,7 @@ def reduce_expression(
                 ))
 
             case UnaryTransform(transform_name, operand) if isinstance(operand, SymbolLiteral):
-                from emoji_bench.interpreter import evaluate_transform
+                from emoji_bench.domain.interpreter import evaluate_transform
                 result = evaluate_transform(transform_name, operand.symbol, system)
                 replacement = SymbolLiteral(result)
                 after = replace_at_path(current, path, replacement)

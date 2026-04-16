@@ -1,6 +1,6 @@
 import random
 
-from emoji_bench.expressions import (
+from emoji_bench.domain.expressions import (
     BinaryOp,
     SymbolLiteral,
     UnaryTransform,
@@ -8,8 +8,8 @@ from emoji_bench.expressions import (
     expr_to_str_with_system,
     random_expression,
 )
-from emoji_bench.generator import generate_system
-from emoji_bench.types import Symbol
+from emoji_bench.domain.generator import generate_system
+from emoji_bench.domain.types import Symbol
 
 
 def test_expr_to_str_literal():

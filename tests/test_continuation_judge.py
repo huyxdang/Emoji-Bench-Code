@@ -3,16 +3,16 @@ from types import SimpleNamespace
 
 import pytest
 
-from emoji_bench.continuation_benchmark import generate_continuation_instance
-from emoji_bench.continuation_dataset import continuation_record
-from emoji_bench.continuation_judge import (
+from emoji_bench.dataset.continuation_benchmark import generate_continuation_instance
+from emoji_bench.dataset.continuation_dataset import continuation_record
+from emoji_bench.domain.formatter import system_to_json
+from emoji_bench.domain.generator import generate_system
+from emoji_bench.judge.continuation_judge import (
     JudgeVerdict,
     build_judge_prompt,
     compute_step_values,
     judge_continuation,
 )
-from emoji_bench.formatter import system_to_json
-from emoji_bench.generator import generate_system
 from emoji_bench.model_registry import get_model_config
 
 

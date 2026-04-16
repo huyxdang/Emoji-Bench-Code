@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from emoji_bench.judge_artifacts import (
+from emoji_bench.judge.artifacts import (
     build_prediction_fingerprint_map,
     ensure_full_judge_coverage,
     load_validated_judge_rows,

@@ -3,18 +3,18 @@ from __future__ import annotations
 import math
 import random
 
-from emoji_bench.operations import (
+from emoji_bench.domain.operations import (
     generate_group_table,
     generate_operation_table,
     get_group_automorphisms,
 )
-from emoji_bench.symbols import sample_symbols
-from emoji_bench.transforms import (
+from emoji_bench.domain.symbols import sample_symbols
+from emoji_bench.domain.transforms import (
     find_valid_transformations,
     make_transformation_rule,
     validate_distribution_property,
 )
-from emoji_bench.types import (
+from emoji_bench.domain.types import (
     DerivedOperation,
     FormalSystem,
     OperationTable,
@@ -329,8 +329,8 @@ def _generate_derived_ops(
 
 def _validate_system(system: FormalSystem) -> None:
     """Run all consistency checks on a generated system. Raises on failure."""
-    from emoji_bench.interpreter import evaluate_binary
-    from emoji_bench.transforms import validate_distribution_property
+    from emoji_bench.domain.interpreter import evaluate_binary
+    from emoji_bench.domain.transforms import validate_distribution_property
 
     symbol_set = set(system.symbols)
 

@@ -1,8 +1,8 @@
 import pytest
 
-from emoji_bench.generator import generate_system
-from emoji_bench.interpreter import evaluate_binary
-from emoji_bench.transforms import validate_distribution_property
+from emoji_bench.domain.generator import generate_system
+from emoji_bench.domain.interpreter import evaluate_binary
+from emoji_bench.domain.transforms import validate_distribution_property
 
 
 def test_generate_easy():

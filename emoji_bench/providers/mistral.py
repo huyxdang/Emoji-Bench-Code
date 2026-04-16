@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from emoji_bench.continuation_transport import ContinuationMode, ContinuationResponse
+from emoji_bench.providers.transport import ContinuationMode, ContinuationResponse
 from emoji_bench.model_registry import ModelConfig
-from emoji_bench.provider_clients import extract_mistral_usage
+from emoji_bench.providers.clients import extract_mistral_usage
 
 
 def request_mistral_messages(

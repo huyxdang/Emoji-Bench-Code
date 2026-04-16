@@ -3,7 +3,7 @@ from __future__ import annotations
 import random
 from dataclasses import dataclass
 
-from emoji_bench.types import FormalSystem, Symbol
+from emoji_bench.domain.types import FormalSystem, Symbol
 
 
 @dataclass(frozen=True)

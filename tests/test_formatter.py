@@ -1,9 +1,9 @@
-from emoji_bench.formatter import (
+from emoji_bench.domain.formatter import (
     format_system_for_prompt,
     system_from_json,
     system_to_json,
 )
-from emoji_bench.generator import generate_system
+from emoji_bench.domain.generator import generate_system
 
 
 def test_json_round_trip_easy():

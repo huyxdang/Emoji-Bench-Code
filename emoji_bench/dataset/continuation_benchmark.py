@@ -3,18 +3,18 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from emoji_bench.benchmark_types import ErrorInfo, ErrorType
-from emoji_bench.chain_generator import generate_chain
-from emoji_bench.chain_types import DerivationChain
+from emoji_bench.dataset.error_info import ErrorInfo
+from emoji_bench.dataset.error_injector import (
+    get_cascading_eligible_steps,
+    inject_cascading_wrong_result,
+)
+from emoji_bench.domain.chain_generator import generate_chain
+from emoji_bench.domain.chain_types import DerivationChain
 from emoji_bench.continuation_formatter import (
     format_continuation_prefill,
     format_continuation_turn_1_user,
 )
-from emoji_bench.error_injector import (
-    get_cascading_eligible_steps,
-    inject_cascading_wrong_result,
-)
-from emoji_bench.types import FormalSystem, Symbol
+from emoji_bench.domain.types import FormalSystem, Symbol
 
 
 @dataclass(frozen=True)
@@ -176,7 +176,7 @@ def continuation_record(
         "base_id": base_id,
         "split": split,
         "difficulty": difficulty,
-        "error_type": ErrorType.E_CONTINUE.value,
+        "error_type": "E-CONTINUE",
 
         # Conversation.
         "turn_1_user": instance.turn_1_user,
