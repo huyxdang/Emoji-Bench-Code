@@ -36,7 +36,14 @@ from typing import Any
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from emoji_bench.continuation_scorer import (
+from emoji_bench.domain.continuation_validator import validate_derivation
+from emoji_bench.domain.formatter import system_from_json
+from emoji_bench.judge.artifacts import (
+    build_prediction_fingerprint_map,
+    ensure_full_judge_coverage,
+    load_validated_judge_rows,
+)
+from emoji_bench.judge.continuation_scorer import (
     OUTCOME_BUCKETS,
     NestedScoredContinuation,
     ScoredContinuation,
@@ -45,55 +52,12 @@ from emoji_bench.continuation_scorer import (
     score_prediction_nested,
     summarize_nested,
 )
-from emoji_bench.continuation_validator import validate_derivation
-from emoji_bench.formatter import system_from_json
-from emoji_bench.judge_artifacts import (
-    build_prediction_fingerprint_map,
-    ensure_full_judge_coverage,
-    load_validated_judge_rows,
-)
 from emoji_bench.jsonl_io import load_jsonl_records
-
-
-# --- Path resolution ------------------------------------------------------
-
-
-def _resolve_predictions_path(raw: str) -> Path:
-    path = Path(raw)
-    if path.is_dir():
-        path = path / "predictions.jsonl"
-    return path
-
-
-def _resolve_dataset_path(
-    *,
-    explicit: str | None,
-    summary_path: Path,
-) -> Path | None:
-    """Find the source dataset file. Returns None if it can't be located.
-
-    Returning None is fine when judge.jsonl isn't present either — we just
-    skip the nested-metric path. When judge.jsonl IS present we'll error
-    upstream because the validator needs system_json from the dataset.
-    """
-    if explicit is not None:
-        p = Path(explicit)
-        if p.is_dir():
-            p = p / "test.jsonl"
-        return p
-    if summary_path.exists():
-        try:
-            summary = json.loads(summary_path.read_text(encoding="utf-8"))
-        except json.JSONDecodeError:
-            return None
-        input_path = summary.get("input_path")
-        if input_path:
-            p = Path(input_path)
-            if p.is_dir():
-                p = p / "test.jsonl"
-            if p.exists():
-                return p
-    return None
+from emoji_bench.eval.paths import (
+    build_score_artifact_paths,
+    resolve_dataset_path as _resolve_dataset_path,
+    resolve_predictions_path as _resolve_predictions_path,
+)
 
 
 # --- Regex baseline summary ----------------------------------------------
@@ -251,31 +215,27 @@ def main() -> None:
     if not predictions_path.exists():
         parser.error(f"predictions file not found: {predictions_path}")
 
-    output_dir = Path(args.output_dir) if args.output_dir else predictions_path.parent
-    output_dir.mkdir(parents=True, exist_ok=True)
-    summary_path = output_dir / "summary.json"
-    judge_path = output_dir / "judge.jsonl"
-    scores_path = output_dir / "scores.jsonl"
-    nested_scores_path = output_dir / "nested_scores.jsonl"
-    score_summary_path = output_dir / "score_summary.json"
+    artifact_paths = build_score_artifact_paths(predictions_path, output_dir=args.output_dir)
+    artifact_paths.output_dir.mkdir(parents=True, exist_ok=True)
 
     predictions = load_jsonl_records(predictions_path)
     prediction_fingerprints = build_prediction_fingerprint_map(predictions)
     scored = [score_prediction(row) for row in predictions]
 
-    with scores_path.open("w", encoding="utf-8") as fh:
+    with artifact_paths.scores_path.open("w", encoding="utf-8") as fh:
         for s in scored:
             fh.write(json.dumps(s.to_dict(), ensure_ascii=False) + "\n")
 
     regex_summary = _regex_summary(scored)
     summary: dict[str, Any] = {
         "predictions_path": str(predictions_path.resolve()),
-        "scores_path": str(scores_path.resolve()),
+        "scores_path": str(artifact_paths.scores_path.resolve()),
     }
 
-    if judge_path.exists():
+    if artifact_paths.judge_path.exists():
         dataset_path = _resolve_dataset_path(
-            explicit=args.dataset_path, summary_path=summary_path,
+            explicit=args.dataset_path,
+            summary_path=artifact_paths.summary_path,
         )
         dataset_rows = (
             {row["example_id"]: row for row in load_jsonl_records(dataset_path)}
@@ -283,7 +243,7 @@ def main() -> None:
             else None
         )
         judge_rows = load_validated_judge_rows(
-            judge_path,
+            artifact_paths.judge_path,
             expected_fingerprints=prediction_fingerprints,
         )
         ensure_full_judge_coverage(
@@ -296,14 +256,14 @@ def main() -> None:
             dataset_rows=dataset_rows,
             judge_rows=judge_rows,
         )
-        with nested_scores_path.open("w", encoding="utf-8") as fh:
+        with artifact_paths.nested_scores_path.open("w", encoding="utf-8") as fh:
             for ns in nested_scored:
                 fh.write(json.dumps(ns.to_dict(), ensure_ascii=False) + "\n")
 
         summary["headline"] = summarize_nested(nested_scored)
         summary["headline_kind"] = "judge_plus_validator"
-        summary["nested_scores_path"] = str(nested_scores_path.resolve())
-        summary["judge_path"] = str(judge_path.resolve())
+        summary["nested_scores_path"] = str(artifact_paths.nested_scores_path.resolve())
+        summary["judge_path"] = str(artifact_paths.judge_path.resolve())
         summary["judged_count"] = len(judge_rows)
         summary["judged_coverage"] = 1.0
         if dataset_path is None:
@@ -323,7 +283,7 @@ def main() -> None:
             "unavailable. Run scripts/judge_continuation.py first to enable them."
         )
 
-    score_summary_path.write_text(
+    artifact_paths.score_summary_path.write_text(
         json.dumps(summary, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
     )

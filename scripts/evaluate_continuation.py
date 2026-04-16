@@ -17,22 +17,23 @@ import argparse
 import json
 import os
 import sys
-import threading
-import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-from typing import Any
 
 # Allow direct `python scripts/...` execution from a repo checkout.
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from emoji_bench.continuation_formatter import TURN_2_PROMPT_LEVELS, get_turn_2_prompt
-from emoji_bench.continuation_provider import (
-    ContinuationMode,
-    request_continuation,
+from emoji_bench.eval.matrix import (
+    default_eval_output_dir as _default_output_dir,
 )
-from emoji_bench.jsonl_io import append_jsonl, load_jsonl_records
+from emoji_bench.eval.paths import (
+    build_eval_artifact_paths,
+    load_dotenv as _load_dotenv,
+    resolve_dataset_split_path as _resolve_input_path,
+)
+from emoji_bench.eval.runner import EvaluationRunOptions, run_evaluation
+from emoji_bench.jsonl_io import load_jsonl_records
 from emoji_bench.model_registry import (
     REASONING_EFFORT_CHOICES,
     apply_reasoning_effort_override,
@@ -40,89 +41,8 @@ from emoji_bench.model_registry import (
     list_model_configs,
     model_choices,
 )
-from emoji_bench.provider_clients import make_client, resolve_api_key
-
-
-_REQUIRED_RECORD_FIELDS: tuple[str, ...] = (
-    "example_id",
-    "turn_1_user",
-    "turn_1_assistant_prefill",
-    "ground_truth_final_output",
-    "wrong_branch_final_output",
-    "chain_length_x",
-    "prefill_error_step",
-    "difficulty",
-    "error_type",
-)
-
-
-def _load_dotenv(path: Path) -> None:
-    if not path.exists():
-        return
-    for raw_line in path.read_text(encoding="utf-8").splitlines():
-        line = raw_line.strip()
-        if not line or line.startswith("#") or "=" not in line:
-            continue
-        key, value = line.split("=", 1)
-        key = key.strip()
-        value = value.strip()
-        if not key or key in os.environ:
-            continue
-        if value and value[0] == value[-1] and value[0] in {"'", '"'}:
-            value = value[1:-1]
-        os.environ[key] = value
-
-
-def _resolve_input_path(raw_path: str) -> Path:
-    path = Path(raw_path)
-    if path.is_dir():
-        path = path / "test.jsonl"
-    return path
-
-
-def _matrix_variant(mode: ContinuationMode) -> str:
-    if mode == "prefill":
-        return "B"
-    if mode == "single_turn":
-        return "C"
-    raise ValueError(f"Unsupported continuation mode: {mode}")
-
-
-def _matrix_cell(mode: ContinuationMode, turn_2_level: int) -> str:
-    return f"{_matrix_variant(mode)}-L{turn_2_level}"
-
-
-def _model_output_slug(model_key: str, reasoning_effort: str | None) -> str:
-    slug = model_key.replace("/", "-")
-    if reasoning_effort is None:
-        return slug
-    return f"{slug}-reasoning-{reasoning_effort}"
-
-
-def _default_output_dir(
-    model_key: str,
-    mode: ContinuationMode,
-    *,
-    reasoning_effort: str | None = None,
-    turn_2_level: int = 0,
-) -> Path:
-    slug = _model_output_slug(model_key, reasoning_effort)
-    return Path("artifacts") / "evals" / f"{slug}-{_matrix_cell(mode, turn_2_level)}"
-
-
-def _load_existing(path: Path) -> tuple[set[str], list[dict[str, Any]]]:
-    if not path.exists():
-        return set(), []
-    records = load_jsonl_records(path)
-    return {row["example_id"] for row in records}, records
-
-
-def _validate_record(record: dict[str, Any]) -> None:
-    missing = [field for field in _REQUIRED_RECORD_FIELDS if field not in record]
-    if missing:
-        raise ValueError(
-            f"continuation record {record.get('example_id')!r} missing fields: {missing}"
-        )
+from emoji_bench.providers.clients import make_client, resolve_api_key
+from emoji_bench.providers.continuation import request_continuation
 
 
 def main() -> None:
@@ -280,136 +200,28 @@ def main() -> None:
             turn_2_level=turn_2_level,
         )
     )
-    output_dir.mkdir(parents=True, exist_ok=True)
-    predictions_path = output_dir / "predictions.jsonl"
-    summary_path = output_dir / "summary.json"
-
-    if args.no_resume and predictions_path.exists():
-        predictions_path.unlink()
-    seen, _ = _load_existing(predictions_path)
+    artifact_paths = build_eval_artifact_paths(output_dir)
 
     client = make_client(model_config.provider, api_key=api_key)
-    n_done = len(seen)
-    n_total = len(records)
-
-    pending = [r for r in records if r["example_id"] not in seen]
-    for record in pending:
-        _validate_record(record)
-
-    write_lock = threading.Lock()
-    state_lock = threading.Lock()
-    progress_counter = [n_done]  # box so closure can mutate
-
-    def process_one(record: dict[str, Any]) -> None:
-        last_error: Exception | None = None
-        for attempt in range(1, args.max_retries + 1):
-            try:
-                started = time.perf_counter()
-                response = request_continuation(
-                    client=client,
-                    model_config=model_config,
-                    turn_1_user=record["turn_1_user"],
-                    turn_1_assistant_prefill=record["turn_1_assistant_prefill"],
-                    turn_2_user=turn_2_user_override,
-                    max_output_tokens=max_output_tokens,
-                    mode=args.mode,
-                )
-                latency = time.perf_counter() - started
-                row: dict[str, Any] = {
-                    "example_id": record["example_id"],
-                    "base_id": record.get("base_id"),
-                    "difficulty": record["difficulty"],
-                    "error_type": record["error_type"],
-                    "ground_truth_final_output": record["ground_truth_final_output"],
-                    "wrong_branch_final_output": record["wrong_branch_final_output"],
-                    "chain_length_x": record["chain_length_x"],
-                    "prefill_error_step": record["prefill_error_step"],
-                    "raw_continuation_text": response.raw_continuation_text,
-                    "mode": response.mode,
-                    "turn_2_user_sent": turn_2_user_override,
-                    "turn_2_level": turn_2_level,
-                    "response_id": response.response_id,
-                    "request_latency_seconds": latency,
-                    "model": model_config.key,
-                    "provider": model_config.provider,
-                    "api_model": model_config.api_model,
-                }
-                usage = response.usage
-                row["input_tokens"] = None if usage is None else usage.input_tokens
-                row["output_tokens"] = None if usage is None else usage.output_tokens
-                row["reasoning_tokens"] = None if usage is None else usage.reasoning_tokens
-                row["total_tokens"] = None if usage is None else usage.total_tokens
-                with write_lock:
-                    append_jsonl(predictions_path, row)
-                with state_lock:
-                    seen.add(record["example_id"])
-                    progress_counter[0] += 1
-                    done_now = progress_counter[0]
-                print(
-                    f"[{done_now}/{n_total}] {record['example_id']} "
-                    f"({response.mode}, len={len(response.raw_continuation_text)})"
-                )
-                if args.request_delay_seconds > 0:
-                    time.sleep(args.request_delay_seconds)
-                return
-            except Exception as exc:
-                last_error = exc
-                if attempt == args.max_retries:
-                    raise
-                time.sleep(args.retry_delay_seconds)
-        if last_error is not None and record["example_id"] not in seen:
-            raise last_error
-
-    if args.max_concurrent <= 1:
-        for record in pending:
-            process_one(record)
-    else:
-        # ThreadPoolExecutor so the I/O-bound HTTP calls can overlap. The
-        # OpenAI SDK's client is thread-safe for concurrent requests.
-        with ThreadPoolExecutor(max_workers=args.max_concurrent) as pool:
-            futures = {pool.submit(process_one, r): r for r in pending}
-            for fut in as_completed(futures):
-                # Re-raise the first failure so we don't silently swallow
-                # provider errors when running many concurrent calls.
-                fut.result()
-
-    n_done = progress_counter[0]
-    summary = {
-        "model": model_config.key,
-        "provider": model_config.provider,
-        "api_model": model_config.api_model,
-        "mode": args.mode,
-        "matrix_variant": _matrix_variant(args.mode),
-        "matrix_cell": _matrix_cell(args.mode, turn_2_level),
-        "reasoning_effort_requested": args.reasoning_effort,
-        "openai_reasoning_effort": (
-            None if model_config.openai_reasoning is None else model_config.openai_reasoning.effort
+    summary = run_evaluation(
+        client=client,
+        model_config=model_config,
+        input_path=input_path,
+        records=records,
+        output_paths=artifact_paths,
+        options=EvaluationRunOptions(
+            mode=args.mode,
+            turn_2_user=turn_2_user_override,
+            turn_2_level=turn_2_level,
+            max_output_tokens=max_output_tokens,
+            max_concurrent=args.max_concurrent,
+            max_retries=args.max_retries,
+            retry_delay_seconds=args.retry_delay_seconds,
+            request_delay_seconds=args.request_delay_seconds,
+            no_resume=args.no_resume,
+            reasoning_effort_requested=args.reasoning_effort,
         ),
-        "anthropic_thinking_enabled": (
-            None
-            if model_config.anthropic_thinking is None
-            else model_config.anthropic_thinking.enabled
-        ),
-        "anthropic_thinking_budget_tokens": (
-            None
-            if model_config.anthropic_thinking is None
-            else model_config.anthropic_thinking.budget_tokens
-        ),
-        "anthropic_effort": model_config.anthropic_effort,
-        "gemini_thinking_level": (
-            None if model_config.gemini_thinking is None else model_config.gemini_thinking.level
-        ),
-        "turn_2_level": turn_2_level,
-        "turn_2_user_sent": turn_2_user_override,
-        "input_path": str(input_path.resolve()),
-        "output_dir": str(output_dir.resolve()),
-        "predictions_path": str(predictions_path.resolve()),
-        "total_examples": n_total,
-        "completed_examples": n_done,
-    }
-    summary_path.write_text(
-        json.dumps(summary, ensure_ascii=False, indent=2) + "\n",
-        encoding="utf-8",
+        request_continuation_fn=request_continuation,
     )
     print(json.dumps(summary, ensure_ascii=False, indent=2))
 

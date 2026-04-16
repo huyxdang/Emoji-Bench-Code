@@ -35,69 +35,24 @@ from typing import Any
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from emoji_bench.continuation_judge import judge_continuation
-from emoji_bench.judge_artifacts import (
+from emoji_bench.judge.artifacts import (
     build_prediction_fingerprint_map,
     load_validated_judge_rows,
 )
+from emoji_bench.judge.continuation_judge import judge_continuation
 from emoji_bench.jsonl_io import append_jsonl, load_jsonl_records
 from emoji_bench.model_registry import (
     get_model_config,
     list_model_configs,
     model_choices,
 )
-from emoji_bench.provider_clients import make_client, resolve_api_key
-
-
-def _load_dotenv(path: Path) -> None:
-    if not path.exists():
-        return
-    for raw_line in path.read_text(encoding="utf-8").splitlines():
-        line = raw_line.strip()
-        if not line or line.startswith("#") or "=" not in line:
-            continue
-        key, value = line.split("=", 1)
-        key = key.strip()
-        value = value.strip()
-        if not key or key in os.environ:
-            continue
-        if value and value[0] == value[-1] and value[0] in {"'", '"'}:
-            value = value[1:-1]
-        os.environ[key] = value
-
-
-def _resolve_predictions_path(raw: str) -> Path:
-    p = Path(raw)
-    if p.is_dir():
-        p = p / "predictions.jsonl"
-    return p
-
-
-def _resolve_dataset_path(
-    *,
-    explicit: str | None,
-    summary_path: Path,
-) -> Path:
-    """Find the source dataset file. Explicit > summary.json > error."""
-    if explicit is not None:
-        p = Path(explicit)
-        if p.is_dir():
-            p = p / "test.jsonl"
-        return p
-    if summary_path.exists():
-        summary = json.loads(summary_path.read_text(encoding="utf-8"))
-        input_path = summary.get("input_path")
-        if input_path:
-            p = Path(input_path)
-            if p.is_dir():
-                p = p / "test.jsonl"
-            if p.exists():
-                return p
-    raise FileNotFoundError(
-        "Could not locate the source dataset. Pass --dataset-path explicitly "
-        "or ensure summary.json exists alongside predictions.jsonl with a "
-        "valid 'input_path' field."
-    )
+from emoji_bench.eval.paths import (
+    build_judge_artifact_paths,
+    load_dotenv as _load_dotenv,
+    resolve_dataset_path,
+    resolve_predictions_path as _resolve_predictions_path,
+)
+from emoji_bench.providers.clients import make_client, resolve_api_key
 
 
 def main() -> None:
@@ -190,13 +145,17 @@ def main() -> None:
     predictions_path = _resolve_predictions_path(args.predictions_path)
     if not predictions_path.exists():
         parser.error(f"predictions file not found: {predictions_path}")
-    output_dir = predictions_path.parent
-    summary_path = output_dir / "summary.json"
-    judge_path = output_dir / "judge.jsonl"
-    dataset_path = _resolve_dataset_path(
+    artifact_paths = build_judge_artifact_paths(predictions_path)
+    dataset_path = resolve_dataset_path(
         explicit=args.dataset_path,
-        summary_path=summary_path,
+        summary_path=artifact_paths.summary_path,
     )
+    if dataset_path is None:
+        raise FileNotFoundError(
+            "Could not locate the source dataset. Pass --dataset-path explicitly "
+            "or ensure summary.json exists alongside predictions.jsonl with a "
+            "valid 'input_path' field."
+        )
 
     judge_model_config = get_model_config(args.judge_model)
     if judge_model_config.provider != "openai":
@@ -216,14 +175,14 @@ def main() -> None:
     prediction_fingerprints = build_prediction_fingerprint_map(predictions)
     dataset_rows = {row["example_id"]: row for row in load_jsonl_records(dataset_path)}
 
-    if args.no_resume and judge_path.exists():
-        judge_path.unlink()
+    if args.no_resume and artifact_paths.judge_path.exists():
+        artifact_paths.judge_path.unlink()
     existing_judgments = (
         load_validated_judge_rows(
-            judge_path,
+            artifact_paths.judge_path,
             expected_fingerprints=prediction_fingerprints,
         )
-        if judge_path.exists()
+        if artifact_paths.judge_path.exists()
         else {}
     )
     judged = set(existing_judgments)
@@ -240,7 +199,7 @@ def main() -> None:
                 "judge_model": judge_model_config.key,
                 "predictions_path": str(predictions_path.resolve()),
                 "dataset_path": str(dataset_path.resolve()),
-                "judge_path": str(judge_path.resolve()),
+                "judge_path": str(artifact_paths.judge_path.resolve()),
                 "already_judged": len(judged),
                 "pending": len(pending),
                 "total": n_total,
@@ -286,7 +245,7 @@ def main() -> None:
                     "request_latency_seconds": latency,
                 }
                 with write_lock:
-                    append_jsonl(judge_path, row)
+                    append_jsonl(artifact_paths.judge_path, row)
                 with state_lock:
                     judged.add(eid)
                     progress_counter[0] += 1

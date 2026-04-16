@@ -31,7 +31,7 @@ PYTHON_BIN="${PYTHON_BIN:-python}"
 JUDGE_MODEL="${JUDGE_MODEL:-gpt-5.4-mini-no-reasoning}"
 JUDGE_MAX_CONCURRENT="${JUDGE_MAX_CONCURRENT:-8}"
 
-EXTRA_ARGS=()
+declare -a EXTRA_ARGS=()
 if [[ $# -ge 2 ]]; then
   if [[ "$2" == "--" ]]; then
     EXTRA_ARGS=("${@:3}")
@@ -40,12 +40,14 @@ if [[ $# -ge 2 ]]; then
   fi
 fi
 
-for arg in "${EXTRA_ARGS[@]}"; do
-  if [[ "$arg" == "--output-dir" ]]; then
-    echo "run.sh does not support forwarding --output-dir because it breaks per-cell judge/score routing." >&2
-    exit 2
-  fi
-done
+if (( ${#EXTRA_ARGS[@]} > 0 )); then
+  for arg in "${EXTRA_ARGS[@]}"; do
+    if [[ "$arg" == "--output-dir" ]]; then
+      echo "run.sh does not support forwarding --output-dir because it breaks per-cell judge/score routing." >&2
+      exit 2
+    fi
+  done
+fi
 
 MODELS=(
   "claude-opus-4-6-reasoning-high"
@@ -84,11 +86,18 @@ for model in "${MODELS[@]}"; do
     for level in "${LEVELS[@]}"; do
       RUN_INDEX=$((RUN_INDEX + 1))
       echo "[$RUN_INDEX/$TOTAL_RUNS] model=$model mode=$mode turn_2_level=$level"
-      if "$PYTHON_BIN" scripts/evaluate_continuation.py "$DATASET" \
-        --model "$model" \
-        --mode "$mode" \
-        --turn-2-prompt-level "$level" \
-        "${EXTRA_ARGS[@]}"; then
+      EVAL_CMD=(
+        "$PYTHON_BIN"
+        scripts/evaluate_continuation.py
+        "$DATASET"
+        --model "$model"
+        --mode "$mode"
+        --turn-2-prompt-level "$level"
+      )
+      if (( ${#EXTRA_ARGS[@]} > 0 )); then
+        EVAL_CMD+=("${EXTRA_ARGS[@]}")
+      fi
+      if "${EVAL_CMD[@]}"; then
         SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
         SUCCESSFUL_OUTPUT_DIRS+=("artifacts/evals/${model}-$(matrix_variant "$mode")-L${level}")
       else

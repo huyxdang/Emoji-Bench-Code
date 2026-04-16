@@ -13,15 +13,7 @@ if __package__ in {None, ""}:
 
 from emoji_bench.continuation_formatter import get_turn_2_prompt
 from emoji_bench.jsonl_io import load_jsonl_records
-
-
-def _resolve_input_path(raw_path: str | Path, *, split: str) -> Path:
-    path = Path(raw_path)
-    if path.is_dir():
-        path = path / f"{split}.jsonl"
-    if not path.exists():
-        raise FileNotFoundError(f"Dataset split not found: {path}")
-    return path
+from emoji_bench.pipeline_paths import resolve_dataset_split_path as _resolve_input_path
 
 
 def _load_manifest(dataset_path: Path) -> dict[str, Any] | None:
@@ -152,6 +144,8 @@ def main() -> None:
     args = parser.parse_args()
 
     input_path = _resolve_input_path(args.input_path, split=args.split)
+    if not input_path.exists():
+        raise FileNotFoundError(f"Dataset split not found: {input_path}")
     records = load_jsonl_records(input_path)
     selected = _select_records(
         records,
