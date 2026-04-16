@@ -92,6 +92,17 @@ MODEL_CONFIGS: dict[str, ModelConfig] = {
         openai_reasoning=OpenAIReasoningConfig(effort="medium"),
         notes="Configured to use medium reasoning effort for evaluation runs.",
     ),
+    "gpt-5.4-mini-no-reasoning": ModelConfig(
+        key="gpt-5.4-mini-no-reasoning",
+        label="GPT-5.4 mini (no reasoning)",
+        provider="openai",
+        api_model="gpt-5.4-mini",
+        docs_url="https://developers.openai.com/api/docs/models/gpt-5.4-mini",
+        api_key_env_var="OPENAI_API_KEY",
+        default_max_output_tokens=DEFAULT_MAX_OUTPUT_TOKENS,
+        openai_reasoning=OpenAIReasoningConfig(effort="none"),
+        notes="Pinned alias for GPT-5.4 mini with reasoning.effort='none'.",
+    ),
     "gpt-5.4-reasoning-xhigh": ModelConfig(
         key="gpt-5.4-reasoning-xhigh",
         label="GPT-5.4 (reasoning xhigh)",

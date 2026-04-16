@@ -244,3 +244,8 @@ Useful contribution areas:
 ## License
 
 MIT. See `LICENSE`.
+
+## Run all models 
+`
+./run.sh artifacts/emoji-bench-dataset-100 -- --max-concurrent 8
+`

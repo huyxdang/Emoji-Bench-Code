@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import json
+import random
 import ssl
+import time
 from dataclasses import dataclass
 from typing import Any
 from urllib import error as urllib_error
@@ -12,6 +14,49 @@ from emoji_bench.model_registry import ModelConfig, ProviderName
 
 GEMINI_API_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models"
 MISTRAL_API_URL = "https://api.mistral.ai/v1/chat/completions"
+
+_MAX_RETRIES = 6
+_BASE_BACKOFF_SECONDS = 2.0
+_MAX_BACKOFF_SECONDS = 60.0
+
+
+def _retryable_urlopen(request: urllib_request.Request, *, label: str) -> dict[str, Any]:
+    attempt = 0
+    while True:
+        try:
+            with urllib_request.urlopen(request, context=_api_ssl_context()) as response:
+                return json.loads(response.read().decode("utf-8"))
+        except urllib_error.HTTPError as exc:
+            is_retryable = exc.code == 429 or 500 <= exc.code < 600
+            if not is_retryable or attempt >= _MAX_RETRIES:
+                body = exc.read().decode("utf-8", errors="replace").strip()
+                message = f"{label} API request failed with status {exc.code}"
+                if body:
+                    message += f": {body}"
+                raise RuntimeError(message) from exc
+            retry_after = exc.headers.get("Retry-After") if exc.headers else None
+            delay = _parse_retry_after(retry_after)
+            if delay is None:
+                delay = min(_BASE_BACKOFF_SECONDS * (2 ** attempt), _MAX_BACKOFF_SECONDS)
+                delay += random.uniform(0, delay * 0.25)
+            time.sleep(delay)
+            attempt += 1
+        except urllib_error.URLError as exc:
+            if attempt >= _MAX_RETRIES:
+                raise RuntimeError(f"{label} API request failed: {exc}") from exc
+            delay = min(_BASE_BACKOFF_SECONDS * (2 ** attempt), _MAX_BACKOFF_SECONDS)
+            delay += random.uniform(0, delay * 0.25)
+            time.sleep(delay)
+            attempt += 1
+
+
+def _parse_retry_after(value: str | None) -> float | None:
+    if not value:
+        return None
+    try:
+        return max(0.0, float(value))
+    except ValueError:
+        return None
 
 
 @dataclass(frozen=True)
@@ -37,15 +82,7 @@ class _MistralClient:
             },
             method="POST",
         )
-        try:
-            with urllib_request.urlopen(request, context=_api_ssl_context()) as response:
-                return json.loads(response.read().decode("utf-8"))
-        except urllib_error.HTTPError as exc:
-            body = exc.read().decode("utf-8", errors="replace").strip()
-            message = f"Mistral API request failed with status {exc.code}"
-            if body:
-                message += f": {body}"
-            raise RuntimeError(message) from exc
+        return _retryable_urlopen(request, label="Mistral")
 
 
 @dataclass(frozen=True)
@@ -63,15 +100,7 @@ class _GeminiClient:
             },
             method="POST",
         )
-        try:
-            with urllib_request.urlopen(request, context=_api_ssl_context()) as response:
-                return json.loads(response.read().decode("utf-8"))
-        except urllib_error.HTTPError as exc:
-            body = exc.read().decode("utf-8", errors="replace").strip()
-            message = f"Gemini API request failed with status {exc.code}"
-            if body:
-                message += f": {body}"
-            raise RuntimeError(message) from exc
+        return _retryable_urlopen(request, label="Gemini")
 
 
 def _api_ssl_context() -> ssl.SSLContext:

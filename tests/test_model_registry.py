@@ -23,6 +23,7 @@ def test_requested_model_configs_are_present():
         "gemini-3.1-pro-preview",
         "gpt-5.4-reasoning-xhigh",
         "gpt-5.4",
+        "gpt-5.4-mini-no-reasoning",
         "gpt-5.4-mini-reasoning-xhigh",
         "gpt-5.4-mini",
         "gpt-5.4-nano",
@@ -49,6 +50,14 @@ def test_pinned_openai_reasoning_xhigh_aliases_are_present():
         assert config.provider == "openai"
         assert config.openai_reasoning is not None
         assert config.openai_reasoning.effort == "xhigh"
+
+
+def test_gpt54_mini_no_reasoning_alias_is_present():
+    config = get_model_config("gpt-5.4-mini-no-reasoning")
+    assert config.provider == "openai"
+    assert config.api_model == "gpt-5.4-mini"
+    assert config.openai_reasoning is not None
+    assert config.openai_reasoning.effort == "none"
 
 
 def test_claude_sonnet_46_models_default_to_high_anthropic_effort():
