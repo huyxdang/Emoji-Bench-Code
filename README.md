@@ -2,7 +2,7 @@
   <img src="public/emoji-bench.png" alt="Emoji-Bench" width="100%" />
 </p>
 
-# Emoji-Bench
+# Emoji-Bench: LLMs Don't Look Back. 
 
 Emoji-Bench is a benchmark for **unprompted self-detection** during derivation continuation in novel formal systems.
 
@@ -149,6 +149,30 @@ change predictions in place, rerun `judge_continuation.py --no-resume`.
 `score_continuation.py` rejects stale, duplicate, or partial `judge.jsonl`
 files instead of silently scoring a subset.
 
+### Run the Full Matrix
+
+```bash
+./run.sh artifacts/emoji-bench-dataset-100 -- --max-concurrent 8
+```
+
+`run.sh` is the repo-level batch runner. It:
+
+- runs the full 32-cell model matrix
+- resumes partially completed eval directories
+- runs judge and score after the eval phase finishes
+- continues past failed cells and prints a final failure summary
+
+Defaults:
+
+- judge model: `gpt-5.4-mini-no-reasoning`
+- judge concurrency: `8`
+
+Example override:
+
+```bash
+JUDGE_MAX_CONCURRENT=4 ./run.sh artifacts/emoji-bench-dataset-100 -- --max-concurrent 8
+```
+
 ## Metrics
 
 Headline reporting uses three nested rates:
@@ -197,19 +221,16 @@ The Turn 2 user prompt is applied at evaluation time, not stored in dataset rows
 
 ## Repo Map
 
-Core modules in `emoji_bench/`:
+The codebase is organized by responsibility:
 
-- `generator.py`, `chain_generator.py`, `expressions.py`, `interpreter.py`: formal-system and derivation generation
-- `error_injector.py`: cascading wrong-result injection
-- `continuation_benchmark.py`: single continuation instance generator and serializer
-- `continuation_formatter.py`: Turn 1, prefill, and single-turn prompt formatting
-- `continuation_dataset.py`: dataset generation and rejection accounting
-- `dataset_io.py`, `jsonl_io.py`, `provider_clients.py`: shared I/O and provider helpers
-- `continuation_provider.py`: raw continuation requests across OpenAI, Anthropic, Gemini, and Mistral
-- `continuation_judge.py`: judge prompt and deterministic regeneration of the bad-step values
-- `continuation_validator.py`: parser and deterministic derivation validator
-- `continuation_scorer.py`: regex baseline plus nested metric aggregation
-- `model_registry.py`: configured model definitions
+- `emoji_bench/domain/`: formal-system generation, derivation chains, expression types, interpretation, and deterministic validation
+- `emoji_bench/dataset/`: continuation-instance generation, cascading error injection, dataset serialization, and manifest helpers
+- `emoji_bench/eval/`: matrix naming (`B/C`, `L0/L1`), artifact path resolution, and the shared evaluation runner
+- `emoji_bench/providers/`: provider clients plus OpenAI, Anthropic, Gemini, and Mistral continuation transport
+- `emoji_bench/judge/`: judge artifact validation, LLM-as-a-judge prompting, and score aggregation
+- `emoji_bench/continuation_formatter.py`: Turn 1, prefill, and single-turn prompt formatting
+- `emoji_bench/model_registry.py`: configured model aliases and provider-specific defaults
+- `emoji_bench/jsonl_io.py`: shared JSONL helpers
 
 CLI scripts in `scripts/`:
 
@@ -218,6 +239,11 @@ CLI scripts in `scripts/`:
 - `judge_continuation.py`
 - `score_continuation.py`
 - `preview_dataset.py`
+- `plot_b_results.py`
+
+Repo-level helpers:
+
+- `run.sh`: full-matrix eval -> judge -> score batch runner
 
 ## Kaggle-Compatible Shapes
 
@@ -230,7 +256,7 @@ The benchmark is intentionally a 2x2 matrix:
 
 ## Artifacts
 
-`artifacts/` contains generated datasets and evaluation results used by the repo. New runs still write there by default.
+`artifacts/` contains the canonical in-repo dataset plus generated evaluation results and plots. New runs still write there by default.
 
 ## Contributing
 
@@ -244,8 +270,3 @@ Useful contribution areas:
 ## License
 
 MIT. See `LICENSE`.
-
-## Run all models 
-`
-./run.sh artifacts/emoji-bench-dataset-100 -- --max-concurrent 8
-`
