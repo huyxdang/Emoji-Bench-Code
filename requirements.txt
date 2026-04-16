@@ -8,5 +8,8 @@ huggingface_hub>=0.23
 # Optional: fallback SSL CA bundle used by provider_clients._api_ssl_context.
 certifi
 
+# Plotting (scripts/plot_b_results.py)
+matplotlib
+
 # Development / tests
 pytest

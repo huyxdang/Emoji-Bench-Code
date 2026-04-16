@@ -1,0 +1,99 @@
+{
+  "predictions_path": "/Users/huydang/Desktop/Emoji-Bench/artifacts/evals/gpt-5.4-reasoning-xhigh-C-L1/predictions.jsonl",
+  "scores_path": "/Users/huydang/Desktop/Emoji-Bench/artifacts/evals/gpt-5.4-reasoning-xhigh-C-L1/scores.jsonl",
+  "headline": {
+    "total": 100,
+    "detect_rate": 0.18,
+    "detect_correct_rate": 0.16,
+    "detect_correct_finaloutput_correct_rate": 0.14,
+    "by_difficulty": {
+      "easy": {
+        "total": 25,
+        "detect_rate": 0.36,
+        "detect_correct_rate": 0.32,
+        "detect_correct_finaloutput_correct_rate": 0.32
+      },
+      "medium": {
+        "total": 25,
+        "detect_rate": 0.12,
+        "detect_correct_rate": 0.08,
+        "detect_correct_finaloutput_correct_rate": 0.08
+      },
+      "hard": {
+        "total": 25,
+        "detect_rate": 0.24,
+        "detect_correct_rate": 0.24,
+        "detect_correct_finaloutput_correct_rate": 0.16
+      },
+      "expert": {
+        "total": 25,
+        "detect_rate": 0.0,
+        "detect_correct_rate": 0.0,
+        "detect_correct_finaloutput_correct_rate": 0.0
+      }
+    }
+  },
+  "headline_kind": "judge_plus_validator",
+  "nested_scores_path": "/Users/huydang/Desktop/Emoji-Bench/artifacts/evals/gpt-5.4-reasoning-xhigh-C-L1/nested_scores.jsonl",
+  "judge_path": "/Users/huydang/Desktop/Emoji-Bench/artifacts/evals/gpt-5.4-reasoning-xhigh-C-L1/judge.jsonl",
+  "judged_count": 100,
+  "judged_coverage": 1.0,
+  "validator_status": "ok",
+  "dataset_path": "/Users/huydang/Desktop/Emoji-Bench/artifacts/emoji-bench-dataset-100/test.jsonl",
+  "regex_baseline": {
+    "total": 100,
+    "outcome_buckets": {
+      "detect_recover": 18,
+      "silent_recovery": 1,
+      "detect_only": 0,
+      "blind_wrong_branch": 11,
+      "off_rails": 0,
+      "extraction_failed": 70
+    },
+    "rates": {
+      "self_detection_loose": 0.18,
+      "self_detection_strict": 0.18,
+      "final_answer_recovery": 0.19,
+      "blind_cascade": 0.11,
+      "extraction_ok": 0.3
+    },
+    "by_difficulty": {
+      "easy": {
+        "detect_recover": 9,
+        "silent_recovery": 1,
+        "detect_only": 0,
+        "blind_wrong_branch": 3,
+        "off_rails": 0,
+        "extraction_failed": 12,
+        "_total": 25
+      },
+      "medium": {
+        "detect_recover": 3,
+        "silent_recovery": 0,
+        "detect_only": 0,
+        "blind_wrong_branch": 2,
+        "off_rails": 0,
+        "extraction_failed": 20,
+        "_total": 25
+      },
+      "hard": {
+        "detect_recover": 6,
+        "silent_recovery": 0,
+        "detect_only": 0,
+        "blind_wrong_branch": 5,
+        "off_rails": 0,
+        "extraction_failed": 14,
+        "_total": 25
+      },
+      "expert": {
+        "detect_recover": 0,
+        "silent_recovery": 0,
+        "detect_only": 0,
+        "blind_wrong_branch": 1,
+        "off_rails": 0,
+        "extraction_failed": 24,
+        "_total": 25
+      }
+    }
+  }
+}

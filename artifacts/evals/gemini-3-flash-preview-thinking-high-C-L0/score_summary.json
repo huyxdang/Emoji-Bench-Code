@@ -1,0 +1,99 @@
+{
+  "predictions_path": "/Users/huydang/Desktop/Emoji-Bench/artifacts/evals/gemini-3-flash-preview-thinking-high-C-L0/predictions.jsonl",
+  "scores_path": "/Users/huydang/Desktop/Emoji-Bench/artifacts/evals/gemini-3-flash-preview-thinking-high-C-L0/scores.jsonl",
+  "headline": {
+    "total": 100,
+    "detect_rate": 0.13,
+    "detect_correct_rate": 0.01,
+    "detect_correct_finaloutput_correct_rate": 0.0,
+    "by_difficulty": {
+      "easy": {
+        "total": 25,
+        "detect_rate": 0.16,
+        "detect_correct_rate": 0.0,
+        "detect_correct_finaloutput_correct_rate": 0.0
+      },
+      "medium": {
+        "total": 25,
+        "detect_rate": 0.16,
+        "detect_correct_rate": 0.04,
+        "detect_correct_finaloutput_correct_rate": 0.0
+      },
+      "hard": {
+        "total": 25,
+        "detect_rate": 0.12,
+        "detect_correct_rate": 0.0,
+        "detect_correct_finaloutput_correct_rate": 0.0
+      },
+      "expert": {
+        "total": 25,
+        "detect_rate": 0.08,
+        "detect_correct_rate": 0.0,
+        "detect_correct_finaloutput_correct_rate": 0.0
+      }
+    }
+  },
+  "headline_kind": "judge_plus_validator",
+  "nested_scores_path": "/Users/huydang/Desktop/Emoji-Bench/artifacts/evals/gemini-3-flash-preview-thinking-high-C-L0/nested_scores.jsonl",
+  "judge_path": "/Users/huydang/Desktop/Emoji-Bench/artifacts/evals/gemini-3-flash-preview-thinking-high-C-L0/judge.jsonl",
+  "judged_count": 100,
+  "judged_coverage": 1.0,
+  "validator_status": "ok",
+  "dataset_path": "/Users/huydang/Desktop/Emoji-Bench/artifacts/emoji-bench-dataset-100/test.jsonl",
+  "regex_baseline": {
+    "total": 100,
+    "outcome_buckets": {
+      "detect_recover": 0,
+      "silent_recovery": 1,
+      "detect_only": 1,
+      "blind_wrong_branch": 24,
+      "off_rails": 0,
+      "extraction_failed": 74
+    },
+    "rates": {
+      "self_detection_loose": 0.13,
+      "self_detection_strict": 0.03,
+      "final_answer_recovery": 0.01,
+      "blind_cascade": 0.25,
+      "extraction_ok": 0.26
+    },
+    "by_difficulty": {
+      "easy": {
+        "detect_recover": 0,
+        "silent_recovery": 1,
+        "detect_only": 0,
+        "blind_wrong_branch": 20,
+        "off_rails": 0,
+        "extraction_failed": 4,
+        "_total": 25
+      },
+      "medium": {
+        "detect_recover": 0,
+        "silent_recovery": 0,
+        "detect_only": 1,
+        "blind_wrong_branch": 4,
+        "off_rails": 0,
+        "extraction_failed": 20,
+        "_total": 25
+      },
+      "hard": {
+        "detect_recover": 0,
+        "silent_recovery": 0,
+        "detect_only": 0,
+        "blind_wrong_branch": 0,
+        "off_rails": 0,
+        "extraction_failed": 25,
+        "_total": 25
+      },
+      "expert": {
+        "detect_recover": 0,
+        "silent_recovery": 0,
+        "detect_only": 0,
+        "blind_wrong_branch": 0,
+        "off_rails": 0,
+        "extraction_failed": 25,
+        "_total": 25
+      }
+    }
+  }
+}

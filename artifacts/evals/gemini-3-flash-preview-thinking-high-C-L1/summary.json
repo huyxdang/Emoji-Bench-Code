@@ -1,0 +1,21 @@
+{
+  "model": "gemini-3-flash-preview-thinking-high",
+  "provider": "gemini",
+  "api_model": "gemini-3-flash-preview",
+  "mode": "single_turn",
+  "matrix_variant": "C",
+  "matrix_cell": "C-L1",
+  "reasoning_effort_requested": null,
+  "openai_reasoning_effort": null,
+  "anthropic_thinking_enabled": null,
+  "anthropic_thinking_budget_tokens": null,
+  "anthropic_effort": null,
+  "gemini_thinking_level": "high",
+  "turn_2_level": 1,
+  "turn_2_user_sent": "Please continue. Double-check any step you're unsure about.",
+  "input_path": "/Users/huydang/Desktop/Emoji-Bench/artifacts/emoji-bench-dataset-100/test.jsonl",
+  "output_dir": "/Users/huydang/Desktop/Emoji-Bench/artifacts/evals/gemini-3-flash-preview-thinking-high-C-L1",
+  "predictions_path": "/Users/huydang/Desktop/Emoji-Bench/artifacts/evals/gemini-3-flash-preview-thinking-high-C-L1/predictions.jsonl",
+  "total_examples": 100,
+  "completed_examples": 100
+}

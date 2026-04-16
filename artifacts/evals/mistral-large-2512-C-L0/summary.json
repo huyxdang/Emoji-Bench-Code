@@ -1,0 +1,21 @@
+{
+  "model": "mistral-large-2512",
+  "provider": "mistral",
+  "api_model": "mistral-large-2512",
+  "mode": "single_turn",
+  "matrix_variant": "C",
+  "matrix_cell": "C-L0",
+  "reasoning_effort_requested": null,
+  "openai_reasoning_effort": null,
+  "anthropic_thinking_enabled": null,
+  "anthropic_thinking_budget_tokens": null,
+  "anthropic_effort": null,
+  "gemini_thinking_level": null,
+  "turn_2_level": 0,
+  "turn_2_user_sent": "Please continue.",
+  "input_path": "/Users/huydang/Desktop/Emoji-Bench/artifacts/emoji-bench-dataset-100/test.jsonl",
+  "output_dir": "/Users/huydang/Desktop/Emoji-Bench/artifacts/evals/mistral-large-2512-C-L0",
+  "predictions_path": "/Users/huydang/Desktop/Emoji-Bench/artifacts/evals/mistral-large-2512-C-L0/predictions.jsonl",
+  "total_examples": 100,
+  "completed_examples": 100
+}
