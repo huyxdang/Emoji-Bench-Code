@@ -4,7 +4,8 @@ Produces two PNGs:
   * L0: "Performance when prompted w/out hint"
   * L1: "Performance when prompted with hint"
 
-Each chart puts models on the x-axis with two grouped bars per model:
+Each chart puts models on the x-axis with three grouped bars per model:
+  * "error detection %"                        (detect_rate)
   * "correct error detection %"               (detect_correct_rate)
   * "correct error detection + final output %" (detect_correct_finaloutput_correct_rate)
 """
@@ -27,6 +28,7 @@ LEVELS = {
 }
 
 METRICS = [
+    ("detect_rate", "error detection %"),
     ("detect_correct_rate", "correct error detection %"),
     ("detect_correct_finaloutput_correct_rate", "correct error detection + final output %"),
 ]
@@ -66,11 +68,11 @@ def plot_level(
             value = headline.get(key)
             series[label].append(float(value) * 100 if value is not None else 0.0)
 
-    fig, ax = plt.subplots(figsize=(max(8, 1.6 * len(models) + 2), 6))
-    bar_width = 0.38
+    fig, ax = plt.subplots(figsize=(max(8, 2.0 * len(models) + 2), 6))
+    bar_width = 0.26
     x_positions = range(len(models))
-    offsets = [-bar_width / 2, bar_width / 2]
-    colors = ["#4C78A8", "#F58518"]
+    offsets = [-bar_width, 0, bar_width]
+    colors = ["#72B7B2", "#4C78A8", "#F58518"]
 
     for (label, values), offset, color in zip(series.items(), offsets, colors):
         xs = [x + offset for x in x_positions]
