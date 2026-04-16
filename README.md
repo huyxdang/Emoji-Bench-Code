@@ -245,7 +245,7 @@ Repo-level helpers:
 
 - `run.sh`: full-matrix eval -> judge -> score batch runner
 
-## Kaggle-Compatible Shapes
+## Shapes
 
 The benchmark is intentionally a 2x2 matrix:
 
