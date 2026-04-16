@@ -283,13 +283,6 @@ All three nested rates on the `artifacts/emoji-bench-dataset-100` dataset (N=100
 | gpt-5.4-mini-reasoning-xhigh | 0.00 | 0.00 | 0.00 |
 | magistral-medium-2509 | 0.00 | 0.00 | 0.00 |
 
-### Takeaways
-
-- **The hint (L0 → L1) matters enormously.** Opus jumps 0.28 → 0.60 on B and 0.02 → 0.45 on C. Much of the L0 failure is "missing permission to audit," not inability.
-- **Prefill (B) beats single-turn (C)** for most models. Seeing the bad step in the *assistant* role seems easier to flag than reading the same transcript as user context.
-- **A floor cluster sits at ~0 across the board** (gpt-5.4-mini, magistral-medium, mistral-large). They cascade regardless of hint or delivery mode.
-- **Gemini 3.1 Pro only has B cells** — C runs have not been executed yet.
-
 Full per-difficulty breakdowns are in each cell's `score_summary.json`.
 
 ---
