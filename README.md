@@ -2,48 +2,26 @@
   <img src="public/emoji-bench.png" alt="Emoji-Bench" width="100%" />
 </p>
 
-# Emoji-Bench: LLMs Don't Look Back. 
+# Emoji-Bench: LLMs Don't Look Back
 
 Emoji-Bench is a benchmark for **unprompted self-detection** during derivation continuation in novel formal systems.
 
-The core question is narrow:
+**The question:** if a model is shown a partially completed derivation whose last visible step is wrong, and the only user instruction is to continue, will it notice — or blindly cascade?
 
-**If a model is shown a partially completed derivation whose last visible step is wrong, and the only user instruction is to continue, will it notice or will it blindly cascade?**
+Each row is a 3-turn interaction:
+1. **Turn 1 user:** rules for a procedurally generated formal system, an expression, and a required step format.
+2. **Turn 1 assistant (prefilled):** steps `1..Y`, where step `Y` is a deliberately injected error.
+3. **Turn 2 user:** `Please continue.`
 
-## Benchmark Shape
+The model's continuation is scored against two stored targets — the correct terminal symbol and the terminal reached by blindly cascading from the bad step. These are always different by construction.
 
-Each example is a continuation-only 3-turn interaction:
+---
 
-1. Turn 1 user: rules for a procedurally generated formal system, an expression, and a required step format
-2. Turn 1 assistant prefill: steps `1..Y`, where step `Y` is an injected cascading error
-3. Turn 2 user: `Please continue.` by default
+## Setup
 
-The model then produces the continuation that gets scored.
+**Requirements:** Python `>=3.11` and [`uv`](https://docs.astral.sh/uv/).
 
-Two targets are stored per row:
-
-- `ground_truth_final_output`: the correct final symbol from the clean derivation
-- `wrong_branch_final_output`: the final symbol reached by blindly continuing from the bad state
-
-These are always different by construction.
-
-## Why It Exists
-
-Most self-correction benchmarks explicitly ask the model to inspect for mistakes. That over-cues the behavior. Emoji-Bench is trying to measure the harder failure mode: the model is already mid-task, sees a bad intermediate result, and has to notice without being told to audit.
-
-The benchmark is hard to shortcut because:
-
-- the formal systems are procedurally generated and novel
-- the injected error is non-convergent, so blindly continuing reaches a different terminal symbol
-
-## Quick Start
-
-### Requirements
-
-- Python `>=3.11`
-- [`uv`](https://docs.astral.sh/uv/)
-
-### Install
+Install:
 
 ```bash
 uv pip install -e ".[dev,hf,openai,anthropic]"
@@ -51,18 +29,22 @@ uv pip install -e ".[dev,hf,openai,anthropic]"
 
 Provider API keys:
 
-- `OPENAI_API_KEY`
-- `ANTHROPIC_API_KEY`
-- `GEMINI_API_KEY`
-- `MISTRAL_API_KEY`
+```bash
+export OPENAI_API_KEY=...
+export ANTHROPIC_API_KEY=...
+export GEMINI_API_KEY=...
+export MISTRAL_API_KEY=...
+```
 
-Run tests:
+Run the test suite to confirm everything works:
 
 ```bash
 pytest
 ```
 
-### Generate a Dataset
+---
+
+## Reproduce the dataset
 
 ```bash
 python scripts/generate_continuation_dataset.py \
@@ -70,202 +52,164 @@ python scripts/generate_continuation_dataset.py \
   --output-dir artifacts/emoji-bench-dataset-100
 ```
 
-Generation rejects rows that fail any of:
+This produces:
+
+```
+artifacts/emoji-bench-dataset-100/
+├── test.jsonl      # 100 rows, stratified 25 × {easy, medium, hard, expert}
+├── manifest.json   # seeds, rejection counts, generator commit hash
+└── README.md
+```
+
+Rows are rejected at generation time if they fail any of:
 
 - realized chain length `< 4`
 - insufficient continuation runway after the prefill
 - no midpoint-window cascading slot
-- convergent wrong branch
+- convergent wrong branch (wrong terminal equals ground truth)
 
-Per-difficulty rejection counts are written to `manifest.json`.
+Every row is byte-reproducible from its `system_seed`, `chain_seed`, and `error_seed`.
 
-### Run Inference
+---
+
+## Run the full experiment
+
+The evaluation matrix is **8 models × 2 delivery shapes × 2 prompt strengths = 32 cells**.
+
+```bash
+./run.sh artifacts/emoji-bench-dataset-100 -- --max-concurrent 8
+```
+
+`run.sh` will:
+
+1. Run `evaluate_continuation.py` over all 32 cells (resuming partially completed ones).
+2. Run the LLM-as-judge over each successful prediction set.
+3. Run the deterministic scorer.
+4. Continue past failed cells and print a final failure summary.
+
+Defaults:
+
+- Judge model: `gpt-5.4-mini-no-reasoning`
+- Judge concurrency: `8` (`JUDGE_MAX_CONCURRENT=N` to override)
+
+The four matrix cells per model:
+
+| Cell | Delivery | Turn-2 prompt |
+|---|---|---|
+| **B-L0** | prefill (native 3-message) | `Please continue.` |
+| **B-L1** | prefill | `Please continue. Double-check any step you're unsure about.` |
+| **C-L0** | single-turn flattened transcript | `Please continue.` |
+| **C-L1** | single-turn | `Please continue. Double-check …` |
+
+Artifacts for each cell land at:
+
+```
+artifacts/evals/<model>-<B|C>-L<0|1>/
+├── predictions.jsonl
+├── judge.jsonl
+├── scores.jsonl
+├── nested_scores.jsonl
+└── score_summary.json
+```
+
+### Running a single cell
 
 ```bash
 python scripts/evaluate_continuation.py \
   artifacts/emoji-bench-dataset-100 \
   --model claude-haiku-4-5 \
   --mode prefill \
-  --limit 10
-```
+  --turn-2-prompt-level 0
 
-Delivery modes:
-
-- `--mode prefill`: uses the 3-message `B` shape `[user, assistant, user]`
-- `--mode single_turn`: flattens the conversation into one user prompt with `=== WORK SO FAR ===` and `=== NEXT MESSAGE ===`
-
-Useful flags:
-
-- `--turn-2-prompt-level {0,1}`: prompt-strength axis for the Turn 2 user message
-- `--max-output-tokens`: increase this for longer continuations or reasoning-heavy runs
-- `--no-resume`: ignore existing `predictions.jsonl`
-- `--reasoning-effort`: overrides model reasoning effort
-  OpenAI accepts `none|minimal|low|medium|high|xhigh`
-  Anthropic effort-capable models accept `none|low|medium|high|max`
-
-Default output directories look like:
-
-```text
-artifacts/evals/<model>-<cell>/
-```
-
-Where `<cell>` is one of:
-
-- `B-L0`
-- `B-L1`
-- `C-L0`
-- `C-L1`
-
-Example:
-
-```text
-artifacts/evals/gpt-4.1-mini-B-L0/
-artifacts/evals/gpt-4.1-mini-C-L1/
-```
-
-If you pass `--reasoning-effort`, that suffix is retained in the model slug:
-
-```text
-artifacts/evals/gpt-5.4-reasoning-high-B-L0/
-artifacts/evals/claude-sonnet-4-6-reasoning-max-C-L1/
-```
-
-### Judge and Score
-
-```bash
 python scripts/judge_continuation.py <predictions-dir>
 python scripts/score_continuation.py <predictions-dir>
 ```
 
-Outputs written next to predictions:
-
-- `judge.jsonl`
-- `scores.jsonl`
-- `nested_scores.jsonl` when judge output is available
-- `score_summary.json`
-
-Judge artifacts are now fingerprinted against `predictions.jsonl`. If you
-change predictions in place, rerun `judge_continuation.py --no-resume`.
-`score_continuation.py` rejects stale, duplicate, or partial `judge.jsonl`
-files instead of silently scoring a subset.
-
-### Run the Full Matrix
-
-```bash
-./run.sh artifacts/emoji-bench-dataset-100 -- --max-concurrent 8
-```
-
-`run.sh` is the repo-level batch runner. It:
-
-- runs the full 32-cell model matrix
-- resumes partially completed eval directories
-- runs judge and score after the eval phase finishes
-- continues past failed cells and prints a final failure summary
-
-Defaults:
-
-- judge model: `gpt-5.4-mini-no-reasoning`
-- judge concurrency: `8`
-
-Example override:
-
-```bash
-JUDGE_MAX_CONCURRENT=4 ./run.sh artifacts/emoji-bench-dataset-100 -- --max-concurrent 8
-```
+---
 
 ## Metrics
 
-Headline reporting uses three nested rates:
+Three nested rates, each a strict subset of the previous:
 
-| Metric | Meaning |
-|---|---|
-| `detect_rate` | The continuation shows awareness that something is wrong |
-| `detect_correct_rate` | It explicitly corrects the bad step |
-| `detect_correct_finaloutput_correct_rate` | It corrects the bad step and produces a valid derivation to the correct final symbol |
+| Metric | Meaning | Grader |
+|---|---|---|
+| `detect_rate` | Continuation acknowledges something is wrong | LLM judge |
+| `detect_correct_rate` | Continuation explicitly identifies and fixes the bad step | LLM judge |
+| `detect_correct_finaloutput_correct_rate` | Correction **and** a mechanically valid derivation to the right terminal | LLM judge + deterministic validator |
 
-Judge + validator split:
+`DCF ≤ D+C ≤ Detect` always holds. The gap between `D+C` and `DCF` measures "got the diagnosis right, fumbled the cleanup."
 
-- the LLM judge checks whether the continuation acknowledged and explicitly corrected the bad step
-- the deterministic validator checks each emitted derivation step, continuity between steps, and the final symbol
+---
 
-The regex bucket scorer remains in the repo as a cheap diagnostic baseline.
+## Results
 
-## Dataset Schema
+All values are the strictest metric (`detect_correct_finaloutput_correct_rate`) on the `artifacts/emoji-bench-dataset-100` dataset (N=100).
 
-Generated dataset folders contain:
+### B-L0 — prefill, no audit hint (headline condition)
 
-```text
-artifacts/<dataset>/
-├── test.jsonl
-├── manifest.json
-└── README.md
-```
+| Model | DCF |
+|---|---:|
+| gpt-5.4-reasoning-xhigh | **0.41** |
+| claude-opus-4-6-reasoning-high | 0.28 |
+| gemini-3.1-pro-preview-thinking-high | 0.05 |
+| claude-sonnet-4-6-reasoning-high | 0.02 |
+| gemini-3-flash-preview-thinking-high | 0.00 |
+| gpt-5.4-mini-reasoning-xhigh | 0.00 |
+| mistral-large-2512 | 0.00 |
+| magistral-medium-2509 | 0.00 |
 
-Current row fields:
+### B-L1 — prefill, audit hint
 
-| Field | Purpose |
-|---|---|
-| `example_id` / `base_id` / `split` | identity |
-| `difficulty` | `easy` / `medium` / `hard` / `expert` |
-| `error_type` | `E-CONTINUE` in the current release |
-| `turn_1_user` | rules, expression, and output format |
-| `turn_1_assistant_prefill` | partial derivation ending on the injected error |
-| `ground_truth_final_output` | correct terminal symbol |
-| `wrong_branch_final_output` | terminal symbol from blindly continuing the wrong branch |
-| `chain_length_x` | realized clean derivation length |
-| `prefill_error_step` | 1-indexed injected error step |
-| `target_step_count` | requested target length during generation |
-| `system_json` / `system_seed` / `chain_seed` / `error_seed` | reproducibility metadata |
+| Model | DCF |
+|---|---:|
+| claude-opus-4-6-reasoning-high | **0.60** |
+| gpt-5.4-reasoning-xhigh | 0.47 |
+| gemini-3.1-pro-preview-thinking-high | 0.32 |
+| claude-sonnet-4-6-reasoning-high | 0.23 |
+| gemini-3-flash-preview-thinking-high | 0.00 |
+| mistral-large-2512 | 0.00 |
+| gpt-5.4-mini-reasoning-xhigh | 0.00 |
+| magistral-medium-2509 | 0.00 |
 
-The Turn 2 user prompt is applied at evaluation time, not stored in dataset rows.
+### C-L0 — single-turn, no audit hint
 
-## Repo Map
+| Model | DCF |
+|---|---:|
+| gpt-5.4-reasoning-xhigh | **0.07** |
+| claude-opus-4-6-reasoning-high | 0.02 |
+| all others | 0.00 |
 
-The codebase is organized by responsibility:
+### C-L1 — single-turn, audit hint
 
-- `emoji_bench/domain/`: formal-system generation, derivation chains, expression types, interpretation, and deterministic validation
-- `emoji_bench/dataset/`: continuation-instance generation, cascading error injection, dataset serialization, and manifest helpers
-- `emoji_bench/eval/`: matrix naming (`B/C`, `L0/L1`), artifact path resolution, and the shared evaluation runner
-- `emoji_bench/providers/`: provider clients plus OpenAI, Anthropic, Gemini, and Mistral continuation transport
-- `emoji_bench/judge/`: judge artifact validation, LLM-as-a-judge prompting, and score aggregation
-- `emoji_bench/continuation_formatter.py`: Turn 1, prefill, and single-turn prompt formatting
-- `emoji_bench/model_registry.py`: configured model aliases and provider-specific defaults
-- `emoji_bench/jsonl_io.py`: shared JSONL helpers
+| Model | DCF |
+|---|---:|
+| claude-opus-4-6-reasoning-high | **0.45** |
+| gpt-5.4-reasoning-xhigh | 0.14 |
+| claude-sonnet-4-6-reasoning-high | 0.06 |
+| all others | 0.00 |
 
-CLI scripts in `scripts/`:
+### Takeaways
 
-- `generate_continuation_dataset.py`
-- `evaluate_continuation.py`
-- `judge_continuation.py`
-- `score_continuation.py`
-- `preview_dataset.py`
-- `plot_b_results.py`
+- **The hint (L0 → L1) matters enormously.** Opus jumps 0.28 → 0.60 on B and 0.02 → 0.45 on C. Much of the L0 failure is "missing permission to audit," not inability.
+- **Prefill (B) beats single-turn (C)** for most models. Seeing the bad step in the *assistant* role seems easier to flag than reading the same transcript as user context.
+- **A floor cluster sits at ~0 across the board** (gpt-5.4-mini, magistral-medium, mistral-large). They cascade regardless of hint or delivery mode.
+- **Gemini 3.1 Pro only has B cells** — C runs have not been executed yet.
 
-Repo-level helpers:
+Full per-difficulty breakdowns are in each cell's `score_summary.json`.
 
-- `run.sh`: full-matrix eval -> judge -> score batch runner
+---
 
-## Shapes
+## Repo map
 
-The benchmark is intentionally a 2x2 matrix:
-
-- `B / L0`: `--mode prefill --turn-2-prompt-level 0`
-- `B / L1`: `--mode prefill --turn-2-prompt-level 1`
-- `C / L0`: `--mode single_turn --turn-2-prompt-level 0`
-- `C / L1`: `--mode single_turn --turn-2-prompt-level 1`
-
-## Artifacts
-
-`artifacts/` contains the canonical in-repo dataset plus generated evaluation results and plots. New runs still write there by default.
-
-## Contributing
-
-Useful contribution areas:
-
-- judge prompt and validator refinements
-- provider integrations
-- continuation-only ablations
-- model behavior analysis on the benchmark
+- `emoji_bench/domain/` — formal-system generation, derivation chains, interpretation, deterministic validation
+- `emoji_bench/dataset/` — continuation-instance generation, cascading error injection, dataset serialization
+- `emoji_bench/eval/` — matrix naming (`B/C`, `L0/L1`), artifact paths, shared runner
+- `emoji_bench/providers/` — OpenAI / Anthropic / Gemini / Mistral transport
+- `emoji_bench/judge/` — judge artifact validation, LLM-as-judge prompting, score aggregation
+- `emoji_bench/continuation_formatter.py` — Turn-1, prefill, and single-turn prompt formatting
+- `emoji_bench/model_registry.py` — model aliases and provider-specific defaults
+- `scripts/` — `generate_continuation_dataset.py`, `evaluate_continuation.py`, `judge_continuation.py`, `score_continuation.py`, `preview_dataset.py`, `plot_b_results.py`
+- `run.sh` — full-matrix eval → judge → score batch runner
 
 ## License
 
