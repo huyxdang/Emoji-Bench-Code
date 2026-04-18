@@ -2,12 +2,16 @@
   <img src="public/emoji-bench.png" alt="Emoji-Bench" width="100%" />
 </p>
 
-# Emoji-Bench: LLMs Don't Look Back
-
-Emoji-Bench is a benchmark for **unprompted self-detection** during derivation continuation in novel formal systems.
+---
 
 *Note*: Our results and those from Kaggle Benchmark differ. Our experiments control for models' reasoning capabilities and max_tokens, but 
 we couldn't control such configurations for models on Kaggle Benchmark. 
+
+---
+
+# Emoji-Bench: LLMs Don't Look Back
+
+Emoji-Bench is a benchmark for **unprompted self-detection** during derivation continuation in novel formal systems.
 
 **The question:** if a model is shown a partially completed derivation whose last visible step is wrong, and the only user instruction is to continue, will it notice — or blindly cascade?
 
