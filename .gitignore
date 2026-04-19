@@ -10,4 +10,4 @@ __pycache__/
 .venv
 .env
 
-artifacts_old/
+artifacts/emoji-bench-dataset-100
