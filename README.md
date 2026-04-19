@@ -139,7 +139,13 @@ The assertions will hold byte-for-byte on any machine as long as the generator c
 
 ## Run the full experiment
 
-The evaluation matrix is **8 models × 2 delivery shapes × 2 prompt strengths = 32 cells**.
+The current runner matrix is **9 models × 2 delivery shapes × 2 prompt strengths = 36 cells**.
+
+The checked-in artifact bundle in `artifacts/evals/` is intentionally partial:
+
+- `claude-opus-4-7-reasoning-max`: `B-L0` only
+- `gemini-3.1-pro-preview-thinking-high`: `B-L0` and `B-L1` only
+- all other listed models: full `2 × 2` coverage
 
 ```bash
 ./run.sh artifacts/emoji-bench-dataset-100 -- --max-concurrent 8
@@ -147,7 +153,7 @@ The evaluation matrix is **8 models × 2 delivery shapes × 2 prompt strengths =
 
 `run.sh` will:
 
-1. Run `evaluate_continuation.py` over all 32 cells (resuming partially completed ones).
+1. Run `evaluate_continuation.py` over all 36 cells (resuming partially completed ones).
 2. Run the LLM-as-judge over each successful prediction set.
 3. Run the deterministic scorer.
 4. Continue past failed cells and print a final failure summary.
@@ -241,6 +247,12 @@ This closes the compensating-error loophole: a chain that writes a wrong interme
 
 All three nested rates on the `artifacts/emoji-bench-dataset-100` dataset (N=100). Rows are sorted by DCF (the strictest metric). `D = detect_rate`, `DC = detect_correct_rate`, `DCF = detect_correct_finaloutput_correct_rate`.
 
+Coverage note:
+
+- `claude-opus-4-7-reasoning-max` currently appears only in `B-L0`
+- `gemini-3.1-pro-preview-thinking-high` currently appears only in `B-L0` and `B-L1`
+- models are omitted from cell tables that do not have committed artifacts yet
+
 ### B-L0 — prefill, no audit hint (headline condition)
 
 | Model | D | DC | DCF |
@@ -292,7 +304,7 @@ All three nested rates on the `artifacts/emoji-bench-dataset-100` dataset (N=100
 | gpt-5.4-mini-reasoning-xhigh | 0.00 | 0.00 | 0.00 |
 | magistral-medium-2509 | 0.00 | 0.00 | 0.00 |
 
-Full per-difficulty breakdowns are in each cell's `score_summary.json`.
+Per-difficulty breakdowns are in each available cell's `score_summary.json`.
 
 ---
 
