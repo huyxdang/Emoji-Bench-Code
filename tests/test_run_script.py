@@ -100,22 +100,22 @@ def test_run_sh_runs_eval_then_judge_then_score_for_successful_cells(tmp_path):
 
     assert result.returncode == 0
     assert "All eval, judge, and score runs completed successfully." in result.stdout
-    assert len(calls) == 96
+    assert len(calls) == 108
 
     eval_calls = [call for call in calls if call[0] == "scripts/evaluate_continuation.py"]
     judge_calls = [call for call in calls if call[0] == "scripts/judge_continuation.py"]
     score_calls = [call for call in calls if call[0] == "scripts/score_continuation.py"]
 
-    assert len(eval_calls) == 32
-    assert len(judge_calls) == 32
-    assert len(score_calls) == 32
+    assert len(eval_calls) == 36
+    assert len(judge_calls) == 36
+    assert len(score_calls) == 36
 
     first_eval = eval_calls[0]
     assert first_eval[:8] == [
         "scripts/evaluate_continuation.py",
         "artifacts/emoji-bench-dataset-100",
         "--model",
-        "claude-opus-4-6-reasoning-high",
+        "claude-opus-4-7-reasoning-max",
         "--mode",
         "prefill",
         "--turn-2-prompt-level",
@@ -123,14 +123,14 @@ def test_run_sh_runs_eval_then_judge_then_score_for_successful_cells(tmp_path):
     ]
     assert judge_calls[0][:5] == [
         "scripts/judge_continuation.py",
-        "artifacts/evals/claude-opus-4-6-reasoning-high-B-L0",
+        "artifacts/evals/claude-opus-4-7-reasoning-max-B-L0",
         "--judge-model",
         "gpt-5.4-mini-no-reasoning",
         "--max-concurrent",
     ]
     assert score_calls[0] == [
         "scripts/score_continuation.py",
-        "artifacts/evals/claude-opus-4-6-reasoning-high-B-L0",
+        "artifacts/evals/claude-opus-4-7-reasoning-max-B-L0",
     ]
 
 
@@ -149,9 +149,9 @@ def test_run_sh_continues_past_failed_eval_and_skips_judging_failed_cell(tmp_pat
     judge_calls = [call for call in calls if call[0] == "scripts/judge_continuation.py"]
     score_calls = [call for call in calls if call[0] == "scripts/score_continuation.py"]
 
-    assert len(eval_calls) == 32
-    assert len(judge_calls) == 31
-    assert len(score_calls) == 31
+    assert len(eval_calls) == 36
+    assert len(judge_calls) == 35
+    assert len(score_calls) == 35
 
     failed_output_dir = "artifacts/evals/gpt-5.4-reasoning-xhigh-C-L1"
     assert all(call[1] != failed_output_dir for call in judge_calls)
@@ -172,8 +172,8 @@ def test_run_sh_skips_score_when_judge_fails(tmp_path):
     judge_calls = [call for call in calls if call[0] == "scripts/judge_continuation.py"]
     score_calls = [call for call in calls if call[0] == "scripts/score_continuation.py"]
 
-    assert len(judge_calls) == 32
-    assert len(score_calls) == 31
+    assert len(judge_calls) == 36
+    assert len(score_calls) == 35
     assert all(
         call[1] != "artifacts/evals/claude-opus-4-6-reasoning-high-B-L0"
         for call in score_calls

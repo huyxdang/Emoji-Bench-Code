@@ -110,13 +110,12 @@ def main() -> None:
     parser.add_argument(
         "--max-concurrent",
         type=int,
-        default=1,
+        default=10,
         help=(
-            "Number of concurrent API calls to run at once. Default 1 "
-            "(serial). Thread-safe: writes to predictions.jsonl are "
-            "serialized behind a lock, and the 'seen' set is guarded. Raise "
-            "to 5-20 for reasoning models where the per-call latency "
-            "dominates throughput."
+            "Number of concurrent API calls to run at once. Default 8. "
+            "Thread-safe: writes to predictions.jsonl are serialized behind "
+            "a lock, and the 'seen' set is guarded. Raise or lower as needed "
+            "for provider rate limits and model latency."
         ),
     )
     parser.add_argument(

@@ -1,6 +1,7 @@
 import pytest
 
 from emoji_bench.model_registry import (
+    CLAUDE_OPUS_MAX_OUTPUT_TOKENS,
     DEFAULT_MAX_OUTPUT_TOKENS,
     MODEL_CONFIGS,
     apply_reasoning_effort_override,
@@ -95,6 +96,7 @@ def test_pinned_claude_opus_47_reasoning_max_alias_is_present():
     assert config.provider == "anthropic"
     assert config.api_model == "claude-opus-4-7"
     assert config.anthropic_effort == "max"
+    assert config.default_max_output_tokens == CLAUDE_OPUS_MAX_OUTPUT_TOKENS
     assert config.anthropic_thinking is not None
     assert config.anthropic_thinking.enabled is True
     assert config.anthropic_thinking.mode == "adaptive"
@@ -130,7 +132,10 @@ def test_model_choices_put_stronger_claude_and_gemini_variants_first():
 def test_all_configured_models_use_expected_default_max_output_tokens():
     assert DEFAULT_MAX_OUTPUT_TOKENS == 4096
     for config in MODEL_CONFIGS.values():
-        assert config.default_max_output_tokens == DEFAULT_MAX_OUTPUT_TOKENS
+        if config.key == "claude-opus-4-7-reasoning-max":
+            assert config.default_max_output_tokens == CLAUDE_OPUS_MAX_OUTPUT_TOKENS
+        else:
+            assert config.default_max_output_tokens == DEFAULT_MAX_OUTPUT_TOKENS
 
 
 def test_resolve_api_key_uses_provider_specific_env_var():

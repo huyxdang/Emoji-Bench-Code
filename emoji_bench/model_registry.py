@@ -12,6 +12,7 @@ AnthropicThinkingMode = Literal["manual", "adaptive"]
 ReasoningEffortOverride = Literal["none", "minimal", "low", "medium", "high", "xhigh", "max"]
 
 DEFAULT_MAX_OUTPUT_TOKENS = 4096
+CLAUDE_OPUS_MAX_OUTPUT_TOKENS = 128000
 REASONING_EFFORT_CHOICES: tuple[ReasoningEffortOverride, ...] = (
     "none",
     "minimal",
@@ -93,6 +94,7 @@ def _anthropic_model(
     key: str,
     label: str,
     api_model: str,
+    default_max_output_tokens: int = DEFAULT_MAX_OUTPUT_TOKENS,
     anthropic_thinking: AnthropicThinkingConfig | None = None,
     anthropic_effort: AnthropicEffort | None = None,
     notes: str | None = None,
@@ -104,7 +106,7 @@ def _anthropic_model(
         api_model=api_model,
         docs_url=ANTHROPIC_MODELS_DOCS_URL,
         api_key_env_var="ANTHROPIC_API_KEY",
-        default_max_output_tokens=DEFAULT_MAX_OUTPUT_TOKENS,
+        default_max_output_tokens=default_max_output_tokens,
         anthropic_thinking=anthropic_thinking,
         anthropic_effort=anthropic_effort,
         notes=notes,
@@ -324,10 +326,11 @@ MODEL_CONFIGS: dict[str, ModelConfig] = {
         api_model="claude-opus-4-7",
         anthropic_thinking=AnthropicThinkingConfig(enabled=True, mode="adaptive"),
         anthropic_effort="max",
+        default_max_output_tokens=CLAUDE_OPUS_MAX_OUTPUT_TOKENS,
         notes=(
             "Pinned benchmark alias for Claude Opus 4.7 with adaptive thinking "
-            "enabled and effort='max'. Anthropic documents adaptive thinking as "
-            "the only supported thinking mode on Opus 4.7."
+            "enabled and effort='max'. Defaults to Anthropic's published 128k "
+            "max output for synchronous Messages API requests."
         ),
     ),
     CLAUDE_HAIKU_4_5.key: CLAUDE_HAIKU_4_5,
