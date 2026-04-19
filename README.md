@@ -76,7 +76,7 @@ This produces:
 ```
 artifacts/emoji-bench-dataset-100/
 ├── test.jsonl      # 100 rows, stratified 25 × {easy, medium, hard, expert}
-├── manifest.json   # seeds, rejection counts, generator commit hash
+├── manifest.json   # master seed, difficulty config snapshot, rejection counts, generator commit hash
 └── README.md
 ```
 
@@ -96,12 +96,13 @@ Each `test.jsonl` line is a JSON object with:
 | `example_id`, `base_id`, `split`, `difficulty`, `error_type` | identifiers + stratification |
 | `turn_1_user` | rules + expression + step-format instructions |
 | `turn_1_assistant_prefill` | partial derivation ending on the injected bad step |
-| `turn_2_user` | `Please continue.` |
 | `ground_truth_final_output` | correct terminal symbol (clean chain) |
 | `wrong_branch_final_output` | terminal reached by cascading from the bad step |
-| `chain_length_x`, `prefill_error_step`, `prefill_cutoff_step`, `target_step_count` | chain shape |
+| `chain_length_x`, `prefill_error_step`, `target_step_count` | chain shape |
 | `system_json` | serialized formal system (tables, transforms) |
 | `system_seed`, `chain_seed`, `error_seed` | generation seeds |
+
+The default Turn 2 user message is not stored in the row; evaluation applies `Please continue.` or a prompt-strength override at run time.
 
 ### Reproduce a single row from its seeds
 
@@ -245,6 +246,7 @@ All three nested rates on the `artifacts/emoji-bench-dataset-100` dataset (N=100
 | Model | D | DC | DCF |
 |---|---:|---:|---:|
 | gpt-5.4-reasoning-xhigh | 0.54 | 0.52 | **0.41** |
+| claude-opus-4-7-reasoning-max | 0.46 | 0.45 | 0.38 |
 | claude-opus-4-6-reasoning-high | 0.33 | 0.31 | 0.28 |
 | gemini-3.1-pro-preview-thinking-high | 0.07 | 0.06 | 0.05 |
 | claude-sonnet-4-6-reasoning-high | 0.03 | 0.03 | 0.02 |

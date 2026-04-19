@@ -20,9 +20,31 @@ class _FakeMessagesAPI:
     def __init__(self, response: object):
         self._response = response
         self.calls: list[dict] = []
+        self.create_calls: list[dict] = []
+        self.stream_calls: list[dict] = []
 
     def create(self, **options):
+        self.create_calls.append(options)
         self.calls.append(options)
+        return self._response
+
+    def stream(self, **options):
+        self.stream_calls.append(options)
+        self.calls.append(options)
+        return _FakeAnthropicStream(self._response)
+
+
+class _FakeAnthropicStream:
+    def __init__(self, response: object):
+        self._response = response
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        return None
+
+    def get_final_message(self):
         return self._response
 
 
@@ -128,6 +150,24 @@ def test_request_continuation_prefill_anthropic_sends_three_message_conversation
     ]
     assert "system" not in sent
     assert "output_config" not in sent
+
+
+def test_request_continuation_anthropic_uses_stream_helper_when_available():
+    response = _make_anthropic_response(" continuing the work...")
+    client = _FakeAnthropicClient(response)
+    model_config = get_model_config("claude-haiku-4-5")
+
+    request_continuation(
+        client=client,
+        model_config=model_config,
+        turn_1_user="[T1U]",
+        turn_1_assistant_prefill="[PREFILL]",
+        max_output_tokens=512,
+        mode="prefill",
+    )
+
+    assert len(client.messages.stream_calls) == 1
+    assert client.messages.create_calls == []
 
 
 def test_request_continuation_single_turn_anthropic_sends_one_user_message():

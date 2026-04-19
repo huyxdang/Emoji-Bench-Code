@@ -34,13 +34,24 @@ def request_anthropic_messages(
     if model_config.anthropic_effort is not None:
         options["output_config"] = {"effort": model_config.anthropic_effort}
 
-    response = client.messages.create(**options)
+    response = _send_anthropic_request(client=client, options=options)
     return ContinuationResponse(
         raw_continuation_text=_anthropic_text(response),
         response_id=getattr(response, "id", None),
         usage=extract_anthropic_usage(response),
         mode=mode,
     )
+
+
+def _send_anthropic_request(*, client: Any, options: dict[str, Any]) -> Any:
+    messages_api = client.messages
+    stream = getattr(messages_api, "stream", None)
+    if callable(stream):
+        # Anthropic's SDK requires streaming for long-running requests. Using the
+        # helper keeps the final response shape identical to messages.create().
+        with stream(**options) as response_stream:
+            return response_stream.get_final_message()
+    return messages_api.create(**options)
 
 
 def _anthropic_text(response: Any) -> str:
