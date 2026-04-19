@@ -20,17 +20,17 @@ def request_anthropic_messages(
         "messages": messages,
         "max_tokens": max_output_tokens,
     }
-    if (
-        model_config.anthropic_thinking is not None
-        and model_config.anthropic_thinking.enabled
-        and model_config.anthropic_thinking.budget_tokens is not None
-    ):
-        if model_config.anthropic_thinking.budget_tokens >= max_output_tokens:
-            raise ValueError("Anthropic thinking budget must be less than max_output_tokens")
-        options["thinking"] = {
-            "type": "enabled",
-            "budget_tokens": model_config.anthropic_thinking.budget_tokens,
-        }
+    thinking = model_config.anthropic_thinking
+    if thinking is not None and thinking.enabled:
+        if thinking.mode == "adaptive":
+            options["thinking"] = {"type": "adaptive"}
+        elif thinking.budget_tokens is not None:
+            if thinking.budget_tokens >= max_output_tokens:
+                raise ValueError("Anthropic thinking budget must be less than max_output_tokens")
+            options["thinking"] = {
+                "type": "enabled",
+                "budget_tokens": thinking.budget_tokens,
+            }
     if model_config.anthropic_effort is not None:
         options["output_config"] = {"effort": model_config.anthropic_effort}
 

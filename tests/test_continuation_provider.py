@@ -215,6 +215,25 @@ def test_request_continuation_sonnet_reasoning_sends_thinking_and_effort():
     assert sent["output_config"] == {"effort": "low"}
 
 
+def test_request_continuation_opus_47_reasoning_max_sends_adaptive_thinking_and_effort():
+    response = _make_anthropic_response("Step 3: ...")
+    client = _FakeAnthropicClient(response)
+    model_config = get_model_config("claude-opus-4-7-reasoning-max")
+
+    request_continuation(
+        client=client,
+        model_config=model_config,
+        turn_1_user="[T1U]",
+        turn_1_assistant_prefill="[PREFILL]",
+        max_output_tokens=2048,
+        mode="prefill",
+    )
+
+    sent = client.messages.calls[0]
+    assert sent["thinking"] == {"type": "adaptive"}
+    assert sent["output_config"] == {"effort": "max"}
+
+
 def test_request_continuation_prefill_openai_sends_three_message_conversation():
     level_0 = get_turn_2_prompt(0)
     response = _make_openai_response("(continuation)")

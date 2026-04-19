@@ -12,6 +12,7 @@ from emoji_bench.providers.clients import resolve_api_key
 
 def test_requested_model_configs_are_present():
     assert {
+        "claude-opus-4-7-reasoning-max",
         "claude-opus-4-6-reasoning-high",
         "claude-haiku-4-5",
         "claude-sonnet-4-6",
@@ -89,6 +90,17 @@ def test_pinned_claude_reasoning_high_aliases_are_present():
         assert config.anthropic_thinking.budget_tokens == 1024
 
 
+def test_pinned_claude_opus_47_reasoning_max_alias_is_present():
+    config = get_model_config("claude-opus-4-7-reasoning-max")
+    assert config.provider == "anthropic"
+    assert config.api_model == "claude-opus-4-7"
+    assert config.anthropic_effort == "max"
+    assert config.anthropic_thinking is not None
+    assert config.anthropic_thinking.enabled is True
+    assert config.anthropic_thinking.mode == "adaptive"
+    assert config.anthropic_thinking.budget_tokens is None
+
+
 def test_pinned_gemini_thinking_high_aliases_are_present():
     for key, api_model in (
         ("gemini-3.1-pro-preview-thinking-high", "gemini-3.1-pro-preview"),
@@ -103,6 +115,9 @@ def test_pinned_gemini_thinking_high_aliases_are_present():
 
 def test_model_choices_put_stronger_claude_and_gemini_variants_first():
     choices = model_choices()
+    assert choices.index("claude-opus-4-7-reasoning-max") < choices.index(
+        "claude-opus-4-6-reasoning-high"
+    )
     assert choices.index("claude-opus-4-6-reasoning-high") < choices.index(
         "claude-sonnet-4-6-reasoning-high"
     )
@@ -157,10 +172,19 @@ def test_apply_reasoning_effort_override_updates_openai_and_anthropic_configs():
     assert sonnet_reasoning.anthropic_thinking.enabled is True
     assert sonnet_reasoning.anthropic_thinking.budget_tokens == 1024
 
+    opus_47 = apply_reasoning_effort_override(get_model_config("claude-opus-4-7-reasoning-max"), "xhigh")
+    assert opus_47.anthropic_effort == "xhigh"
+    assert opus_47.anthropic_thinking is not None
+    assert opus_47.anthropic_thinking.enabled is True
+    assert opus_47.anthropic_thinking.mode == "adaptive"
+
 
 def test_apply_reasoning_effort_override_rejects_unsupported_combinations():
     with pytest.raises(ValueError, match="Anthropic effort does not support 'minimal'"):
         apply_reasoning_effort_override(get_model_config("claude-sonnet-4-6"), "minimal")
+
+    with pytest.raises(ValueError, match="xhigh is available only on Claude Opus 4.7"):
+        apply_reasoning_effort_override(get_model_config("claude-sonnet-4-6"), "xhigh")
 
     with pytest.raises(ValueError, match="does not support it"):
         apply_reasoning_effort_override(get_model_config("claude-haiku-4-5"), "low")
