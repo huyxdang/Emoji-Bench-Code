@@ -93,8 +93,59 @@ def test_evaluate_continuation_writes_predictions_and_summary(monkeypatch, tmp_p
     assert summary["turn_2_level"] == 1
     assert summary["turn_2_user_sent"] == get_turn_2_prompt(1)
     assert summary["openai_reasoning_effort"] == "none"
+    assert summary["max_output_tokens"] == 4096
     assert summary["completed_examples"] == 1
     assert summary["total_examples"] == 1
+
+
+def test_evaluate_continuation_summary_records_max_output_tokens_override(
+    monkeypatch,
+    tmp_path,
+    capsys,
+):
+    module = load_script_module("evaluate_continuation")
+    dataset_path = tmp_path / "test.jsonl"
+    output_dir = tmp_path / "eval-out"
+    write_jsonl(dataset_path, [_dataset_record("cont-000001")])
+
+    calls: list[dict[str, object]] = []
+
+    def fake_request_continuation(**kwargs):
+        calls.append(kwargs)
+        return ContinuationResponse(
+            raw_continuation_text="Final Output: 🪈",
+            response_id="resp_123",
+            usage=None,
+            mode="prefill",
+        )
+
+    monkeypatch.setattr(module, "_load_dotenv", lambda path: None)
+    monkeypatch.setattr(module, "resolve_api_key", lambda **kwargs: "test-key")
+    monkeypatch.setattr(module, "make_client", lambda provider, api_key: object())
+    monkeypatch.setattr(module, "request_continuation", fake_request_continuation)
+    monkeypatch.setattr(
+        module.sys,
+        "argv",
+        [
+            "evaluate_continuation.py",
+            str(dataset_path),
+            "--model",
+            "gpt-5.4-mini-no-reasoning",
+            "--max-output-tokens",
+            "777",
+            "--output-dir",
+            str(output_dir),
+        ],
+    )
+
+    module.main()
+    capsys.readouterr()
+
+    assert len(calls) == 1
+    assert calls[0]["max_output_tokens"] == 777
+
+    summary = json.loads((output_dir / "summary.json").read_text(encoding="utf-8"))
+    assert summary["max_output_tokens"] == 777
 
 
 def test_evaluate_continuation_resume_skips_already_written_examples(

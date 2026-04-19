@@ -177,6 +177,7 @@ def run_evaluation(
         "gemini_thinking_level": (
             None if model_config.gemini_thinking is None else model_config.gemini_thinking.level
         ),
+        "max_output_tokens": options.max_output_tokens,
         "turn_2_level": options.turn_2_level,
         "turn_2_user_sent": options.turn_2_user,
         "input_path": str(input_path.resolve()),
