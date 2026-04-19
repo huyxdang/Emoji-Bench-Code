@@ -3,6 +3,7 @@ import pytest
 from emoji_bench.model_registry import (
     CLAUDE_OPUS_MAX_OUTPUT_TOKENS,
     DEFAULT_MAX_OUTPUT_TOKENS,
+    GPT_5_4_MAX_OUTPUT_TOKENS,
     MODEL_CONFIGS,
     apply_reasoning_effort_override,
     get_model_config,
@@ -47,11 +48,17 @@ def test_gpt54_models_default_to_medium_reasoning():
 
 
 def test_pinned_openai_reasoning_xhigh_aliases_are_present():
-    for key in ("gpt-5.4-reasoning-xhigh", "gpt-5.4-mini-reasoning-xhigh"):
-        config = get_model_config(key)
-        assert config.provider == "openai"
-        assert config.openai_reasoning is not None
-        assert config.openai_reasoning.effort == "xhigh"
+    gpt_54 = get_model_config("gpt-5.4-reasoning-xhigh")
+    assert gpt_54.provider == "openai"
+    assert gpt_54.openai_reasoning is not None
+    assert gpt_54.openai_reasoning.effort == "xhigh"
+    assert gpt_54.default_max_output_tokens == GPT_5_4_MAX_OUTPUT_TOKENS
+
+    gpt_54_mini = get_model_config("gpt-5.4-mini-reasoning-xhigh")
+    assert gpt_54_mini.provider == "openai"
+    assert gpt_54_mini.openai_reasoning is not None
+    assert gpt_54_mini.openai_reasoning.effort == "xhigh"
+    assert gpt_54_mini.default_max_output_tokens == DEFAULT_MAX_OUTPUT_TOKENS
 
 
 def test_gpt54_mini_no_reasoning_alias_is_present():
@@ -134,6 +141,8 @@ def test_all_configured_models_use_expected_default_max_output_tokens():
     for config in MODEL_CONFIGS.values():
         if config.key == "claude-opus-4-7-reasoning-max":
             assert config.default_max_output_tokens == CLAUDE_OPUS_MAX_OUTPUT_TOKENS
+        elif config.key == "gpt-5.4-reasoning-xhigh":
+            assert config.default_max_output_tokens == GPT_5_4_MAX_OUTPUT_TOKENS
         else:
             assert config.default_max_output_tokens == DEFAULT_MAX_OUTPUT_TOKENS
 

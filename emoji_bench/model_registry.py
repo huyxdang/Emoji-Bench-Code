@@ -12,6 +12,7 @@ AnthropicThinkingMode = Literal["manual", "adaptive"]
 ReasoningEffortOverride = Literal["none", "minimal", "low", "medium", "high", "xhigh", "max"]
 
 DEFAULT_MAX_OUTPUT_TOKENS = 4096
+GPT_5_4_MAX_OUTPUT_TOKENS = 128000
 CLAUDE_OPUS_MAX_OUTPUT_TOKENS = 128000
 REASONING_EFFORT_CHOICES: tuple[ReasoningEffortOverride, ...] = (
     "none",
@@ -287,8 +288,12 @@ MODEL_CONFIGS: dict[str, ModelConfig] = {
         GPT_5_4,
         key="gpt-5.4-reasoning-xhigh",
         label="GPT-5.4 (reasoning xhigh)",
+        default_max_output_tokens=GPT_5_4_MAX_OUTPUT_TOKENS,
         openai_reasoning=OpenAIReasoningConfig(effort="xhigh"),
-        notes="Pinned benchmark alias for GPT-5.4 at reasoning.effort='xhigh'.",
+        notes=(
+            "Pinned benchmark alias for GPT-5.4 at reasoning.effort='xhigh'. "
+            "Defaults to OpenAI's published 128k max output tokens."
+        ),
     ),
     "gpt-5.4-mini-reasoning-xhigh": replace(
         GPT_5_4_MINI,
