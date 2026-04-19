@@ -13,8 +13,8 @@ Examples:
 
 Notes:
   - Defaults to artifacts/emoji-bench-dataset-100
-  - Runs only the GPT-5.4 reasoning-xhigh matrix:
-      1 model x 2 modes (prefill, single_turn) x 2 prompt levels (L0, L1)
+  - Runs only the GPT-5.4 reasoning-xhigh prefill matrix:
+      1 model x 1 mode (prefill) x 2 prompt levels (L0, L1)
   - Uses the configured default max output tokens for gpt-5.4-reasoning-xhigh
   - Any args after -- are forwarded to every evaluate_continuation.py call
   - Runs judge+score after the eval phase finishes
@@ -55,7 +55,7 @@ if (( ${#EXTRA_ARGS[@]} > 0 )); then
   done
 fi
 
-MODES=("prefill" "single_turn")
+MODES=("prefill")
 LEVELS=("0" "1")
 TOTAL_RUNS=$(( ${#MODES[@]} * ${#LEVELS[@]} ))
 RUN_INDEX=0

@@ -76,7 +76,7 @@ def test_run_gpt_sh_help_mentions_gpt54_defaults(tmp_path):
         check=True,
     )
 
-    assert "GPT-5.4 reasoning-xhigh matrix" in result.stdout
+    assert "GPT-5.4 reasoning-xhigh prefill matrix" in result.stdout
     assert "gpt-5.4-mini-no-reasoning" in result.stdout
 
 
@@ -106,15 +106,15 @@ def test_run_gpt_sh_runs_eval_then_judge_then_score_for_successful_cells(tmp_pat
 
     assert result.returncode == 0
     assert "All GPT-5.4 eval, judge, and score runs completed successfully." in result.stdout
-    assert len(calls) == 12
+    assert len(calls) == 6
 
     eval_calls = [call for call in calls if call[0] == "scripts/evaluate_continuation.py"]
     judge_calls = [call for call in calls if call[0] == "scripts/judge_continuation.py"]
     score_calls = [call for call in calls if call[0] == "scripts/score_continuation.py"]
 
-    assert len(eval_calls) == 4
-    assert len(judge_calls) == 4
-    assert len(score_calls) == 4
+    assert len(eval_calls) == 2
+    assert len(judge_calls) == 2
+    assert len(score_calls) == 2
     assert all(call[3] == "gpt-5.4-reasoning-xhigh" for call in eval_calls)
 
     first_eval = eval_calls[0]
@@ -139,3 +139,4 @@ def test_run_gpt_sh_runs_eval_then_judge_then_score_for_successful_cells(tmp_pat
         "scripts/score_continuation.py",
         "artifacts/evals/gpt-5.4-reasoning-xhigh-B-L0",
     ]
+    assert all("--mode" in call and call[call.index("--mode") + 1] == "prefill" for call in eval_calls)
