@@ -9,8 +9,8 @@ The judge is asked two yes/no questions about the model's raw continuation:
 The judge never has to recompute the formal-system math. We feed it the
 correct and injected values at prompt time, reconstructed deterministically
 from the dataset's seeds via ``generate_continuation_instance``. That keeps
-the judge task purely reading-comprehension, so a cheap cross-family model
-(``gpt-4.1-mini``) is adequate.
+the judge task purely reading-comprehension, so a small non-reasoning model
+(``gpt-5.4-mini-no-reasoning`` in the current scripts) is adequate.
 
 Metric (3) is computed in the scorer from ``corrected_step_y`` + the
 deterministic Python validator; the judge does not vote on metric (3).

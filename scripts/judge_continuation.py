@@ -54,6 +54,8 @@ from emoji_bench.eval.paths import (
 )
 from emoji_bench.providers.clients import make_client, resolve_api_key
 
+DEFAULT_JUDGE_MODEL = "gpt-5.4-mini-no-reasoning"
+
 
 def main() -> None:
     parser = argparse.ArgumentParser(
@@ -77,7 +79,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--judge-model",
-        default="gpt-4.1-mini",
+        default=DEFAULT_JUDGE_MODEL,
         choices=model_choices(),
         help="Configured model alias to use as the judge.",
     )
@@ -115,7 +117,7 @@ def main() -> None:
         help=(
             "Number of concurrent judge calls to run at once. Default 1 "
             "(serial). Thread-safe writes behind a lock. Raise to 10+ for "
-            "faster passes; OpenAI rate limits on gpt-4.1-mini are generous."
+            "faster passes, subject to your OpenAI rate limits."
         ),
     )
     parser.add_argument(

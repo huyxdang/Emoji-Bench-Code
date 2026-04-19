@@ -94,6 +94,61 @@ def test_judge_continuation_writes_rows_with_prediction_fingerprints(
     assert rows[0]["judge_api_model"] == "gpt-5.4-mini"
 
 
+def test_judge_continuation_defaults_to_gpt54_mini_no_reasoning(
+    monkeypatch,
+    tmp_path,
+    capsys,
+):
+    module = load_script_module("judge_continuation")
+    eval_dir = tmp_path / "eval"
+    dataset_dir = tmp_path / "dataset"
+    eval_dir.mkdir()
+    dataset_dir.mkdir()
+
+    prediction = _prediction("cont-000001", "Final Output: 🪈")
+    write_jsonl(eval_dir / "predictions.jsonl", [prediction])
+    write_jsonl(dataset_dir / "test.jsonl", [_dataset_row("cont-000001")])
+    (eval_dir / "summary.json").write_text(
+        json.dumps({"input_path": str(dataset_dir)}, ensure_ascii=False),
+        encoding="utf-8",
+    )
+
+    seen_judge_models: list[str] = []
+
+    def fake_judge_continuation(**kwargs):
+        seen_judge_models.append(kwargs["judge_model_config"].key)
+        return SimpleNamespace(
+            detected_error=False,
+            corrected_step_y=False,
+            reasoning="no explicit correction",
+            raw_response_text='{"detected_error": false, "corrected_step_y": false}',
+        )
+
+    monkeypatch.setattr(module, "_load_dotenv", lambda path: None)
+    monkeypatch.setattr(module, "resolve_api_key", lambda **kwargs: "test-key")
+    monkeypatch.setattr(module, "make_client", lambda provider, api_key: object())
+    monkeypatch.setattr(module, "judge_continuation", fake_judge_continuation)
+    monkeypatch.setattr(
+        module.sys,
+        "argv",
+        [
+            "judge_continuation.py",
+            str(eval_dir),
+        ],
+    )
+
+    module.main()
+    capsys.readouterr()
+
+    assert seen_judge_models == ["gpt-5.4-mini-no-reasoning"]
+    rows = [
+        json.loads(line)
+        for line in (eval_dir / "judge.jsonl").read_text(encoding="utf-8").splitlines()
+    ]
+    assert rows[0]["judge_model"] == "gpt-5.4-mini-no-reasoning"
+    assert rows[0]["judge_api_model"] == "gpt-5.4-mini"
+
+
 def test_judge_continuation_resume_skips_existing_valid_rows(
     monkeypatch,
     tmp_path,
