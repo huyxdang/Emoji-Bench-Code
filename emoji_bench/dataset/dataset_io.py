@@ -40,7 +40,9 @@ class DatasetManifest:
     dataset_name: str
     total_examples: int
     bases_per_difficulty: int
+    master_seed: int
     target_lengths: dict[str, int]
+    difficulty_configs: dict[str, dict[str, int]]
     split_counts: dict[str, int]
     difficulty_counts: dict[str, int]
     error_type_counts: dict[str, int]
@@ -98,9 +100,12 @@ def build_continuation_dataset_card(
         "prompt-strength variants can be requested without regenerating the dataset.\n\n"
         "## Counts\n\n"
         f"- total_examples: {manifest.total_examples}\n"
+        f"- master_seed: {manifest.master_seed}\n"
         f"- split_counts: {json.dumps(manifest.split_counts, ensure_ascii=False)}\n"
         f"- difficulty_counts: {json.dumps(manifest.difficulty_counts, ensure_ascii=False)}\n"
         f"- error_type_counts: {json.dumps(manifest.error_type_counts, ensure_ascii=False)}\n"
+        f"- target_lengths: {json.dumps(manifest.target_lengths, ensure_ascii=False)}\n"
+        f"- difficulty_configs: {json.dumps(manifest.difficulty_configs, ensure_ascii=False)}\n"
         f"- generator_commit: {manifest.generator_commit}\n\n"
         "## Load\n\n"
         "```python\n"

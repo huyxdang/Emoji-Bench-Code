@@ -168,6 +168,15 @@ def run_evaluation(
             if model_config.anthropic_thinking is None
             else model_config.anthropic_thinking.enabled
         ),
+        "anthropic_thinking_mode": (
+            None
+            if model_config.anthropic_thinking is None
+            else (
+                "disabled"
+                if not model_config.anthropic_thinking.enabled
+                else model_config.anthropic_thinking.mode
+            )
+        ),
         "anthropic_thinking_budget_tokens": (
             None
             if model_config.anthropic_thinking is None

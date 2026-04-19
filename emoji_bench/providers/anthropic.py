@@ -20,27 +20,38 @@ def request_anthropic_messages(
         "messages": messages,
         "max_tokens": max_output_tokens,
     }
-    if (
-        model_config.anthropic_thinking is not None
-        and model_config.anthropic_thinking.enabled
-        and model_config.anthropic_thinking.budget_tokens is not None
-    ):
-        if model_config.anthropic_thinking.budget_tokens >= max_output_tokens:
-            raise ValueError("Anthropic thinking budget must be less than max_output_tokens")
-        options["thinking"] = {
-            "type": "enabled",
-            "budget_tokens": model_config.anthropic_thinking.budget_tokens,
-        }
+    thinking = model_config.anthropic_thinking
+    if thinking is not None and thinking.enabled:
+        if thinking.mode == "adaptive":
+            options["thinking"] = {"type": "adaptive"}
+        elif thinking.budget_tokens is not None:
+            if thinking.budget_tokens >= max_output_tokens:
+                raise ValueError("Anthropic thinking budget must be less than max_output_tokens")
+            options["thinking"] = {
+                "type": "enabled",
+                "budget_tokens": thinking.budget_tokens,
+            }
     if model_config.anthropic_effort is not None:
         options["output_config"] = {"effort": model_config.anthropic_effort}
 
-    response = client.messages.create(**options)
+    response = _send_anthropic_request(client=client, options=options)
     return ContinuationResponse(
         raw_continuation_text=_anthropic_text(response),
         response_id=getattr(response, "id", None),
         usage=extract_anthropic_usage(response),
         mode=mode,
     )
+
+
+def _send_anthropic_request(*, client: Any, options: dict[str, Any]) -> Any:
+    messages_api = client.messages
+    stream = getattr(messages_api, "stream", None)
+    if callable(stream):
+        # Anthropic's SDK requires streaming for long-running requests. Using the
+        # helper keeps the final response shape identical to messages.create().
+        with stream(**options) as response_stream:
+            return response_stream.get_final_message()
+    return messages_api.create(**options)
 
 
 def _anthropic_text(response: Any) -> str:

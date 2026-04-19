@@ -8,9 +8,11 @@ ProviderName = Literal["openai", "anthropic", "mistral", "gemini"]
 OpenAIReasoningEffort = Literal["none", "minimal", "low", "medium", "high", "xhigh"]
 AnthropicEffort = Literal["low", "medium", "high", "max"]
 GeminiThinkingLevel = Literal["minimal", "low", "medium", "high"]
+AnthropicThinkingMode = Literal["manual", "adaptive"]
 ReasoningEffortOverride = Literal["none", "minimal", "low", "medium", "high", "xhigh", "max"]
 
 DEFAULT_MAX_OUTPUT_TOKENS = 4096
+CLAUDE_OPUS_MAX_OUTPUT_TOKENS = 128000
 REASONING_EFFORT_CHOICES: tuple[ReasoningEffortOverride, ...] = (
     "none",
     "minimal",
@@ -37,6 +39,7 @@ class OpenAIReasoningConfig:
 class AnthropicThinkingConfig:
     enabled: bool
     budget_tokens: int | None = None
+    mode: AnthropicThinkingMode = "manual"
 
 
 @dataclass(frozen=True)
@@ -91,6 +94,7 @@ def _anthropic_model(
     key: str,
     label: str,
     api_model: str,
+    default_max_output_tokens: int = DEFAULT_MAX_OUTPUT_TOKENS,
     anthropic_thinking: AnthropicThinkingConfig | None = None,
     anthropic_effort: AnthropicEffort | None = None,
     notes: str | None = None,
@@ -102,7 +106,7 @@ def _anthropic_model(
         api_model=api_model,
         docs_url=ANTHROPIC_MODELS_DOCS_URL,
         api_key_env_var="ANTHROPIC_API_KEY",
-        default_max_output_tokens=DEFAULT_MAX_OUTPUT_TOKENS,
+        default_max_output_tokens=default_max_output_tokens,
         anthropic_thinking=anthropic_thinking,
         anthropic_effort=anthropic_effort,
         notes=notes,
@@ -316,6 +320,19 @@ MODEL_CONFIGS: dict[str, ModelConfig] = {
             "enabled at the minimum 1024-token budget and effort='high'."
         ),
     ),
+    "claude-opus-4-7-reasoning-max": _anthropic_model(
+        key="claude-opus-4-7-reasoning-max",
+        label="Claude Opus 4.7 (reasoning max)",
+        api_model="claude-opus-4-7",
+        anthropic_thinking=AnthropicThinkingConfig(enabled=True, mode="adaptive"),
+        anthropic_effort="max",
+        default_max_output_tokens=CLAUDE_OPUS_MAX_OUTPUT_TOKENS,
+        notes=(
+            "Pinned benchmark alias for Claude Opus 4.7 with adaptive thinking "
+            "enabled and effort='max'. Defaults to Anthropic's published 128k "
+            "max output for synchronous Messages API requests."
+        ),
+    ),
     CLAUDE_HAIKU_4_5.key: CLAUDE_HAIKU_4_5,
     GEMINI_3_FLASH_PREVIEW.key: GEMINI_3_FLASH_PREVIEW,
     "gemini-3-flash-preview-thinking-high": replace(
@@ -347,6 +364,7 @@ MODEL_CONFIGS: dict[str, ModelConfig] = {
 }
 
 _MODEL_ORDER: tuple[str, ...] = (
+    "claude-opus-4-7-reasoning-max",
     "claude-opus-4-6-reasoning-high",
     "claude-sonnet-4-6-reasoning-high",
     "gpt-5.4-reasoning-xhigh",
@@ -388,6 +406,7 @@ _ANTHROPIC_EFFORT_MODELS: frozenset[str] = frozenset(
     {
         "claude-mythos-preview",
         "claude-opus-4-5",
+        "claude-opus-4-7",
         "claude-opus-4-6",
         "claude-sonnet-4-6",
     }
@@ -395,8 +414,14 @@ _ANTHROPIC_EFFORT_MODELS: frozenset[str] = frozenset(
 _ANTHROPIC_MAX_EFFORT_MODELS: frozenset[str] = frozenset(
     {
         "claude-mythos-preview",
+        "claude-opus-4-7",
         "claude-opus-4-6",
         "claude-sonnet-4-6",
+    }
+)
+_ANTHROPIC_XHIGH_EFFORT_MODELS: frozenset[str] = frozenset(
+    {
+        "claude-opus-4-7",
     }
 )
 
@@ -423,16 +448,21 @@ def apply_reasoning_effort_override(
     if supports_anthropic_effort(model_config):
         if effort == "none":
             return replace(model_config, anthropic_effort=None)
-        if effort in {"minimal", "xhigh"}:
+        if effort == "minimal":
             raise ValueError(
                 f"Anthropic effort does not support {effort!r}; use one of "
-                f"{('low', 'medium', 'high', 'max')}."
+                f"{('low', 'medium', 'high', 'max')} and xhigh on Claude Opus 4.7."
+            )
+        if effort == "xhigh" and model_config.api_model not in _ANTHROPIC_XHIGH_EFFORT_MODELS:
+            raise ValueError(
+                f"Anthropic effort {effort!r} is unsupported for {model_config.key}; "
+                "xhigh is available only on Claude Opus 4.7."
             )
         if effort == "max" and model_config.api_model not in _ANTHROPIC_MAX_EFFORT_MODELS:
             raise ValueError(
                 f"Anthropic effort {effort!r} is unsupported for {model_config.key}; "
-                "max is available only on Claude Mythos Preview, Claude Opus 4.6, "
-                "and Claude Sonnet 4.6."
+                "max is available only on Claude Mythos Preview, Claude Opus 4.7, "
+                "Claude Opus 4.6, and Claude Sonnet 4.6."
             )
         return replace(model_config, anthropic_effort=effort)
 

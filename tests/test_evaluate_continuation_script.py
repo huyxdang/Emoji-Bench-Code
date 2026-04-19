@@ -148,6 +148,48 @@ def test_evaluate_continuation_summary_records_max_output_tokens_override(
     assert summary["max_output_tokens"] == 777
 
 
+def test_evaluate_continuation_defaults_max_concurrent_to_10(monkeypatch, tmp_path, capsys):
+    module = load_script_module("evaluate_continuation")
+    dataset_path = tmp_path / "test.jsonl"
+    output_dir = tmp_path / "eval-out"
+    write_jsonl(dataset_path, [_dataset_record("cont-000001")])
+
+    captured: dict[str, object] = {}
+
+    def fake_run_evaluation(**kwargs):
+        captured.update(kwargs)
+        return {
+            "model": kwargs["model_config"].key,
+            "provider": kwargs["model_config"].provider,
+            "api_model": kwargs["model_config"].api_model,
+            "mode": kwargs["options"].mode,
+            "completed_examples": len(kwargs["records"]),
+            "total_examples": len(kwargs["records"]),
+        }
+
+    monkeypatch.setattr(module, "_load_dotenv", lambda path: None)
+    monkeypatch.setattr(module, "resolve_api_key", lambda **kwargs: "test-key")
+    monkeypatch.setattr(module, "make_client", lambda provider, api_key: object())
+    monkeypatch.setattr(module, "run_evaluation", fake_run_evaluation)
+    monkeypatch.setattr(
+        module.sys,
+        "argv",
+        [
+            "evaluate_continuation.py",
+            str(dataset_path),
+            "--model",
+            "gpt-5.4-mini-no-reasoning",
+            "--output-dir",
+            str(output_dir),
+        ],
+    )
+
+    module.main()
+    capsys.readouterr()
+
+    assert captured["options"].max_concurrent == 10
+
+
 def test_evaluate_continuation_resume_skips_already_written_examples(
     monkeypatch,
     tmp_path,

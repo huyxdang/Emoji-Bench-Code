@@ -20,9 +20,31 @@ class _FakeMessagesAPI:
     def __init__(self, response: object):
         self._response = response
         self.calls: list[dict] = []
+        self.create_calls: list[dict] = []
+        self.stream_calls: list[dict] = []
 
     def create(self, **options):
+        self.create_calls.append(options)
         self.calls.append(options)
+        return self._response
+
+    def stream(self, **options):
+        self.stream_calls.append(options)
+        self.calls.append(options)
+        return _FakeAnthropicStream(self._response)
+
+
+class _FakeAnthropicStream:
+    def __init__(self, response: object):
+        self._response = response
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        return None
+
+    def get_final_message(self):
         return self._response
 
 
@@ -130,6 +152,24 @@ def test_request_continuation_prefill_anthropic_sends_three_message_conversation
     assert "output_config" not in sent
 
 
+def test_request_continuation_anthropic_uses_stream_helper_when_available():
+    response = _make_anthropic_response(" continuing the work...")
+    client = _FakeAnthropicClient(response)
+    model_config = get_model_config("claude-haiku-4-5")
+
+    request_continuation(
+        client=client,
+        model_config=model_config,
+        turn_1_user="[T1U]",
+        turn_1_assistant_prefill="[PREFILL]",
+        max_output_tokens=512,
+        mode="prefill",
+    )
+
+    assert len(client.messages.stream_calls) == 1
+    assert client.messages.create_calls == []
+
+
 def test_request_continuation_single_turn_anthropic_sends_one_user_message():
     level_0 = get_turn_2_prompt(0)
     response = _make_anthropic_response("Step 3: ...")
@@ -213,6 +253,25 @@ def test_request_continuation_sonnet_reasoning_sends_thinking_and_effort():
     sent = client.messages.calls[0]
     assert sent["thinking"] == {"type": "enabled", "budget_tokens": 1024}
     assert sent["output_config"] == {"effort": "low"}
+
+
+def test_request_continuation_opus_47_reasoning_max_sends_adaptive_thinking_and_effort():
+    response = _make_anthropic_response("Step 3: ...")
+    client = _FakeAnthropicClient(response)
+    model_config = get_model_config("claude-opus-4-7-reasoning-max")
+
+    request_continuation(
+        client=client,
+        model_config=model_config,
+        turn_1_user="[T1U]",
+        turn_1_assistant_prefill="[PREFILL]",
+        max_output_tokens=2048,
+        mode="prefill",
+    )
+
+    sent = client.messages.calls[0]
+    assert sent["thinking"] == {"type": "adaptive"}
+    assert sent["output_config"] == {"effort": "max"}
 
 
 def test_request_continuation_prefill_openai_sends_three_message_conversation():

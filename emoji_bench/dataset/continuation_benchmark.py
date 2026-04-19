@@ -8,6 +8,12 @@ from emoji_bench.dataset.error_injector import (
     get_cascading_eligible_steps,
     inject_cascading_wrong_result,
 )
+from emoji_bench.dataset.rejection_reasons import (
+    ContinuationGenerationError,
+    R_CASCADE_CONVERGENT,
+    R_NO_ELIGIBLE_IN_CHAIN,
+    R_NO_ELIGIBLE_IN_WINDOW,
+)
 from emoji_bench.domain.chain_generator import generate_chain
 from emoji_bench.domain.chain_types import DerivationChain
 from emoji_bench.continuation_formatter import (
@@ -93,7 +99,8 @@ def generate_continuation_instance(
         step.step_number for step in get_cascading_eligible_steps(clean_chain)
     }
     if not eligible_step_numbers:
-        raise ValueError(
+        raise ContinuationGenerationError(
+            R_NO_ELIGIBLE_IN_CHAIN,
             f"Chain of length {chain_length_x} has no cascading-eligible steps"
         )
 
@@ -103,7 +110,8 @@ def generate_continuation_instance(
         if step in eligible_step_numbers
     ]
     if not candidates:
-        raise ValueError(
+        raise ContinuationGenerationError(
+            R_NO_ELIGIBLE_IN_WINDOW,
             "No eligible error step in the midpoint ±1 window for a chain "
             f"of length {chain_length_x}"
         )
@@ -123,7 +131,8 @@ def generate_continuation_instance(
         break
 
     if mutated_chain is None or error_info is None:
-        raise ValueError(
+        raise ContinuationGenerationError(
+            R_CASCADE_CONVERGENT,
             "Could not inject a non-convergent cascading error at any candidate "
             f"step (tried {candidates}) for a chain of length {chain_length_x}"
         )

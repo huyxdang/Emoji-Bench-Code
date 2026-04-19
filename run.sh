@@ -13,8 +13,8 @@ Examples:
 
 Notes:
   - Defaults to artifacts/emoji-bench-dataset-100
-  - Runs the full 32-run matrix:
-      8 models x 2 modes (prefill, single_turn) x 2 prompt levels (L0, L1)
+  - Runs the full 36-run matrix:
+      9 models x 2 modes (prefill, single_turn) x 2 prompt levels (L0, L1)
   - Any args after -- are forwarded to every evaluate_continuation.py call
   - Runs judge+score after the eval phase finishes
   - Continues past failed cells and prints a final failure summary
@@ -50,6 +50,7 @@ if (( ${#EXTRA_ARGS[@]} > 0 )); then
 fi
 
 MODELS=(
+  "claude-opus-4-7-reasoning-max"
   "claude-opus-4-6-reasoning-high"
   "claude-sonnet-4-6-reasoning-high"
   "gpt-5.4-reasoning-xhigh"

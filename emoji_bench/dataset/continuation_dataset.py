@@ -19,6 +19,13 @@ from emoji_bench.dataset.dataset_io import (
     DatasetManifest,
     git_commit,
 )
+from emoji_bench.dataset.rejection_reasons import (
+    ContinuationGenerationError,
+    REJECTION_REASONS,
+    R_CHAIN_TOO_SHORT,
+    R_INSUFFICIENT_RUNWAY,
+    R_OTHER_INJECTOR_ERROR,
+)
 from emoji_bench.domain.formatter import system_to_json
 from emoji_bench.domain.generator import generate_system
 
@@ -41,24 +48,6 @@ MAX_BASE_ATTEMPTS_PER_DIFFICULTY: int = 20_000
 ERROR_SEED_OFFSET: int = 101
 
 
-# Rejection reasons (kept as strings so they serialize cleanly to JSON).
-R_CHAIN_TOO_SHORT = "chain_too_short"
-R_INSUFFICIENT_RUNWAY = "insufficient_runway"
-R_NO_ELIGIBLE_IN_CHAIN = "no_eligible_in_chain"
-R_NO_ELIGIBLE_IN_WINDOW = "no_eligible_in_window"
-R_CASCADE_CONVERGENT = "cascade_convergent"
-R_OTHER_INJECTOR_ERROR = "other_injector_error"
-
-REJECTION_REASONS: tuple[str, ...] = (
-    R_CHAIN_TOO_SHORT,
-    R_INSUFFICIENT_RUNWAY,
-    R_NO_ELIGIBLE_IN_CHAIN,
-    R_NO_ELIGIBLE_IN_WINDOW,
-    R_CASCADE_CONVERGENT,
-    R_OTHER_INJECTOR_ERROR,
-)
-
-
 def _seed_root(master_seed: int, difficulty_index: int, base_index: int) -> int:
     return master_seed * 1_000_000 + difficulty_index * 10_000 + base_index * 100
 
@@ -70,22 +59,6 @@ def _per_difficulty_targets(count: int) -> dict[str, int]:
         difficulty: count // n + (1 if index < count % n else 0)
         for index, difficulty in enumerate(difficulty_names)
     }
-
-
-def _classify_injector_error(msg: str) -> str:
-    # Mirrors the error strings raised by generate_continuation_instance and
-    # inject_cascading_wrong_result. Update both sides together if either
-    # message text changes.
-    if "no cascading-eligible steps" in msg:
-        return R_NO_ELIGIBLE_IN_CHAIN
-    if "No eligible error step in the midpoint" in msg:
-        return R_NO_ELIGIBLE_IN_WINDOW
-    if "non-convergent cascading error" in msg:
-        return R_CASCADE_CONVERGENT
-    if "change the final result" in msg:
-        return R_CASCADE_CONVERGENT
-    return R_OTHER_INJECTOR_ERROR
-
 
 def _try_generate(
     *,
@@ -105,8 +78,10 @@ def _try_generate(
             chain_seed=chain_seed,
             error_seed=error_seed,
         )
-    except ValueError as exc:
-        return None, _classify_injector_error(str(exc))
+    except ContinuationGenerationError as exc:
+        return None, exc.reason
+    except ValueError:
+        return None, R_OTHER_INJECTOR_ERROR
 
     if instance.chain_length_x < MIN_REALIZED_X:
         return None, R_CHAIN_TOO_SHORT
@@ -250,7 +225,9 @@ def generate_continuation_dataset_records(
         dataset_name=dataset_name,
         total_examples=sum(split_counts.values()),
         bases_per_difficulty=max(bases_used_per_difficulty.values(), default=0),
+        master_seed=master_seed,
         target_lengths=resolved_lengths,
+        difficulty_configs={key: dict(value) for key, value in DIFFICULTY_CONFIGS.items()},
         split_counts=dict(split_counts),
         difficulty_counts=dict(difficulty_counts),
         error_type_counts=dict(error_type_counts),

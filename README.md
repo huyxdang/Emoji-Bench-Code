@@ -76,7 +76,7 @@ This produces:
 ```
 artifacts/emoji-bench-dataset-100/
 ├── test.jsonl      # 100 rows, stratified 25 × {easy, medium, hard, expert}
-├── manifest.json   # seeds, rejection counts, generator commit hash
+├── manifest.json   # master seed, difficulty config snapshot, rejection counts, generator commit hash
 └── README.md
 ```
 
@@ -96,12 +96,13 @@ Each `test.jsonl` line is a JSON object with:
 | `example_id`, `base_id`, `split`, `difficulty`, `error_type` | identifiers + stratification |
 | `turn_1_user` | rules + expression + step-format instructions |
 | `turn_1_assistant_prefill` | partial derivation ending on the injected bad step |
-| `turn_2_user` | `Please continue.` |
 | `ground_truth_final_output` | correct terminal symbol (clean chain) |
 | `wrong_branch_final_output` | terminal reached by cascading from the bad step |
-| `chain_length_x`, `prefill_error_step`, `prefill_cutoff_step`, `target_step_count` | chain shape |
+| `chain_length_x`, `prefill_error_step`, `target_step_count` | chain shape |
 | `system_json` | serialized formal system (tables, transforms) |
 | `system_seed`, `chain_seed`, `error_seed` | generation seeds |
+
+The default Turn 2 user message is not stored in the row; evaluation applies `Please continue.` or a prompt-strength override at run time.
 
 ### Reproduce a single row from its seeds
 
@@ -138,7 +139,13 @@ The assertions will hold byte-for-byte on any machine as long as the generator c
 
 ## Run the full experiment
 
-The evaluation matrix is **8 models × 2 delivery shapes × 2 prompt strengths = 32 cells**.
+The current runner matrix is **9 models × 2 delivery shapes × 2 prompt strengths = 36 cells**.
+
+The checked-in artifact bundle in `artifacts/evals/` is intentionally partial:
+
+- `claude-opus-4-7-reasoning-max`: `B-L0` only
+- `gemini-3.1-pro-preview-thinking-high`: `B-L0` and `B-L1` only
+- all other listed models: full `2 × 2` coverage
 
 ```bash
 ./run.sh artifacts/emoji-bench-dataset-100 -- --max-concurrent 8
@@ -146,7 +153,7 @@ The evaluation matrix is **8 models × 2 delivery shapes × 2 prompt strengths =
 
 `run.sh` will:
 
-1. Run `evaluate_continuation.py` over all 32 cells (resuming partially completed ones).
+1. Run `evaluate_continuation.py` over all 36 cells (resuming partially completed ones).
 2. Run the LLM-as-judge over each successful prediction set.
 3. Run the deterministic scorer.
 4. Continue past failed cells and print a final failure summary.
@@ -240,11 +247,18 @@ This closes the compensating-error loophole: a chain that writes a wrong interme
 
 All three nested rates on the `artifacts/emoji-bench-dataset-100` dataset (N=100). Rows are sorted by DCF (the strictest metric). `D = detect_rate`, `DC = detect_correct_rate`, `DCF = detect_correct_finaloutput_correct_rate`.
 
+Coverage note:
+
+- `claude-opus-4-7-reasoning-max` currently appears only in `B-L0`
+- `gemini-3.1-pro-preview-thinking-high` currently appears only in `B-L0` and `B-L1`
+- models are omitted from cell tables that do not have committed artifacts yet
+
 ### B-L0 — prefill, no audit hint (headline condition)
 
 | Model | D | DC | DCF |
 |---|---:|---:|---:|
 | gpt-5.4-reasoning-xhigh | 0.54 | 0.52 | **0.41** |
+| claude-opus-4-7-reasoning-max | 0.46 | 0.45 | 0.38 |
 | claude-opus-4-6-reasoning-high | 0.33 | 0.31 | 0.28 |
 | gemini-3.1-pro-preview-thinking-high | 0.07 | 0.06 | 0.05 |
 | claude-sonnet-4-6-reasoning-high | 0.03 | 0.03 | 0.02 |
@@ -290,7 +304,7 @@ All three nested rates on the `artifacts/emoji-bench-dataset-100` dataset (N=100
 | gpt-5.4-mini-reasoning-xhigh | 0.00 | 0.00 | 0.00 |
 | magistral-medium-2509 | 0.00 | 0.00 | 0.00 |
 
-Full per-difficulty breakdowns are in each cell's `score_summary.json`.
+Per-difficulty breakdowns are in each available cell's `score_summary.json`.
 
 ---
 

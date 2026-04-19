@@ -4,12 +4,21 @@ import subprocess
 import sys
 from pathlib import Path
 
+from emoji_bench.dataset.continuation_benchmark import generate_continuation_instance
 from emoji_bench.dataset.continuation_dataset import (
     DEFAULT_CONTINUATION_TARGET_LENGTHS,
     MIN_REALIZED_X,
     REJECTION_REASONS,
+    _try_generate,
     generate_continuation_dataset_records,
 )
+from emoji_bench.dataset.dataset_io import DIFFICULTY_CONFIGS
+from emoji_bench.dataset.rejection_reasons import (
+    ContinuationGenerationError,
+    R_NO_ELIGIBLE_IN_WINDOW,
+)
+from emoji_bench.domain.formatter import system_from_json
+from emoji_bench.domain.generator import generate_system
 
 
 def test_generate_continuation_dataset_records_produces_exact_count():
@@ -63,12 +72,6 @@ def test_continuation_records_have_full_schema_and_invariants():
 
 
 def test_runway_floor_is_satisfied_for_every_record():
-    # We can't read mutated_chain directly from the record, but we can verify
-    # the runway by regenerating instances with the same seeds. Here we just
-    # check the weaker structural invariant: Y <= X - ceil(X/2), i.e. there
-    # are at least ceil(X/2) clean-chain steps after the cutoff, which
-    # matches the dataset-generation filter when the mutated chain's suffix
-    # is at least as long as the clean chain's remaining steps.
     split_records, _ = generate_continuation_dataset_records(
         dataset_name="emoji-bench-e-continue-runway",
         count=4,
@@ -76,14 +79,49 @@ def test_runway_floor_is_satisfied_for_every_record():
     )
 
     for record in split_records["test"]:
-        x = record["chain_length_x"]
-        y = record["prefill_error_step"]
-        required = math.ceil(x / 2)
-        clean_remaining = x - y
-        # Because Y is at the midpoint, the clean chain always has >=
-        # ceil(X/2) remaining steps; the mutated runway is enforced
-        # separately by the generator's R_INSUFFICIENT_RUNWAY filter.
-        assert clean_remaining >= required - 1
+        system = system_from_json(record["system_json"])
+        instance = generate_continuation_instance(
+            system,
+            length=record["target_step_count"],
+            chain_seed=record["chain_seed"],
+            error_seed=record["error_seed"],
+        )
+        required = math.ceil(instance.chain_length_x / 2)
+        mutated_remaining = len(instance.mutated_chain.steps) - instance.prefill_error_step
+        assert mutated_remaining >= required
+
+
+def test_continuation_records_are_exactly_reproducible_from_stored_metadata():
+    split_records, manifest = generate_continuation_dataset_records(
+        dataset_name="emoji-bench-e-continue-repro",
+        count=4,
+        master_seed=20260413,
+    )
+
+    assert manifest.master_seed == 20260413
+    assert manifest.difficulty_configs == DIFFICULTY_CONFIGS
+
+    for record in split_records["test"]:
+        system_from_row = system_from_json(record["system_json"])
+        system_from_seed = generate_system(
+            random_seed=record["system_seed"],
+            **DIFFICULTY_CONFIGS[record["difficulty"]],
+        )
+
+        assert system_from_seed == system_from_row
+
+        instance = generate_continuation_instance(
+            system_from_row,
+            length=record["target_step_count"],
+            chain_seed=record["chain_seed"],
+            error_seed=record["error_seed"],
+        )
+        assert instance.turn_1_user == record["turn_1_user"]
+        assert instance.turn_1_assistant_prefill == record["turn_1_assistant_prefill"]
+        assert instance.ground_truth_final_output.emoji == record["ground_truth_final_output"]
+        assert instance.wrong_branch_final_output.emoji == record["wrong_branch_final_output"]
+        assert instance.chain_length_x == record["chain_length_x"]
+        assert instance.prefill_error_step == record["prefill_error_step"]
 
 
 def test_rejection_counts_are_populated_for_every_difficulty():
@@ -99,6 +137,29 @@ def test_rejection_counts_are_populated_for_every_difficulty():
         assert set(bucket.keys()) == set(REJECTION_REASONS)
         for reason, count in bucket.items():
             assert count >= 0, f"negative rejection count for {difficulty}/{reason}"
+
+
+def test_try_generate_uses_structured_rejection_reasons(monkeypatch):
+    def fake_generate_continuation_instance(*args, **kwargs):
+        raise ContinuationGenerationError(
+            R_NO_ELIGIBLE_IN_WINDOW,
+            "custom message that should not need string parsing",
+        )
+
+    monkeypatch.setattr(
+        "emoji_bench.dataset.continuation_dataset.generate_continuation_instance",
+        fake_generate_continuation_instance,
+    )
+
+    instance, reason = _try_generate(
+        system=object(),
+        target_step_count=6,
+        chain_seed=7,
+        error_seed=13,
+    )
+
+    assert instance is None
+    assert reason == R_NO_ELIGIBLE_IN_WINDOW
 
 
 def test_default_target_lengths_match_locked_values():
@@ -136,7 +197,11 @@ def test_generate_continuation_dataset_script_supports_exact_count(tmp_path):
     manifest = json.loads((output_dir / "manifest.json").read_text(encoding="utf-8"))
 
     assert summary["total_examples"] == 4
+    assert summary["master_seed"] == 20260413
+    assert summary["target_lengths"] == DEFAULT_CONTINUATION_TARGET_LENGTHS
     assert manifest["total_examples"] == 4
+    assert manifest["master_seed"] == 20260413
+    assert manifest["difficulty_configs"] == DIFFICULTY_CONFIGS
     assert summary["selected_variants"] == ["E-CONTINUE"]
     assert manifest["error_type_counts"] == {"E-CONTINUE": 4}
     assert manifest["rejection_counts"] is not None
@@ -144,6 +209,7 @@ def test_generate_continuation_dataset_script_supports_exact_count(tmp_path):
     assert "turn_1_user" in card_text
     assert "turn_1_assistant_prefill" in card_text
     assert "ground_truth_final_output" in card_text
+    assert "master_seed" in card_text
 
     test_jsonl = (output_dir / "test.jsonl").read_text(encoding="utf-8").splitlines()
     assert len(test_jsonl) == 4

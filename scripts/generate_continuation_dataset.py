@@ -123,6 +123,8 @@ def main() -> None:
     summary = {
         "output_dir": str(Path(output_dir).resolve()),
         "total_examples": manifest.total_examples,
+        "master_seed": manifest.master_seed,
+        "target_lengths": manifest.target_lengths,
         "split_counts": manifest.split_counts,
         "difficulty_counts": manifest.difficulty_counts,
         "error_type_counts": manifest.error_type_counts,
