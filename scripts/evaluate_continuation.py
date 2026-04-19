@@ -112,7 +112,7 @@ def main() -> None:
         type=int,
         default=10,
         help=(
-            "Number of concurrent API calls to run at once. Default 8. "
+            "Number of concurrent API calls to run at once. Default 10. "
             "Thread-safe: writes to predictions.jsonl are serialized behind "
             "a lock, and the 'seen' set is guarded. Raise or lower as needed "
             "for provider rate limits and model latency."
