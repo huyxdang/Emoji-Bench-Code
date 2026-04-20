@@ -34,11 +34,27 @@ METRICS = [
 ]
 
 
+UNCAPPED_MODELS = {
+    "claude-opus-4-7-reasoning-max",
+    "gemini-3-flash-preview-thinking-high",
+    "gemini-3.1-pro-preview-thinking-high",
+    "gpt-5.4-mini-reasoning-xhigh",
+    "gpt-5.4-reasoning-xhigh",
+}
+
+EXCLUDED_MODELS = {"mistral-large-2512"}
+
+
 def collect_b_results(level: int, evals_dir: Path) -> list[tuple[str, dict[str, float]]]:
     suffix = f"-B-L{level}"
     results: list[tuple[str, dict[str, float]]] = []
     for cell_dir in sorted(evals_dir.iterdir()):
         if not cell_dir.is_dir() or not cell_dir.name.endswith(suffix):
+            continue
+        if "4096" in cell_dir.name:
+            continue
+        model_name = cell_dir.name[: -len(suffix)]
+        if model_name in EXCLUDED_MODELS:
             continue
         summary_path = cell_dir / "score_summary.json"
         if not summary_path.exists():
@@ -47,8 +63,8 @@ def collect_b_results(level: int, evals_dir: Path) -> list[tuple[str, dict[str, 
         with summary_path.open() as fh:
             summary = json.load(fh)
         headline = summary.get("headline") or {}
-        model_name = cell_dir.name[: -len(suffix)]
-        results.append((model_name, headline))
+        display_name = model_name if model_name in UNCAPPED_MODELS else f"{model_name} (4096)"
+        results.append((display_name, headline))
     return results
 
 
@@ -92,6 +108,9 @@ def plot_level(
     ax.set_ylim(0, 105)
     ax.set_xticks(list(x_positions))
     ax.set_xticklabels(models, rotation=25, ha="right")
+    for tick_label, name in zip(ax.get_xticklabels(), models):
+        if "(4096)" in name:
+            tick_label.set_color("#4C78A8")
     ax.legend(loc="upper right", frameon=False)
     ax.grid(axis="y", linestyle="--", alpha=0.4)
     fig.tight_layout()
