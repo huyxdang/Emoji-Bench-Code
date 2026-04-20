@@ -23,8 +23,8 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 EVALS_DIR = REPO_ROOT / "artifacts" / "evals"
 
 LEVELS = {
-    0: "Performance when prompted w/out hint",
-    1: "Performance when prompted with hint",
+    0: "Performance (w/out hint)",
+    1: "Performance (with hint)",
 }
 
 METRICS = [
