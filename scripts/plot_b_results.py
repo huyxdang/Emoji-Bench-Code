@@ -42,7 +42,7 @@ UNCAPPED_MODELS = {
     "gpt-5.4-reasoning-xhigh",
 }
 
-EXCLUDED_MODELS = {"mistral-large-2512"}
+EXCLUDED_MODELS: set[str] = set()
 
 
 def collect_b_results(level: int, evals_dir: Path) -> list[tuple[str, dict[str, float]]]:
