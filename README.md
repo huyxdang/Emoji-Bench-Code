@@ -13,12 +13,16 @@ we couldn't control such configurations for models on Kaggle Benchmark.
 
 Emoji-Bench is a benchmark for **unprompted self-detection** during derivation continuation in novel formal systems.
 
-**The question:** if a model is shown a partially completed derivation whose last visible step is wrong, and the only user instruction is to continue, will it notice — or blindly cascade?
+**The question:** Can a model catch and fix its own mistakes - without being prompted to look?
 
 Each row is a 3-turn interaction:
 1. **Turn 1 user:** rules for a procedurally generated formal system, an expression, and a required step format.
-2. **Turn 1 assistant (prefilled):** steps `1..Y`, where step `Y` is a deliberately injected error.
+2. **Turn 1 assistant (prefilled):** steps `1..Y`, where step `Y` is a deliberately injected error. The model is not told that its own prior turn contains an error.
 3. **Turn 2 user:** `Please continue.`
+
+`Please continue.` is the minimal message that keeps the task coherent — it names no error, asks for no review, and makes no reference to correctness. A truly empty turn-2 would just end the conversation. This is the condition that answers the headline question.
+
+A second prompt strength, `Please continue. Double-check any step you're unsure about.`, is included as a **prompted-review baseline** — it directly instructs the model to look. It is not a test of unprompted self-correction; it's the contrast that tells you how much headroom the nudge buys. In the matrix below, **L0 answers the question**; **L1 bounds the ceiling**.
 
 The model's continuation is scored against two stored targets — the correct terminal symbol and the terminal reached by blindly cascading from the bad step. These are always different by construction.
 
@@ -253,7 +257,7 @@ Coverage note:
 - `gemini-3.1-pro-preview-thinking-high` currently appears only in `B-L0` and `B-L1`
 - models are omitted from cell tables that do not have committed artifacts yet
 
-### B-L0 — prefill, no audit hint (headline condition)
+### B-L0 — prefill, no audit hint (headline condition — answers "without being prompted to look")
 
 | Model | D | DC | DCF |
 |---|---:|---:|---:|
@@ -267,7 +271,7 @@ Coverage note:
 | mistral-large-2512 | 0.00 | 0.00 | 0.00 |
 | magistral-medium-2509 | 0.00 | 0.00 | 0.00 |
 
-### B-L1 — prefill, audit hint
+### B-L1 — prefill, audit hint (prompted-review ceiling, not the headline question)
 
 | Model | D | DC | DCF |
 |---|---:|---:|---:|
@@ -292,7 +296,7 @@ Coverage note:
 | mistral-large-2512 | 0.00 | 0.00 | 0.00 |
 | magistral-medium-2509 | 0.00 | 0.00 | 0.00 |
 
-### C-L1 — single-turn, audit hint
+### C-L1 — single-turn, audit hint (prompted-review ceiling)
 
 | Model | D | DC | DCF |
 |---|---:|---:|---:|
