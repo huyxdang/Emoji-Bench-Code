@@ -44,7 +44,7 @@ def test_gpt54_models_default_to_medium_reasoning():
         assert config.openai_reasoning.effort == "medium"
     assert get_model_config("gpt-5.4").default_max_output_tokens == DEFAULT_MAX_OUTPUT_TOKENS
     assert get_model_config("gpt-5.4-mini").default_max_output_tokens == DEFAULT_MAX_OUTPUT_TOKENS
-    assert get_model_config("gpt-5.4-nano").default_max_output_tokens == DEFAULT_MAX_OUTPUT_TOKENS
+    assert get_model_config("gpt-5.4-nano").default_max_output_tokens == GPT_5_4_MAX_OUTPUT_TOKENS
 
 
 def test_pinned_openai_reasoning_xhigh_aliases_are_present():
@@ -58,7 +58,7 @@ def test_pinned_openai_reasoning_xhigh_aliases_are_present():
     assert gpt_54_mini.provider == "openai"
     assert gpt_54_mini.openai_reasoning is not None
     assert gpt_54_mini.openai_reasoning.effort == "xhigh"
-    assert gpt_54_mini.default_max_output_tokens == DEFAULT_MAX_OUTPUT_TOKENS
+    assert gpt_54_mini.default_max_output_tokens == GPT_5_4_MAX_OUTPUT_TOKENS
 
 
 def test_gpt54_mini_no_reasoning_alias_is_present():
@@ -141,7 +141,7 @@ def test_all_configured_models_use_expected_default_max_output_tokens():
     for config in MODEL_CONFIGS.values():
         if config.key == "claude-opus-4-7-reasoning-max":
             assert config.default_max_output_tokens == CLAUDE_OPUS_MAX_OUTPUT_TOKENS
-        elif config.key == "gpt-5.4-reasoning-xhigh":
+        elif config.key in {"gpt-5.4-reasoning-xhigh", "gpt-5.4-mini-reasoning-xhigh", "gpt-5.4-nano"}:
             assert config.default_max_output_tokens == GPT_5_4_MAX_OUTPUT_TOKENS
         else:
             assert config.default_max_output_tokens == DEFAULT_MAX_OUTPUT_TOKENS

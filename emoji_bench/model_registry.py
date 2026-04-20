@@ -184,7 +184,10 @@ GPT_5_4_NANO = _openai_model(
     api_model="gpt-5.4-nano",
     docs_suffix="gpt-5.4-nano",
     openai_reasoning=OpenAIReasoningConfig(effort="medium"),
-    notes="Configured to use medium reasoning effort for evaluation runs.",
+    notes=(
+        "Configured to use medium reasoning effort for evaluation runs. "
+        "Defaults to OpenAI's published 128k max output tokens."
+    ),
 )
 
 CLAUDE_SONNET_4_6 = _anthropic_model(
@@ -299,10 +302,17 @@ MODEL_CONFIGS: dict[str, ModelConfig] = {
         GPT_5_4_MINI,
         key="gpt-5.4-mini-reasoning-xhigh",
         label="GPT-5.4 mini (reasoning xhigh)",
+        default_max_output_tokens=GPT_5_4_MAX_OUTPUT_TOKENS,
         openai_reasoning=OpenAIReasoningConfig(effort="xhigh"),
-        notes="Pinned benchmark alias for GPT-5.4 mini at reasoning.effort='xhigh'.",
+        notes=(
+            "Pinned benchmark alias for GPT-5.4 mini at reasoning.effort='xhigh'. "
+            "Defaults to OpenAI's published 128k max output tokens."
+        ),
     ),
-    GPT_5_4_NANO.key: GPT_5_4_NANO,
+    GPT_5_4_NANO.key: replace(
+        GPT_5_4_NANO,
+        default_max_output_tokens=GPT_5_4_MAX_OUTPUT_TOKENS,
+    ),
     CLAUDE_SONNET_4_6.key: CLAUDE_SONNET_4_6,
     CLAUDE_SONNET_4_6_REASONING.key: CLAUDE_SONNET_4_6_REASONING,
     "claude-opus-4-6-reasoning-high": _anthropic_model(
