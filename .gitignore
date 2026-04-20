@@ -9,5 +9,3 @@ __pycache__/
 *.pyc
 .venv
 .env
-
-artifacts/emoji-bench-dataset-100
