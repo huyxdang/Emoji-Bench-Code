@@ -2,6 +2,7 @@ import pytest
 
 from emoji_bench.model_registry import (
     CLAUDE_OPUS_MAX_OUTPUT_TOKENS,
+    CLAUDE_SONNET_MAX_OUTPUT_TOKENS,
     DEFAULT_MAX_OUTPUT_TOKENS,
     GPT_5_4_MAX_OUTPUT_TOKENS,
     MODEL_CONFIGS,
@@ -19,7 +20,7 @@ def test_requested_model_configs_are_present():
         "claude-haiku-4-5",
         "claude-sonnet-4-6",
         "claude-sonnet-4-6-reasoning",
-        "claude-sonnet-4-6-reasoning-high",
+        "claude-sonnet-4-6-reasoning-max",
         "gemini-3-flash-preview-thinking-high",
         "gemini-3-flash-preview",
         "gemini-3.1-pro-preview-thinking-high",
@@ -69,33 +70,37 @@ def test_gpt54_mini_no_reasoning_alias_is_present():
     assert config.openai_reasoning.effort == "none"
 
 
-def test_claude_sonnet_46_models_default_to_high_anthropic_effort():
+def test_claude_sonnet_46_models_default_to_max_anthropic_effort():
     baseline = get_model_config("claude-sonnet-4-6")
     assert baseline.provider == "anthropic"
-    assert baseline.anthropic_effort == "high"
+    assert baseline.anthropic_effort == "max"
+    assert baseline.default_max_output_tokens == CLAUDE_SONNET_MAX_OUTPUT_TOKENS
     assert baseline.anthropic_thinking is not None
     assert baseline.anthropic_thinking.enabled is False
 
     reasoning = get_model_config("claude-sonnet-4-6-reasoning")
     assert reasoning.provider == "anthropic"
-    assert reasoning.anthropic_effort == "high"
+    assert reasoning.anthropic_effort == "max"
+    assert reasoning.default_max_output_tokens == CLAUDE_SONNET_MAX_OUTPUT_TOKENS
     assert reasoning.anthropic_thinking is not None
     assert reasoning.anthropic_thinking.enabled is True
-    assert reasoning.anthropic_thinking.budget_tokens == 1024
+    assert reasoning.anthropic_thinking.mode == "adaptive"
+    assert reasoning.anthropic_thinking.budget_tokens is None
 
 
-def test_pinned_claude_reasoning_high_aliases_are_present():
-    for key, api_model in (
-        ("claude-opus-4-6-reasoning-high", "claude-opus-4-6"),
-        ("claude-sonnet-4-6-reasoning-high", "claude-sonnet-4-6"),
+def test_pinned_claude_reasoning_aliases_are_present():
+    for key, api_model, expected_effort, expected_mode, expected_budget in (
+        ("claude-opus-4-6-reasoning-high", "claude-opus-4-6", "high", "manual", 1024),
+        ("claude-sonnet-4-6-reasoning-max", "claude-sonnet-4-6", "max", "adaptive", None),
     ):
         config = get_model_config(key)
         assert config.provider == "anthropic"
         assert config.api_model == api_model
-        assert config.anthropic_effort == "high"
+        assert config.anthropic_effort == expected_effort
         assert config.anthropic_thinking is not None
         assert config.anthropic_thinking.enabled is True
-        assert config.anthropic_thinking.budget_tokens == 1024
+        assert config.anthropic_thinking.mode == expected_mode
+        assert config.anthropic_thinking.budget_tokens == expected_budget
 
 
 def test_pinned_claude_opus_47_reasoning_max_alias_is_present():
@@ -128,7 +133,7 @@ def test_model_choices_put_stronger_claude_and_gemini_variants_first():
         "claude-opus-4-6-reasoning-high"
     )
     assert choices.index("claude-opus-4-6-reasoning-high") < choices.index(
-        "claude-sonnet-4-6-reasoning-high"
+        "claude-sonnet-4-6-reasoning-max"
     )
     assert choices.index("gemini-3.1-pro-preview-thinking-high") < choices.index(
         "gemini-3-flash-preview-thinking-high"
@@ -143,6 +148,12 @@ def test_all_configured_models_use_expected_default_max_output_tokens():
             assert config.default_max_output_tokens == CLAUDE_OPUS_MAX_OUTPUT_TOKENS
         elif config.key in {"gpt-5.4-reasoning-xhigh", "gpt-5.4-mini-reasoning-xhigh", "gpt-5.4-nano"}:
             assert config.default_max_output_tokens == GPT_5_4_MAX_OUTPUT_TOKENS
+        elif config.key in {
+            "claude-sonnet-4-6",
+            "claude-sonnet-4-6-reasoning",
+            "claude-sonnet-4-6-reasoning-max",
+        }:
+            assert config.default_max_output_tokens == CLAUDE_SONNET_MAX_OUTPUT_TOKENS
         else:
             assert config.default_max_output_tokens == DEFAULT_MAX_OUTPUT_TOKENS
 
@@ -184,7 +195,8 @@ def test_apply_reasoning_effort_override_updates_openai_and_anthropic_configs():
     assert sonnet_reasoning.anthropic_effort == "low"
     assert sonnet_reasoning.anthropic_thinking is not None
     assert sonnet_reasoning.anthropic_thinking.enabled is True
-    assert sonnet_reasoning.anthropic_thinking.budget_tokens == 1024
+    assert sonnet_reasoning.anthropic_thinking.mode == "adaptive"
+    assert sonnet_reasoning.anthropic_thinking.budget_tokens is None
 
     opus_47 = apply_reasoning_effort_override(get_model_config("claude-opus-4-7-reasoning-max"), "xhigh")
     assert opus_47.anthropic_effort == "xhigh"

@@ -6,30 +6,35 @@
     "detect_rate": 0.27,
     "detect_correct_rate": 0.26,
     "detect_correct_finaloutput_correct_rate": 0.23,
+    "mechanical_correct_rate": 0.24,
     "by_difficulty": {
       "easy": {
         "total": 25,
         "detect_rate": 0.6,
         "detect_correct_rate": 0.56,
-        "detect_correct_finaloutput_correct_rate": 0.56
+        "detect_correct_finaloutput_correct_rate": 0.56,
+        "mechanical_correct_rate": 0.6
       },
       "medium": {
         "total": 25,
         "detect_rate": 0.2,
         "detect_correct_rate": 0.2,
-        "detect_correct_finaloutput_correct_rate": 0.12
+        "detect_correct_finaloutput_correct_rate": 0.12,
+        "mechanical_correct_rate": 0.12
       },
       "hard": {
         "total": 25,
         "detect_rate": 0.08,
         "detect_correct_rate": 0.08,
-        "detect_correct_finaloutput_correct_rate": 0.08
+        "detect_correct_finaloutput_correct_rate": 0.08,
+        "mechanical_correct_rate": 0.08
       },
       "expert": {
         "total": 25,
         "detect_rate": 0.2,
         "detect_correct_rate": 0.2,
-        "detect_correct_finaloutput_correct_rate": 0.16
+        "detect_correct_finaloutput_correct_rate": 0.16,
+        "mechanical_correct_rate": 0.16
       }
     }
   },

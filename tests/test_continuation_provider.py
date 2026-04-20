@@ -232,7 +232,7 @@ def test_request_continuation_sonnet_sets_default_anthropic_effort():
     )
 
     sent = client.messages.calls[0]
-    assert sent["output_config"] == {"effort": "high"}
+    assert sent["output_config"] == {"effort": "max"}
     assert "thinking" not in sent
 
 
@@ -251,7 +251,7 @@ def test_request_continuation_sonnet_reasoning_sends_thinking_and_effort():
     )
 
     sent = client.messages.calls[0]
-    assert sent["thinking"] == {"type": "enabled", "budget_tokens": 1024}
+    assert sent["thinking"] == {"type": "adaptive"}
     assert sent["output_config"] == {"effort": "low"}
 
 

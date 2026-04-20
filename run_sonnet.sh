@@ -4,20 +4,19 @@ set -euo pipefail
 if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
   cat <<'EOF'
 Usage:
-  ./run.sh [dataset_path] [-- extra evaluate_continuation.py args...]
+  ./run_sonnet.sh [dataset_path] [-- extra evaluate_continuation.py args...]
 
 Examples:
-  ./run.sh
-  ./run.sh artifacts/emoji-bench-dataset-100
-  ./run.sh artifacts/emoji-bench-dataset-100 -- --max-concurrent 8
+  ./run_sonnet.sh
+  ./run_sonnet.sh artifacts/emoji-bench-dataset-100
+  ./run_sonnet.sh artifacts/emoji-bench-dataset-100 -- --max-output-tokens 64000
 
 Notes:
   - Defaults to artifacts/emoji-bench-dataset-100
-  - Runs the full 36-run matrix:
-      9 models x 2 modes (prefill, single_turn) x 2 prompt levels (L0, L1)
+  - Runs only claude-sonnet-4-6-reasoning-max on the B slice (L0 only)
+  - Uses the alias's configured default max output tokens unless overridden
   - Any args after -- are forwarded to every evaluate_continuation.py call
   - Runs judge+score after the eval phase finishes
-  - Continues past failed cells and prints a final failure summary
   - Uses JUDGE_MODEL (default: gpt-5.4-mini-no-reasoning) and JUDGE_MAX_CONCURRENT (default: 8)
 EOF
   exit 0
@@ -28,6 +27,9 @@ cd "$REPO_ROOT"
 
 DATASET="${1:-artifacts/emoji-bench-dataset-100}"
 PYTHON_BIN="${PYTHON_BIN:-python}"
+MODELS=("claude-sonnet-4-6-reasoning-max")
+MODE="prefill"
+LEVELS=("0")
 JUDGE_MODEL="${JUDGE_MODEL:-gpt-5.4-mini-no-reasoning}"
 JUDGE_MAX_CONCURRENT="${JUDGE_MAX_CONCURRENT:-8}"
 
@@ -43,69 +45,49 @@ fi
 if (( ${#EXTRA_ARGS[@]} > 0 )); then
   for arg in "${EXTRA_ARGS[@]}"; do
     if [[ "$arg" == "--output-dir" ]]; then
-      echo "run.sh does not support forwarding --output-dir because it breaks per-cell judge/score routing." >&2
+      echo "run_sonnet.sh does not support forwarding --output-dir because it breaks judge/score routing." >&2
+      exit 2
+    fi
+    if [[ "$arg" == "--model" ]]; then
+      echo "run_sonnet.sh does not support forwarding --model because it is dedicated to: ${MODELS[*]}." >&2
       exit 2
     fi
   done
 fi
 
-MODELS=(
-  "claude-opus-4-7-reasoning-max"
-  "claude-opus-4-6-reasoning-high"
-  "claude-sonnet-4-6-reasoning-max"
-  "gpt-5.4-reasoning-xhigh"
-  "gpt-5.4-mini-reasoning-xhigh"
-  "gemini-3.1-pro-preview-thinking-high"
-  "gemini-3-flash-preview-thinking-high"
-  "mistral-large-2512"
-  "magistral-medium-2509"
-)
-
-MODES=("prefill" "single_turn")
-LEVELS=("0" "1")
-TOTAL_RUNS=$(( ${#MODELS[@]} * ${#MODES[@]} * ${#LEVELS[@]} ))
+TOTAL_RUNS=$(( ${#MODELS[@]} * ${#LEVELS[@]} ))
 RUN_INDEX=0
 SUCCESS_COUNT=0
-FAILED_RUNS=()
 SUCCESSFUL_OUTPUT_DIRS=()
+FAILED_RUNS=()
 JUDGE_SUCCESS_COUNT=0
 JUDGE_FAILED_RUNS=()
 SCORE_SUCCESS_COUNT=0
 SCORE_FAILED_RUNS=()
 
-matrix_variant() {
-  local mode="$1"
-  if [[ "$mode" == "prefill" ]]; then
-    echo "B"
-  else
-    echo "C"
-  fi
-}
-
 for model in "${MODELS[@]}"; do
-  for mode in "${MODES[@]}"; do
-    for level in "${LEVELS[@]}"; do
-      RUN_INDEX=$((RUN_INDEX + 1))
-      echo "[$RUN_INDEX/$TOTAL_RUNS] model=$model mode=$mode turn_2_level=$level"
-      EVAL_CMD=(
-        "$PYTHON_BIN"
-        scripts/evaluate_continuation.py
-        "$DATASET"
-        --model "$model"
-        --mode "$mode"
-        --turn-2-prompt-level "$level"
-      )
-      if (( ${#EXTRA_ARGS[@]} > 0 )); then
-        EVAL_CMD+=("${EXTRA_ARGS[@]}")
-      fi
-      if "${EVAL_CMD[@]}"; then
-        SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
-        SUCCESSFUL_OUTPUT_DIRS+=("artifacts/evals/${model}-$(matrix_variant "$mode")-L${level}")
-      else
-        FAILED_RUNS+=("model=$model mode=$mode turn_2_level=$level")
-        echo "FAILED: model=$model mode=$mode turn_2_level=$level" >&2
-      fi
-    done
+  for level in "${LEVELS[@]}"; do
+    RUN_INDEX=$((RUN_INDEX + 1))
+    echo "[$RUN_INDEX/$TOTAL_RUNS] model=$model mode=$MODE turn_2_level=$level"
+    EVAL_CMD=(
+      "$PYTHON_BIN"
+      scripts/evaluate_continuation.py
+      "$DATASET"
+      --model "$model"
+      --mode "$MODE"
+      --turn-2-prompt-level "$level"
+    )
+    if (( ${#EXTRA_ARGS[@]} > 0 )); then
+      EVAL_CMD+=("${EXTRA_ARGS[@]}")
+    fi
+
+    if "${EVAL_CMD[@]}"; then
+      SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
+      SUCCESSFUL_OUTPUT_DIRS+=("artifacts/evals/${model}-B-L${level}")
+    else
+      FAILED_RUNS+=("model=$model mode=$MODE turn_2_level=$level")
+      echo "FAILED: model=$model mode=$MODE turn_2_level=$level" >&2
+    fi
   done
 done
 
@@ -162,4 +144,4 @@ if (( ${#FAILED_RUNS[@]} > 0 || ${#JUDGE_FAILED_RUNS[@]} > 0 || ${#SCORE_FAILED_
   exit 1
 fi
 
-echo "All eval, judge, and score runs completed successfully."
+echo "All Claude Sonnet 4.6 eval, judge, and score runs completed successfully."

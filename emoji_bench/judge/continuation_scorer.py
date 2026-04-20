@@ -438,12 +438,17 @@ def summarize_nested(
             "detect_rate": 0.0,
             "detect_correct_rate": 0.0,
             "detect_correct_finaloutput_correct_rate": 0.0,
+            "mechanical_correct_rate": 0.0,
             "by_difficulty": {},
         }
 
     n_detect = sum(1 for s in scored if s.detected)
     n_detect_fix = sum(1 for s in scored if s.detected_and_fixed)
     n_detect_fix_right = sum(1 for s in scored if s.detected_fixed_and_right)
+    n_mechanical = sum(
+        1 for s in scored
+        if s.validator_derivation_valid and s.validator_terminal_matches_gt
+    )
 
     by_difficulty: dict[str, dict[str, Any]] = {}
     diff_counts: dict[str, Counter] = {}
@@ -454,6 +459,9 @@ def summarize_nested(
         diff_counts[d]["detect"] += int(s.detected)
         diff_counts[d]["detect_fix"] += int(s.detected_and_fixed)
         diff_counts[d]["detect_fix_right"] += int(s.detected_fixed_and_right)
+        diff_counts[d]["mechanical"] += int(
+            s.validator_derivation_valid and s.validator_terminal_matches_gt
+        )
 
     for d, c in diff_counts.items():
         n = c["_total"]
@@ -464,6 +472,9 @@ def summarize_nested(
             "detect_correct_finaloutput_correct_rate": (
                 round(c["detect_fix_right"] / n, 4) if n else 0.0
             ),
+            "mechanical_correct_rate": (
+                round(c["mechanical"] / n, 4) if n else 0.0
+            ),
         }
 
     return {
@@ -471,5 +482,6 @@ def summarize_nested(
         "detect_rate": round(n_detect / total, 4),
         "detect_correct_rate": round(n_detect_fix / total, 4),
         "detect_correct_finaloutput_correct_rate": round(n_detect_fix_right / total, 4),
+        "mechanical_correct_rate": round(n_mechanical / total, 4),
         "by_difficulty": by_difficulty,
     }

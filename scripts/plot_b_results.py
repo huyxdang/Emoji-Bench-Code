@@ -36,6 +36,7 @@ METRICS = [
 
 UNCAPPED_MODELS = {
     "claude-opus-4-7-reasoning-max",
+    "claude-sonnet-4-6-reasoning-max",
     "gemini-3-flash-preview-thinking-high",
     "gemini-3.1-pro-preview-thinking-high",
     "gpt-5.4-mini-reasoning-xhigh",

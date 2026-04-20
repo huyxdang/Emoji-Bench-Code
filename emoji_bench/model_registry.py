@@ -14,6 +14,7 @@ ReasoningEffortOverride = Literal["none", "minimal", "low", "medium", "high", "x
 DEFAULT_MAX_OUTPUT_TOKENS = 4096
 GPT_5_4_MAX_OUTPUT_TOKENS = 128000
 CLAUDE_OPUS_MAX_OUTPUT_TOKENS = 128000
+CLAUDE_SONNET_MAX_OUTPUT_TOKENS = 64000
 REASONING_EFFORT_CHOICES: tuple[ReasoningEffortOverride, ...] = (
     "none",
     "minimal",
@@ -194,23 +195,25 @@ CLAUDE_SONNET_4_6 = _anthropic_model(
     key="claude-sonnet-4-6",
     label="Claude Sonnet 4.6",
     api_model="claude-sonnet-4-6",
+    default_max_output_tokens=CLAUDE_SONNET_MAX_OUTPUT_TOKENS,
     anthropic_thinking=AnthropicThinkingConfig(enabled=False),
-    anthropic_effort="high",
+    anthropic_effort="max",
     notes=(
         "Extended thinking is supported by the model, but disabled by default in this "
-        "evaluator. Anthropic effort defaults to high unless overridden."
+        "evaluator. Anthropic effort defaults to max unless overridden."
     ),
 )
 CLAUDE_SONNET_4_6_REASONING = _anthropic_model(
     key="claude-sonnet-4-6-reasoning",
     label="Claude Sonnet 4.6 (reasoning)",
     api_model="claude-sonnet-4-6",
-    anthropic_thinking=AnthropicThinkingConfig(enabled=True, budget_tokens=1024),
-    anthropic_effort="high",
+    default_max_output_tokens=CLAUDE_SONNET_MAX_OUTPUT_TOKENS,
+    anthropic_thinking=AnthropicThinkingConfig(enabled=True, mode="adaptive"),
+    anthropic_effort="max",
     notes=(
-        "Uses Claude Sonnet 4.6 with Anthropic extended thinking enabled. "
-        "Configured with the minimum 1024-token thinking budget by default, "
-        "with Anthropic effort defaulting to high."
+        "Uses Claude Sonnet 4.6 with Anthropic adaptive extended thinking enabled. "
+        "`budget_tokens` is deprecated on Sonnet 4.6; adaptive thinking lets the "
+        "model decide depth. Anthropic effort defaults to max."
     ),
 )
 CLAUDE_HAIKU_4_5 = _anthropic_model(
@@ -326,13 +329,14 @@ MODEL_CONFIGS: dict[str, ModelConfig] = {
             "enabled at the minimum 1024-token budget and effort='high'."
         ),
     ),
-    "claude-sonnet-4-6-reasoning-high": replace(
+    "claude-sonnet-4-6-reasoning-max": replace(
         CLAUDE_SONNET_4_6_REASONING,
-        key="claude-sonnet-4-6-reasoning-high",
-        label="Claude Sonnet 4.6 (reasoning high)",
+        key="claude-sonnet-4-6-reasoning-max",
+        label="Claude Sonnet 4.6 (reasoning max)",
+        anthropic_effort="max",
         notes=(
-            "Pinned benchmark alias for Claude Sonnet 4.6 with extended thinking "
-            "enabled at the minimum 1024-token budget and effort='high'."
+            "Pinned benchmark alias for Claude Sonnet 4.6 with adaptive extended "
+            "thinking enabled and effort='max'."
         ),
     ),
     "claude-opus-4-7-reasoning-max": _anthropic_model(
@@ -381,7 +385,7 @@ MODEL_CONFIGS: dict[str, ModelConfig] = {
 _MODEL_ORDER: tuple[str, ...] = (
     "claude-opus-4-7-reasoning-max",
     "claude-opus-4-6-reasoning-high",
-    "claude-sonnet-4-6-reasoning-high",
+    "claude-sonnet-4-6-reasoning-max",
     "gpt-5.4-reasoning-xhigh",
     "gpt-5.4-mini-reasoning-xhigh",
     "gemini-3.1-pro-preview-thinking-high",
