@@ -93,22 +93,20 @@ def test_build_judge_prompt_mentions_step_number_and_values(pilot_pair):
     assert f"Step {pred['prefill_error_step']}" in prompt
     assert step_values.correct_value.emoji in prompt
     assert step_values.injected_value.emoji in prompt
-    assert "detected_error" in prompt
-    assert "corrected_step_y" in prompt
+    assert "error_recovered" in prompt
     # Must warn the judge off grading the math.
     assert "Do not grade the math" in prompt
     # Must include the model's continuation verbatim.
     assert "Step X: ..." in prompt
 
 
-def test_build_judge_prompt_instructs_narrow_metric_2(pilot_pair):
+def test_build_judge_prompt_allows_implicit_recovery(pilot_pair):
     dataset_row, pred = pilot_pair
     pred["raw_continuation_text"] = ""
     step_values = compute_step_values(dataset_row=dataset_row)
     prompt = build_judge_prompt(prediction_row=pred, step_values=step_values)
-    # The narrow definition must be present (explicit restatement required).
-    assert "Implicit corrections" in prompt
-    assert "do NOT count" in prompt
+    assert "Implicit correction DOES count" in prompt
+    assert "Do not require the model to mention" in prompt
 
 
 # --- judge_continuation (mocked client) ------------------------------------
@@ -167,11 +165,10 @@ def test_judge_continuation_returns_structured_verdict(pilot_pair):
 
     client = _FakeOpenAIClient(
         payload={
-            "detected_error": True,
-            "corrected_step_y": False,
-            "reasoning": "Model hedged but did not restate step Y.",
+            "error_recovered": True,
+            "reasoning": "The continuation switches onto the corrected branch.",
         },
-        raw_text='{"detected_error": true, "corrected_step_y": false, "reasoning": "..."}',
+        raw_text='{"error_recovered": true, "reasoning": "..."}',
     )
     verdict = judge_continuation(
         client=client,
@@ -180,9 +177,8 @@ def test_judge_continuation_returns_structured_verdict(pilot_pair):
         dataset_row=dataset_row,
     )
     assert isinstance(verdict, JudgeVerdict)
-    assert verdict.detected_error is True
-    assert verdict.corrected_step_y is False
-    assert "step Y" in verdict.reasoning or "hedged" in verdict.reasoning
+    assert verdict.error_recovered is True
+    assert "corrected branch" in verdict.reasoning
 
 
 def test_judge_continuation_passes_prompt_and_schema_to_api(pilot_pair):
@@ -191,9 +187,8 @@ def test_judge_continuation_passes_prompt_and_schema_to_api(pilot_pair):
 
     client = _FakeOpenAIClient(
         payload={
-            "detected_error": False,
-            "corrected_step_y": False,
-            "reasoning": "no hedge",
+            "error_recovered": False,
+            "reasoning": "blindly continues from the injected state",
         },
         raw_text="{}",
     )
@@ -208,7 +203,7 @@ def test_judge_continuation_passes_prompt_and_schema_to_api(pilot_pair):
     assert call["model"] == "gpt-4.1-mini"
     assert call["input"][0]["role"] == "system"
     assert call["input"][1]["role"] == "user"
-    assert "detected_error" in call["input"][1]["content"]
+    assert "error_recovered" in call["input"][1]["content"]
     # text_format must be passed so the Responses API enforces the JSON schema.
     assert "text_format" in call
 
@@ -230,8 +225,7 @@ def test_judge_continuation_rejects_non_boolean_fallback_fields(pilot_pair):
 
     client = _FallbackOnlyClient(
         raw_text=(
-            '{"detected_error": "false", "corrected_step_y": false, '
-            '"reasoning": "bad types"}'
+            '{"error_recovered": "false", "reasoning": "bad types"}'
         ),
     )
     with pytest.raises(ValueError, match="must be a JSON boolean"):

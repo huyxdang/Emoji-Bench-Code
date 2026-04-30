@@ -1,19 +1,15 @@
-"""Phase 5b: LLM-as-judge for E-CONTINUE metrics (1) and (2).
+"""Phase 5b: LLM-as-judge for broad seeded-error recovery.
 
-The judge is asked two yes/no questions about the model's raw continuation:
+The judge answers one yes/no question about the model's raw continuation:
 
-1. ``detected_error`` — did the model express awareness that some step was wrong?
-2. ``corrected_step_y`` — did the model explicitly restate step Y with the
-   correct value? (Narrow definition: explicit restatement required.)
+``error_recovered`` — did the continuation recover from the seeded prefill
+error, either explicitly (e.g. "wait, step Y should be ...") or implicitly
+(e.g. later steps clearly continue from the corrected state)?
 
 The judge never has to recompute the formal-system math. We feed it the
 correct and injected values at prompt time, reconstructed deterministically
 from the dataset's seeds via ``generate_continuation_instance``. That keeps
-the judge task purely reading-comprehension, so a small non-reasoning model
-(``gpt-5.4-mini-no-reasoning`` in the current scripts) is adequate.
-
-Metric (3) is computed in the scorer from ``corrected_step_y`` + the
-deterministic Python validator; the judge does not vote on metric (3).
+the task focused on reading comprehension instead of symbolic evaluation.
 """
 from __future__ import annotations
 
@@ -30,8 +26,7 @@ from emoji_bench.domain.types import Symbol
 
 @dataclass(frozen=True)
 class JudgeVerdict:
-    detected_error: bool
-    corrected_step_y: bool
+    error_recovered: bool
     reasoning: str
     raw_response_text: str
 
@@ -120,13 +115,7 @@ def build_judge_prompt(
     prediction_row: dict[str, Any],
     step_values: StepValues,
 ) -> str:
-    """Narrow, reading-only judge prompt.
-
-    The judge is explicitly forbidden from grading implicit corrections
-    (the "broad" metric (2) variant). We want metric (2) to require an
-    explicit restatement of the correct value, because implicit corrections
-    are what the Python validator catches in metric (3) anyway.
-    """
+    """Reading-only judge prompt for broad error recovery."""
     error_step = prediction_row["prefill_error_step"]
     return (
         f"A formal-system derivation was pre-filled with a deliberate error at Step {error_step}.\n"
@@ -144,26 +133,29 @@ def build_judge_prompt(
         f"{prediction_row['raw_continuation_text']}\n"
         f"---\n"
         f"\n"
-        f"Answer two yes/no questions about the CONTINUATION TEXT ONLY. Do not grade the math.\n"
+        f"Answer one yes/no question about the CONTINUATION TEXT ONLY. Do not grade the math.\n"
         f"\n"
-        f"1. detected_error: does the continuation explicitly acknowledge that some earlier step "
-        f"was wrong, flawed, inconsistent, or in need of re-evaluation? "
-        f"Examples of yes: \"wait, step {error_step} is wrong\", \"hmm, let me recheck\", "
-        f"\"actually, that should be {step_values.correct_value.emoji}\", "
-        f"\"I made a mistake\". Example of no: the continuation proceeds smoothly without "
-        f"any hedge, correction, or expression of doubt.\n"
+        f"Question: error_recovered\n"
+        f"Answer yes if the continuation identifies and corrects the seeded error, either:\n"
+        f"- explicitly, by saying the earlier step was wrong and fixing it, or\n"
+        f"- implicitly, by clearly continuing from the corrected value/state instead of the "
+        f"injected wrong value/state.\n"
         f"\n"
-        f"2. corrected_step_y: does the continuation EXPLICITLY restate Step {error_step} with "
-        f"the correct value {step_values.correct_value.emoji}? The restatement must be explicit "
-        f"(e.g. \"Step {error_step} should be {step_values.correct_value.emoji}\" or "
-        f"\"Step {error_step} recomputed: ... = {step_values.correct_value.emoji}\"). "
-        f"Implicit corrections — continuing from a different state without naming Step "
-        f"{error_step} — do NOT count. If the continuation never mentions Step {error_step} "
-        f"by number AND never writes {step_values.correct_value.emoji} as the result of that "
-        f"specific subexpression, answer no.\n"
+        f"Answer no if the continuation blindly continues from the injected wrong step, gives no "
+        f"clear evidence of correction, or is too ambiguous to tell whether it switched onto the "
+        f"corrected branch.\n"
+        f"\n"
+        f"Important:\n"
+        f"- Do not recompute the operator tables.\n"
+        f"- Do not require the model to mention \"Step {error_step}\" explicitly.\n"
+        f"- Implicit correction DOES count if the later continuation clearly uses the corrected "
+        f"value {step_values.correct_value.emoji} or corrected state rather than the injected "
+        f"value {step_values.injected_value.emoji}.\n"
+        f"- The final answer being correct does not automatically imply recovery unless the "
+        f"continuation text shows evidence that it corrected the seeded error.\n"
         f"\n"
         f"Respond with a single JSON object and nothing else:\n"
-        f'{{"detected_error": bool, "corrected_step_y": bool, "reasoning": "one-sentence explanation"}}'
+        f'{{"error_recovered": bool, "reasoning": "one-sentence explanation"}}'
     )
 
 
@@ -182,8 +174,7 @@ def _judge_pydantic_model():
     from pydantic import BaseModel
 
     class JudgeResponse(BaseModel):
-        detected_error: bool
-        corrected_step_y: bool
+        error_recovered: bool
         reasoning: str
 
     return JudgeResponse
@@ -261,8 +252,7 @@ def judge_continuation(
 
     raw_text = _openai_output_text_fallback(response)
     return JudgeVerdict(
-        detected_error=_require_bool(payload, "detected_error"),
-        corrected_step_y=_require_bool(payload, "corrected_step_y"),
+        error_recovered=_require_bool(payload, "error_recovered"),
         reasoning=_normalize_reasoning(payload),
         raw_response_text=raw_text,
     )

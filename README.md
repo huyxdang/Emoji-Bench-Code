@@ -204,111 +204,50 @@ python scripts/score_continuation.py <predictions-dir>
 
 ## Metrics
 
-Three nested rates, each a strict subset of the previous:
+The current headline report focuses on two questions:
 
 | Metric | Meaning | Grader |
 |---|---|---|
-| `detect_rate` | Continuation acknowledges something is wrong | LLM judge |
-| `detect_correct_rate` | Continuation explicitly identifies and fixes the bad step | LLM judge |
-| `detect_correct_finaloutput_correct_rate` | Correction **and** a mechanically valid derivation to the right terminal | LLM judge + deterministic validator |
+| `error_recovery_rate` | Continuation recovers from the seeded prefill error, either explicitly or implicitly | LLM judge |
+| `final_answer_correct_rate` | Extracted `Final Output:` equals `ground_truth_final_output`, regardless of how the model got there | Deterministic string match |
 
-`DCF ≤ D+C ≤ Detect` always holds. The gap between `D+C` and `DCF` measures "got the diagnosis right, fumbled the cleanup."
+This is intentionally simpler than the older DCF-style headline:
 
-### Grader format
+- We **do** care whether the model recovers from the seeded error.
+- We **do** care whether the final answer is correct.
+- We **do not** make the headline depend on explicit self-commentary or on a mechanically perfect derivation trace.
 
-The deterministic validator (`emoji_bench/domain/continuation_validator.py`) parses the model's continuation one line at a time using this case-insensitive regex:
+### Judge behavior
 
-```python
-_STEP_LINE_REGEX = re.compile(
-    r"^\s*Step\s+(\d+)\s*:\s*(.+?)\s*=\s*(.+?)(?:\s*\[by\s+[^\]]+\])?\s*$",
-    re.IGNORECASE,
-)
-```
+The judge is given the injected bad step and the correct value for that step, then asked a single reading-comprehension question:
 
-Canonical step line shown to the model:
+- did the continuation recover from the seeded error?
 
-```
-Step N: <full expression before> = <full expression after>    [by <rule name>]
-```
+Recovery can be:
 
-Notes on the parser's acceptance surface:
-
-- The `[by <rule>]` clause is **optional** — a bare `Step N: lhs = rhs` parses too.
-- Non-matching lines (free-form prose, commentary, empty lines) are **skipped silently** — only `Step N:` lines contribute.
-- The validator does **not** consult the prefill. It only checks the model's *own* emitted steps.
-
-Validation then enforces three rules:
-
-1. **Per-step reduction validity.** Each `before = after` is re-evaluated under the system's operation tables; any step whose `before` and `after` don't agree under the interpreter is rejected (`first_invalid_step`).
-2. **Consecutivity.** Each step's `before` must equal the previous step's `after` — catches jumps and dropped intermediate steps (`first_discontinuity_step`).
-3. **Terminal match.** The final `after` must be a single symbol equal to `ground_truth_final_output`.
-
-This closes the compensating-error loophole: a chain that writes a wrong intermediate `after` but "cancels" it to land on the right terminal is still rejected.
+- **explicit**: "wait, step Y should be ..."
+- **implicit**: later steps clearly continue from the corrected state without spelling it out
 
 ---
 
 ## Results
 
-All three nested rates on the `artifacts/emoji-bench-dataset-100` dataset (N=100). Rows are sorted by DCF (the strictest metric). `D = detect_rate`, `DC = detect_correct_rate`, `DCF = detect_correct_finaloutput_correct_rate`.
+Each `score_summary.json` now reports:
 
-Coverage note:
+- `error_recovery_rate`
+- `final_answer_correct_rate`
+- `by_difficulty`
 
-- `claude-opus-4-7-reasoning-max` currently appears only in `B-L0`
-- `gemini-3.1-pro-preview-thinking-high` currently appears only in `B-L0` and `B-L1`
-- models are omitted from cell tables that do not have committed artifacts yet
+When `judge.jsonl` is present, both headline metrics are available. When it is missing, the scorer still reports `final_answer_correct_rate` and keeps the regex diagnostics as a non-headline baseline.
 
-### B-L0 — prefill, no audit hint (headline condition — answers "without being prompted to look")
+The checked-in artifact bundle may contain older summaries from earlier metric iterations. Re-run:
 
-| Model | D | DC | DCF |
-|---|---:|---:|---:|
-| gpt-5.4-reasoning-xhigh | 0.54 | 0.52 | **0.41** |
-| claude-opus-4-7-reasoning-max | 0.46 | 0.45 | 0.38 |
-| claude-opus-4-6-reasoning-high | 0.33 | 0.31 | 0.28 |
-| gemini-3.1-pro-preview-thinking-high | 0.07 | 0.06 | 0.05 |
-| claude-sonnet-4-6-reasoning-high | 0.03 | 0.03 | 0.02 |
-| gemini-3-flash-preview-thinking-high | 0.06 | 0.00 | 0.00 |
-| gpt-5.4-mini-reasoning-xhigh | 0.00 | 0.00 | 0.00 |
-| mistral-large-2512 | 0.00 | 0.00 | 0.00 |
-| magistral-medium-2509 | 0.00 | 0.00 | 0.00 |
+```bash
+python scripts/judge_continuation.py <predictions-dir>
+python scripts/score_continuation.py <predictions-dir>
+```
 
-### B-L1 — prefill, audit hint (prompted-review ceiling, not the headline question)
-
-| Model | D | DC | DCF |
-|---|---:|---:|---:|
-| claude-opus-4-6-reasoning-high | 0.76 | 0.75 | **0.60** |
-| gpt-5.4-reasoning-xhigh | 0.53 | 0.53 | 0.47 |
-| gemini-3.1-pro-preview-thinking-high | 0.38 | 0.37 | 0.32 |
-| claude-sonnet-4-6-reasoning-high | 0.27 | 0.26 | 0.23 |
-| gemini-3-flash-preview-thinking-high | 0.14 | 0.06 | 0.00 |
-| mistral-large-2512 | 0.10 | 0.00 | 0.00 |
-| gpt-5.4-mini-reasoning-xhigh | 0.01 | 0.00 | 0.00 |
-| magistral-medium-2509 | 0.00 | 0.00 | 0.00 |
-
-### C-L0 — single-turn, no audit hint
-
-| Model | D | DC | DCF |
-|---|---:|---:|---:|
-| gpt-5.4-reasoning-xhigh | 0.08 | 0.07 | **0.07** |
-| claude-opus-4-6-reasoning-high | 0.03 | 0.03 | 0.02 |
-| gemini-3-flash-preview-thinking-high | 0.13 | 0.01 | 0.00 |
-| claude-sonnet-4-6-reasoning-high | 0.00 | 0.00 | 0.00 |
-| gpt-5.4-mini-reasoning-xhigh | 0.00 | 0.00 | 0.00 |
-| mistral-large-2512 | 0.00 | 0.00 | 0.00 |
-| magistral-medium-2509 | 0.00 | 0.00 | 0.00 |
-
-### C-L1 — single-turn, audit hint (prompted-review ceiling)
-
-| Model | D | DC | DCF |
-|---|---:|---:|---:|
-| claude-opus-4-6-reasoning-high | 0.59 | 0.58 | **0.45** |
-| gpt-5.4-reasoning-xhigh | 0.18 | 0.16 | 0.14 |
-| claude-sonnet-4-6-reasoning-high | 0.10 | 0.10 | 0.06 |
-| gemini-3-flash-preview-thinking-high | 0.07 | 0.00 | 0.00 |
-| mistral-large-2512 | 0.02 | 0.00 | 0.00 |
-| gpt-5.4-mini-reasoning-xhigh | 0.00 | 0.00 | 0.00 |
-| magistral-medium-2509 | 0.00 | 0.00 | 0.00 |
-
-Per-difficulty breakdowns are in each available cell's `score_summary.json`.
+to refresh a cell under the current two-metric scheme.
 
 ---
 

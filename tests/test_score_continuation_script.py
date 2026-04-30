@@ -55,7 +55,7 @@ def _make_real_example() -> tuple[dict[str, object], dict[str, object]]:
     return record, prediction
 
 
-def test_score_continuation_regex_only_when_judge_is_missing(tmp_path, capsys):
+def test_score_continuation_final_output_only_when_judge_is_missing(tmp_path, capsys):
     module = load_script_module("score_continuation")
     eval_dir = tmp_path / "eval"
     eval_dir.mkdir()
@@ -67,13 +67,14 @@ def test_score_continuation_regex_only_when_judge_is_missing(tmp_path, capsys):
     capsys.readouterr()
 
     summary = json.loads((eval_dir / "score_summary.json").read_text(encoding="utf-8"))
-    assert summary["headline_kind"] == "regex_only"
-    assert "regex_baseline" not in summary
+    assert summary["headline_kind"] == "final_output_only"
+    assert "regex_baseline" in summary
     assert summary["headline"]["total"] == 1
-    assert "nested metrics are unavailable" in summary["note"]
+    assert summary["headline"]["final_answer_correct_rate"] == 1.0
+    assert "error_recovery_rate is unavailable" in summary["note"]
 
 
-def test_score_continuation_writes_judge_plus_validator_summary(tmp_path, capsys):
+def test_score_continuation_writes_judge_plus_final_output_summary(tmp_path, capsys):
     module = load_script_module("score_continuation")
     eval_dir = tmp_path / "eval"
     dataset_dir = tmp_path / "dataset"
@@ -89,9 +90,8 @@ def test_score_continuation_writes_judge_plus_validator_summary(tmp_path, capsys
             {
                 "example_id": prediction["example_id"],
                 "prediction_fingerprint": prediction_fingerprint(prediction),
-                "detected_error": True,
-                "corrected_step_y": True,
-                "reasoning": "explicitly corrected step Y",
+                "error_recovered": True,
+                "reasoning": "continuation corrected the seeded error",
                 "raw_response_text": "{}",
                 "judge_model": "gpt-5.4-mini-no-reasoning",
                 "judge_api_model": "gpt-5.4-mini",
@@ -108,13 +108,11 @@ def test_score_continuation_writes_judge_plus_validator_summary(tmp_path, capsys
     capsys.readouterr()
 
     summary = json.loads((eval_dir / "score_summary.json").read_text(encoding="utf-8"))
-    assert summary["headline_kind"] == "judge_plus_validator"
+    assert summary["headline_kind"] == "judge_plus_final_output"
     assert summary["judged_count"] == 1
     assert summary["judged_coverage"] == 1.0
-    assert summary["validator_status"] == "ok"
-    assert summary["headline"]["detect_rate"] == 1.0
-    assert summary["headline"]["detect_correct_rate"] == 1.0
-    assert summary["headline"]["detect_correct_finaloutput_correct_rate"] == 1.0
+    assert summary["headline"]["error_recovery_rate"] == 1.0
+    assert summary["headline"]["final_answer_correct_rate"] == 1.0
     assert "regex_baseline" in summary
     assert (eval_dir / "nested_scores.jsonl").exists()
 
@@ -141,8 +139,7 @@ def test_score_continuation_rejects_partial_judge_coverage(tmp_path):
             {
                 "example_id": prediction_1["example_id"],
                 "prediction_fingerprint": prediction_fingerprint(prediction_1),
-                "detected_error": True,
-                "corrected_step_y": True,
+                "error_recovered": True,
                 "reasoning": "only one row judged",
                 "raw_response_text": "{}",
                 "judge_model": "gpt-5.4-mini-no-reasoning",

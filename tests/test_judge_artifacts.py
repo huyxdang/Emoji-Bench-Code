@@ -43,14 +43,12 @@ def test_load_validated_judge_rows_rejects_duplicate_judgment_ids(tmp_path):
             {
                 "example_id": "cont-000001",
                 "prediction_fingerprint": prediction_fingerprint(prediction),
-                "detected_error": True,
-                "corrected_step_y": False,
+                "error_recovered": True,
             },
             {
                 "example_id": "cont-000001",
                 "prediction_fingerprint": prediction_fingerprint(prediction),
-                "detected_error": False,
-                "corrected_step_y": False,
+                "error_recovered": False,
             },
         ],
     )
@@ -68,8 +66,7 @@ def test_load_validated_judge_rows_rejects_missing_prediction_fingerprint(tmp_pa
         [
             {
                 "example_id": "cont-000001",
-                "detected_error": True,
-                "corrected_step_y": False,
+                "error_recovered": True,
             },
         ],
     )
@@ -90,8 +87,7 @@ def test_load_validated_judge_rows_rejects_stale_prediction_fingerprint(tmp_path
                 "prediction_fingerprint": prediction_fingerprint(
                     _prediction(text="stale continuation")
                 ),
-                "detected_error": True,
-                "corrected_step_y": False,
+                "error_recovered": True,
             },
         ],
     )
@@ -121,8 +117,7 @@ def test_load_validated_judge_rows_accepts_fully_matched_rows(tmp_path):
             {
                 "example_id": prediction["example_id"],
                 "prediction_fingerprint": prediction_fingerprint(prediction),
-                "detected_error": True,
-                "corrected_step_y": False,
+                "error_recovered": True,
             }
             for prediction in predictions
         ],

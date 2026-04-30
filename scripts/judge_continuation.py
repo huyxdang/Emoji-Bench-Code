@@ -12,8 +12,7 @@ Output schema (one JSON object per row in ``judge.jsonl``):
     {
         "example_id":             str,
         "prediction_fingerprint": str,   # stale-resume guard over the judged prediction
-        "detected_error":         bool,  # judge metric (1)
-        "corrected_step_y":       bool,  # judge metric (2), narrow definition
+        "error_recovered":        bool,  # judge metric
         "reasoning":              str,   # judge's one-sentence rationale
         "raw_response_text":      str,   # untruncated judge output for audit
         "judge_model":            str,
@@ -60,8 +59,8 @@ DEFAULT_JUDGE_MODEL = "gpt-5.4-mini-no-reasoning"
 def main() -> None:
     parser = argparse.ArgumentParser(
         description=(
-            "LLM-as-judge pass over an E-CONTINUE predictions.jsonl. Asks two "
-            "yes/no questions per row: detected_error and corrected_step_y. "
+            "LLM-as-judge pass over an E-CONTINUE predictions.jsonl. Asks one "
+            "yes/no question per row: error_recovered. "
             "Writes judge.jsonl alongside the predictions file."
         ),
     )
@@ -238,8 +237,7 @@ def main() -> None:
                 row: dict[str, Any] = {
                     "example_id": eid,
                     "prediction_fingerprint": prediction_fingerprints[eid],
-                    "detected_error": verdict.detected_error,
-                    "corrected_step_y": verdict.corrected_step_y,
+                    "error_recovered": verdict.error_recovered,
                     "reasoning": verdict.reasoning,
                     "raw_response_text": verdict.raw_response_text,
                     "judge_model": judge_model_config.key,
@@ -254,8 +252,7 @@ def main() -> None:
                     done_now = progress_counter[0]
                 print(
                     f"[{done_now}/{n_total}] {eid} "
-                    f"detected={verdict.detected_error} "
-                    f"corrected={verdict.corrected_step_y}"
+                    f"recovered={verdict.error_recovered}"
                 )
                 if args.request_delay_seconds > 0:
                     time.sleep(args.request_delay_seconds)

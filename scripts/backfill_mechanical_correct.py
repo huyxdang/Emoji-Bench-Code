@@ -1,10 +1,12 @@
-"""Backfill `mechanical_correct_rate` into existing score_summary.json files.
+"""Refresh judge-backed headline metrics in existing score_summary.json files.
 
 Walks every directory under artifacts/evals/ that contains both
 `nested_scores.jsonl` and `score_summary.json`, rehydrates the nested scores
 into NestedScoredContinuation rows, recomputes the headline via
-summarize_nested (which now includes mechanical_correct_rate overall and
-per difficulty), and writes the patched score_summary.json back in place.
+summarize_nested, and writes the patched score_summary.json back in place.
+
+The filename is a legacy holdover from the earlier mechanical-correctness
+iteration of the benchmark.
 
 Usage:
   python scripts/backfill_mechanical_correct.py                 # all dirs under artifacts/evals
@@ -43,20 +45,10 @@ def _load_nested(path: Path) -> list[NestedScoredContinuation]:
                 difficulty=d["difficulty"],
                 chain_length_x=d["chain_length_x"],
                 prefill_error_step=d["prefill_error_step"],
-                detected=d["detected"],
-                detected_and_fixed=d["detected_and_fixed"],
-                detected_fixed_and_right=d["detected_fixed_and_right"],
-                judge_detected_error=d["judge_detected_error"],
-                judge_corrected_step_y=d["judge_corrected_step_y"],
+                error_recovered=d["error_recovered"],
                 judge_reasoning=d.get("judge_reasoning", ""),
-                validator_parseable=d["validator_parseable"],
-                validator_derivation_valid=d["validator_derivation_valid"],
-                validator_terminal_matches_gt=d["validator_terminal_matches_gt"],
-                validator_first_invalid_step=d.get("validator_first_invalid_step"),
-                validator_first_discontinuity_step=d.get("validator_first_discontinuity_step"),
-                validator_parsed_step_count=d.get("validator_parsed_step_count", 0),
-                validator_reason=d.get("validator_reason"),
                 final_output=d.get("final_output"),
+                final_answer_correct=d["final_answer_correct"],
                 model=d.get("model", ""),
                 provider=d.get("provider", ""),
                 mode=d.get("mode", ""),
@@ -76,9 +68,9 @@ def _backfill_one(eval_dir: Path, *, dry_run: bool) -> tuple[str, float] | None:
     headline = summarize_nested(rows)
     summary = json.loads(summary_path.read_text())
 
-    # Only rewrite if the existing headline is the nested (judge+validator) one;
-    # regex-only headlines don't have mechanical data and shouldn't be touched.
-    if summary.get("headline_kind") != "judge_plus_validator":
+    # Only rewrite judge-backed summaries; final-output-only and regex-only
+    # outputs do not have a judge-backed headline to refresh.
+    if summary.get("headline_kind") != "judge_plus_final_output":
         return None
 
     summary["headline"] = headline
@@ -86,7 +78,7 @@ def _backfill_one(eval_dir: Path, *, dry_run: bool) -> tuple[str, float] | None:
     if not dry_run:
         summary_path.write_text(json.dumps(summary, indent=2) + "\n")
 
-    return (eval_dir.name, headline.get("mechanical_correct_rate", 0.0))
+    return (eval_dir.name, headline.get("final_answer_correct_rate", 0.0))
 
 
 def main() -> None:
@@ -112,12 +104,15 @@ def main() -> None:
             results.append(out)
 
     results.sort(key=lambda kv: -kv[1])
-    verb = "would set" if args.dry_run else "set"
-    print(f"{verb} mechanical_correct_rate for {len(results)} dirs:")
+    verb = "would refresh" if args.dry_run else "refreshed"
+    print(f"{verb} headline metrics for {len(results)} dirs:")
     for name, rate in results:
         print(f"  {rate:6.2%}  {name}")
     if skipped:
-        print(f"\nskipped {len(skipped)} dirs (no nested score_summary or not judge_plus_validator):")
+        print(
+            f"\nskipped {len(skipped)} dirs "
+            f"(no nested score_summary or not judge_plus_final_output):"
+        )
         for name in skipped:
             print(f"  {name}")
 

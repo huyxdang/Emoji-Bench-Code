@@ -1,11 +1,11 @@
-"""Bar chart of `mechanical_correct_rate` for every B-variant run.
+"""Legacy bar chart of `mechanical_correct_rate` for older B-variant runs.
 
 Produces one combined PNG under artifacts/plots/:
   * b_mechanical.png — two bars per model (L0 on top, L1 below), sorted by
     L0 rate descending.
 
-No exclusions — every `*-B-L{0,1}/score_summary.json` with a
-`judge_plus_validator` headline is included, including 4096-capped variants.
+This script is kept for older artifact bundles that still use the
+`judge_plus_validator` headline.
 """
 
 from __future__ import annotations

@@ -1,5 +1,9 @@
 # Metric Design Memo, Part II: Strict Mechanical Correctness Still Misses Self-Repair
 
+Update: the current scoring pipeline now uses a simpler two-metric headline:
+`error_recovery_rate` and `final_answer_correct_rate`. This memo is kept as
+historical context for the earlier recovery-aware metric discussion.
+
 This is Part II of a two-part metric memo.
 
 - Part I: DCF should not be the headline because it conflates explicit

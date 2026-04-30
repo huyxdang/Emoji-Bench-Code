@@ -58,10 +58,9 @@ def test_judge_continuation_writes_rows_with_prediction_fingerprints(
     def fake_judge_continuation(**kwargs):
         seen_examples.append(kwargs["prediction_row"]["example_id"])
         return SimpleNamespace(
-            detected_error=True,
-            corrected_step_y=False,
-            reasoning="noticed the error but did not restate the step",
-            raw_response_text='{"detected_error": true, "corrected_step_y": false}',
+            error_recovered=True,
+            reasoning="switched onto the corrected branch",
+            raw_response_text='{"error_recovered": true}',
         )
 
     monkeypatch.setattr(module, "_load_dotenv", lambda path: None)
@@ -90,6 +89,7 @@ def test_judge_continuation_writes_rows_with_prediction_fingerprints(
     assert len(rows) == 1
     assert rows[0]["example_id"] == "cont-000001"
     assert rows[0]["prediction_fingerprint"] == prediction_fingerprint(prediction)
+    assert rows[0]["error_recovered"] is True
     assert rows[0]["judge_model"] == "gpt-5.4-mini-no-reasoning"
     assert rows[0]["judge_api_model"] == "gpt-5.4-mini"
 
@@ -118,10 +118,9 @@ def test_judge_continuation_defaults_to_gpt54_mini_no_reasoning(
     def fake_judge_continuation(**kwargs):
         seen_judge_models.append(kwargs["judge_model_config"].key)
         return SimpleNamespace(
-            detected_error=False,
-            corrected_step_y=False,
-            reasoning="no explicit correction",
-            raw_response_text='{"detected_error": false, "corrected_step_y": false}',
+            error_recovered=False,
+            reasoning="no clear recovery",
+            raw_response_text='{"error_recovered": false}',
         )
 
     monkeypatch.setattr(module, "_load_dotenv", lambda path: None)
@@ -177,8 +176,7 @@ def test_judge_continuation_resume_skips_existing_valid_rows(
             {
                 "example_id": "cont-000001",
                 "prediction_fingerprint": prediction_fingerprint(prediction_1),
-                "detected_error": False,
-                "corrected_step_y": False,
+                "error_recovered": False,
                 "reasoning": "already judged",
                 "raw_response_text": "{}",
                 "judge_model": "gpt-4.1-mini",
@@ -192,10 +190,9 @@ def test_judge_continuation_resume_skips_existing_valid_rows(
     def fake_judge_continuation(**kwargs):
         seen_examples.append(kwargs["prediction_row"]["example_id"])
         return SimpleNamespace(
-            detected_error=True,
-            corrected_step_y=True,
+            error_recovered=True,
             reasoning="explicit correction",
-            raw_response_text='{"detected_error": true, "corrected_step_y": true}',
+            raw_response_text='{"error_recovered": true}',
         )
 
     monkeypatch.setattr(module, "_load_dotenv", lambda path: None)

@@ -1,5 +1,9 @@
 # Metric Design Memo, Part I: DCF Is Not The Right Headline
 
+Update: the current scoring pipeline now uses a simpler two-metric headline:
+`error_recovery_rate` and `final_answer_correct_rate`. This memo is kept as
+historical rationale for why DCF was demoted.
+
 This is Part I of a two-part metric memo.
 
 - Part I: why `detect_correct_finaloutput_correct_rate` (DCF) is the wrong
