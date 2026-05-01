@@ -1,0 +1,636 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Emoji-Bench: LLMs Don't Look Back</title>
+  <meta name="description" content="Emoji-Bench measures whether language models catch and fix their own derivation mistakes when asked only to continue.">
+  <style>
+    :root {
+      color-scheme: light;
+      --text: #202124;
+      --muted: #5f6368;
+      --line: #dadce0;
+      --soft: #f8fafd;
+      --blue: #1a73e8;
+      --green: #188038;
+      --yellow: #fbbc04;
+      --red: #d93025;
+      --max: 1120px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      color: var(--text);
+      background: #fff;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 16px;
+      line-height: 1.55;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    img {
+      display: block;
+      max-width: 100%;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(14px);
+    }
+
+    .nav {
+      max-width: var(--max);
+      height: 64px;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 600;
+      letter-spacing: 0;
+      white-space: nowrap;
+    }
+
+    .mark {
+      width: 28px;
+      height: 28px;
+      display: grid;
+      place-items: center;
+      border-radius: 6px;
+      background: conic-gradient(from 30deg, var(--blue), var(--green), var(--yellow), var(--red), var(--blue));
+      color: #fff;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .links {
+      display: flex;
+      align-items: center;
+      gap: 22px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .links a:hover {
+      color: var(--blue);
+    }
+
+    main {
+      overflow: hidden;
+    }
+
+    .section {
+      border-bottom: 1px solid var(--line);
+    }
+
+    .wrap {
+      max-width: var(--max);
+      margin: 0 auto;
+      padding: 72px 24px;
+    }
+
+    .hero {
+      min-height: calc(100vh - 64px);
+      display: grid;
+      align-items: start;
+      background: #fff;
+    }
+
+    .hero .wrap {
+      padding-top: 86px;
+      padding-bottom: 84px;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 0.92fr) minmax(420px, 1.08fr);
+      gap: 48px;
+      align-items: center;
+    }
+
+    .eyebrow {
+      margin: 0 0 18px;
+      color: var(--blue);
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin-top: 0;
+    }
+
+    h1 {
+      max-width: 760px;
+      margin-bottom: 24px;
+      font-size: clamp(44px, 7vw, 86px);
+      line-height: 1.03;
+      font-weight: 500;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      margin-bottom: 24px;
+      font-size: clamp(30px, 4vw, 52px);
+      line-height: 1.12;
+      font-weight: 500;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin-bottom: 10px;
+      font-size: 20px;
+      line-height: 1.25;
+      font-weight: 600;
+    }
+
+    .lede {
+      max-width: 680px;
+      margin-bottom: 32px;
+      color: var(--muted);
+      font-size: 22px;
+      line-height: 1.45;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      min-height: 44px;
+      padding: 0 18px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--blue);
+      background: #fff;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .fact-strip {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1px;
+      max-width: 680px;
+      margin: 0 0 28px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--line);
+    }
+
+    .fact {
+      min-height: 76px;
+      padding: 14px 16px;
+      background: #fff;
+    }
+
+    .fact strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .fact span {
+      display: block;
+      color: var(--text);
+      font-size: 17px;
+      line-height: 1.25;
+      font-weight: 600;
+    }
+
+    .button.primary {
+      border-color: var(--blue);
+      background: var(--blue);
+      color: #fff;
+    }
+
+    .hero-art {
+      overflow: hidden;
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .hero-art img {
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      object-fit: cover;
+    }
+
+    .meta-row {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      background: var(--soft);
+    }
+
+    .meta-item {
+      padding: 24px;
+      border-right: 1px solid var(--line);
+    }
+
+    .meta-item:last-child {
+      border-right: 0;
+    }
+
+    .meta-value {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 28px;
+      line-height: 1.1;
+      font-weight: 500;
+    }
+
+    .meta-label {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+      gap: 64px;
+      align-items: start;
+    }
+
+    .section-kicker {
+      color: var(--muted);
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .body-copy {
+      color: var(--muted);
+      font-size: 18px;
+    }
+
+    .steps {
+      display: grid;
+      gap: 18px;
+    }
+
+    .step {
+      display: grid;
+      grid-template-columns: 44px minmax(0, 1fr);
+      gap: 18px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .step:last-child {
+      padding-bottom: 0;
+      border-bottom: 0;
+    }
+
+    .number {
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 50%;
+      color: var(--blue);
+      font-weight: 600;
+    }
+
+    .result-band {
+      background: var(--soft);
+    }
+
+    .plot-frame {
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .plot-frame img {
+      width: 100%;
+      background: #fff;
+    }
+
+    .caption {
+      margin: 14px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .result-summary {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1px;
+      margin: 30px 0 28px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--line);
+    }
+
+    .result-stat {
+      padding: 22px 24px;
+      background: #fff;
+    }
+
+    .result-stat strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 32px;
+      line-height: 1.1;
+      font-weight: 500;
+    }
+
+    .result-stat span {
+      display: block;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .finding-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1px;
+      background: var(--line);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .finding {
+      min-height: 170px;
+      padding: 24px;
+      background: #fff;
+    }
+
+    .finding p {
+      margin-bottom: 0;
+      color: var(--muted);
+    }
+
+    .note {
+      padding: 20px 24px;
+      border-left: 4px solid var(--blue);
+      background: #fff;
+      color: var(--muted);
+    }
+
+    .footer {
+      color: var(--muted);
+      background: #fff;
+    }
+
+    code {
+      padding: 2px 5px;
+      border-radius: 4px;
+      background: #f1f3f4;
+      color: #3c4043;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.92em;
+    }
+
+    @media (max-width: 860px) {
+      .links {
+        display: none;
+      }
+
+      .hero {
+        min-height: auto;
+      }
+
+      .hero-grid,
+      .two-col,
+      .finding-grid,
+      .meta-row,
+      .fact-strip,
+      .result-summary {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-grid {
+        gap: 36px;
+      }
+
+      .wrap {
+        padding: 52px 20px;
+      }
+
+      h1 {
+        font-size: 46px;
+      }
+
+      .lede {
+        font-size: 19px;
+      }
+
+      .meta-item {
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .meta-item:last-child {
+        border-bottom: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <nav class="nav" aria-label="Primary">
+      <a class="brand" href="#">
+        <span class="mark">E</span>
+        <span>Emoji-Bench</span>
+      </a>
+      <div class="links">
+        <a href="#question">Question</a>
+        <a href="#method">Method</a>
+        <a href="#results">Results</a>
+        <a href="#artifacts">Artifacts</a>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero section" id="question">
+      <div class="wrap hero-grid">
+        <div>
+          <p class="eyebrow">LLMs Don't Look Back</p>
+          <h1>Can models catch hidden mistakes with no hint?</h1>
+          <p class="lede">Emoji-Bench gives a model a derivation with one wrong step, then asks only: <strong>Please continue.</strong></p>
+          <div class="fact-strip" aria-label="Benchmark at a glance">
+            <div class="fact">
+              <strong>Setup</strong>
+              <span>Hidden wrong step</span>
+            </div>
+            <div class="fact">
+              <strong>Prompt</strong>
+              <span>Please continue.</span>
+            </div>
+            <div class="fact">
+              <strong>Result</strong>
+              <span>96% best score</span>
+            </div>
+          </div>
+          <div class="actions">
+            <a class="button primary" href="#results">View results</a>
+            <a class="button" href="README.md">Read README</a>
+          </div>
+        </div>
+        <figure class="hero-art" aria-label="Emoji-Bench visual">
+          <img src="public/emoji-bench-hero-v2.png" alt="Abstract Emoji-Bench reasoning illustration">
+        </figure>
+      </div>
+    </section>
+
+    <section class="meta-row" aria-label="Benchmark summary">
+      <div class="meta-item">
+        <span class="meta-value">100</span>
+        <span class="meta-label">evaluation rows</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-value">4</span>
+        <span class="meta-label">difficulty bands</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-value">B-L0</span>
+        <span class="meta-label">reported setting</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-value">Final Output</span>
+        <span class="meta-label">headline metric</span>
+      </div>
+    </section>
+
+    <section class="section" id="method">
+      <div class="wrap two-col">
+        <div>
+          <p class="section-kicker">Method</p>
+          <h2>A continuation task with a seeded wrong step.</h2>
+        <p class="body-copy">Each example is a three-turn interaction. The model sees rules, a partial derivation with a hidden mistake, and then a minimal continuation request.</p>
+        </div>
+        <div class="steps">
+          <div class="step">
+            <div class="number">1</div>
+            <div>
+              <h3>Define a novel system</h3>
+              <p class="body-copy">The prompt gives emoji-valued operations, an expression, and a required step format.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="number">2</div>
+            <div>
+              <h3>Seed one incorrect assistant step</h3>
+              <p class="body-copy">The prefilled assistant derivation ends on a deliberately injected error, without telling the model anything is wrong.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="number">3</div>
+            <div>
+              <h3>Ask only to continue</h3>
+              <p class="body-copy">The B-L0 turn-2 message is exactly <code>Please continue.</code> No hint, no review instruction, no mention of correctness.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section result-band" id="results">
+      <div class="wrap">
+        <p class="section-kicker">Results</p>
+        <h2>B-L0 final-answer correctness.</h2>
+        <p class="body-copy">Higher is better. A model gets credit only when its extracted <code>Final Output:</code> matches the ground-truth final symbol. Gemini result artifacts were produced through the OpenRouter API, not the Google Gemini API.</p>
+        <div class="result-summary" aria-label="Result summary">
+          <div class="result-stat">
+            <strong>96%</strong>
+            <span>best B-L0 final-answer score</span>
+          </div>
+          <div class="result-stat">
+            <strong>9</strong>
+            <span>uncapped model runs shown</span>
+          </div>
+          <div class="result-stat">
+            <strong>0</strong>
+            <span>hints in the reported prompt</span>
+          </div>
+        </div>
+        <figure class="plot-frame">
+          <img src="artifacts/plots/b_final_answer_l0.png" alt="Bar chart of B-L0 final-answer correctness across evaluated models">
+        </figure>
+        <p class="caption">Source: <code>artifacts/plots/b_final_answer_l0.png</code>, regenerated from <code>artifacts/evals/*-B-L0/score_summary.json</code>.</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="wrap">
+        <p class="section-kicker">Takeaways</p>
+        <div class="finding-grid">
+          <article class="finding">
+            <h3>Final answers separate sharply</h3>
+            <p>The strongest B-L0 run reaches 96% final-answer correctness, while several models remain near 10-20% in the same no-hint setting.</p>
+          </article>
+          <article class="finding">
+            <h3>No recovery judge in the headline</h3>
+            <p>The current report does not score verbal self-detection or derivation quality. It asks only whether the final symbol is right.</p>
+          </article>
+          <article class="finding">
+            <h3>The artifact bundle is narrow</h3>
+            <p>The checked-in results keep only B-L0 runs with maximum output-token settings; capped 4096-token runs were removed.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="artifacts">
+      <div class="wrap two-col">
+        <div>
+          <p class="section-kicker">Artifacts</p>
+          <h2>Open the data behind the figure.</h2>
+        </div>
+        <div>
+          <p class="body-copy">The dataset lives in <code>artifacts/emoji-bench-dataset-100/</code>. The checked-in evaluation summaries live under <code>artifacts/evals/*-B-L0/</code>. Recompute the plot with <code>python scripts/plot_b_final_answer.py</code>.</p>
+          <div class="note">The full benchmark code still supports the broader B/C and L0/L1 matrix, but this page reports the current B-L0 final-answer result set.</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap">
+      <p>Emoji-Bench. Static research summary generated from local artifacts.</p>
+    </div>
+  </footer>
+</body>
+</html>
