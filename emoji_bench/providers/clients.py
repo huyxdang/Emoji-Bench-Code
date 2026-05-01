@@ -18,13 +18,18 @@ MISTRAL_API_URL = "https://api.mistral.ai/v1/chat/completions"
 _MAX_RETRIES = 6
 _BASE_BACKOFF_SECONDS = 2.0
 _MAX_BACKOFF_SECONDS = 60.0
+_REQUEST_TIMEOUT_SECONDS = 600.0
 
 
 def _retryable_urlopen(request: urllib_request.Request, *, label: str) -> dict[str, Any]:
     attempt = 0
     while True:
         try:
-            with urllib_request.urlopen(request, context=_api_ssl_context()) as response:
+            with urllib_request.urlopen(
+                request,
+                context=_api_ssl_context(),
+                timeout=_REQUEST_TIMEOUT_SECONDS,
+            ) as response:
                 return json.loads(response.read().decode("utf-8"))
         except urllib_error.HTTPError as exc:
             is_retryable = exc.code == 429 or 500 <= exc.code < 600
@@ -44,6 +49,115 @@ def _retryable_urlopen(request: urllib_request.Request, *, label: str) -> dict[s
         except urllib_error.URLError as exc:
             if attempt >= _MAX_RETRIES:
                 raise RuntimeError(f"{label} API request failed: {exc}") from exc
+            delay = min(_BASE_BACKOFF_SECONDS * (2 ** attempt), _MAX_BACKOFF_SECONDS)
+            delay += random.uniform(0, delay * 0.25)
+            time.sleep(delay)
+            attempt += 1
+
+
+class _GeminiStreamError(Exception):
+    """Raised when a Gemini SSE stream ends without a finishReason."""
+
+
+def _read_gemini_sse_response(response: Any) -> dict[str, Any]:
+    """Read SSE events from an open Gemini stream and fold them into one response dict."""
+    text_parts: list[str] = []
+    final_usage: dict[str, Any] | None = None
+    final_response_id: Any = None
+    final_finish_reason: Any = None
+    final_safety_ratings: Any = None
+    final_role: str = "model"
+    saw_event = False
+
+    for raw_line in response:
+        line = raw_line.decode("utf-8", errors="replace").rstrip("\r\n")
+        if not line.startswith("data:"):
+            continue
+        body = line[5:].lstrip()
+        if not body:
+            continue
+        try:
+            event = json.loads(body)
+        except json.JSONDecodeError:
+            continue
+        saw_event = True
+        for cand in event.get("candidates") or ():
+            content = cand.get("content") or {}
+            if isinstance(content.get("role"), str):
+                final_role = content["role"]
+            for part in content.get("parts") or ():
+                if isinstance(part, dict):
+                    text = part.get("text")
+                    if isinstance(text, str):
+                        text_parts.append(text)
+            if cand.get("finishReason"):
+                final_finish_reason = cand["finishReason"]
+            if cand.get("safetyRatings"):
+                final_safety_ratings = cand["safetyRatings"]
+        if isinstance(event.get("usageMetadata"), dict):
+            final_usage = event["usageMetadata"]
+        if event.get("responseId"):
+            final_response_id = event["responseId"]
+
+    if not saw_event:
+        raise _GeminiStreamError("no SSE events received from Gemini stream")
+    if final_finish_reason is None:
+        raise _GeminiStreamError("Gemini stream ended without a finishReason")
+
+    candidate: dict[str, Any] = {
+        "content": {
+            "parts": [{"text": "".join(text_parts)}],
+            "role": final_role,
+        },
+        "finishReason": final_finish_reason,
+    }
+    if final_safety_ratings is not None:
+        candidate["safetyRatings"] = final_safety_ratings
+
+    return {
+        "candidates": [candidate],
+        "usageMetadata": final_usage or {},
+        "responseId": final_response_id,
+    }
+
+
+def _retryable_gemini_stream(*, url: str, payload: bytes, api_key: str) -> dict[str, Any]:
+    attempt = 0
+    while True:
+        request = urllib_request.Request(
+            url,
+            data=payload,
+            headers={
+                "Content-Type": "application/json",
+                "x-goog-api-key": api_key,
+            },
+            method="POST",
+        )
+        try:
+            with urllib_request.urlopen(
+                request,
+                context=_api_ssl_context(),
+                timeout=_REQUEST_TIMEOUT_SECONDS,
+            ) as response:
+                return _read_gemini_sse_response(response)
+        except urllib_error.HTTPError as exc:
+            is_retryable = exc.code == 429 or 500 <= exc.code < 600
+            if not is_retryable or attempt >= _MAX_RETRIES:
+                body = exc.read().decode("utf-8", errors="replace").strip()
+                message = f"Gemini API request failed with status {exc.code}"
+                if body:
+                    message += f": {body}"
+                raise RuntimeError(message) from exc
+            retry_after = exc.headers.get("Retry-After") if exc.headers else None
+            delay = _parse_retry_after(retry_after)
+            if delay is None:
+                delay = min(_BASE_BACKOFF_SECONDS * (2 ** attempt), _MAX_BACKOFF_SECONDS)
+                delay += random.uniform(0, delay * 0.25)
+            time.sleep(delay)
+            attempt += 1
+        except (urllib_error.URLError, _GeminiStreamError) as exc:
+            if attempt >= _MAX_RETRIES:
+                raise RuntimeError(f"Gemini API request failed: {exc}") from exc
             delay = min(_BASE_BACKOFF_SECONDS * (2 ** attempt), _MAX_BACKOFF_SECONDS)
             delay += random.uniform(0, delay * 0.25)
             time.sleep(delay)
@@ -90,17 +204,22 @@ class _GeminiClient:
     api_key: str
 
     def generate_content(self, *, model: str, options: dict[str, Any]) -> dict[str, Any]:
+        """Hit Gemini ``:streamGenerateContent`` and return a synthetic non-streaming response.
+
+        We use the SSE streaming endpoint instead of plain ``:generateContent`` because
+        non-streaming buffers the full response server-side and ships it as one HTTP body
+        after the model finishes thinking — which can exceed Google's edge gateway timeout
+        (~5 min) on ``thinkingLevel=high`` requests, leaving the client stuck in
+        ``CLOSE_WAIT``. Streaming pushes tokens as they're generated, which keeps the
+        connection live regardless of total generation time.
+
+        We accumulate SSE chunks into a single response dict that matches the shape of
+        ``:generateContent`` so downstream parsing (``_gemini_text``,
+        ``extract_gemini_usage``) needs no changes.
+        """
         payload = json.dumps(options).encode("utf-8")
-        request = urllib_request.Request(
-            f"{GEMINI_API_BASE_URL}/{model}:generateContent",
-            data=payload,
-            headers={
-                "Content-Type": "application/json",
-                "x-goog-api-key": self.api_key,
-            },
-            method="POST",
-        )
-        return _retryable_urlopen(request, label="Gemini")
+        url = f"{GEMINI_API_BASE_URL}/{model}:streamGenerateContent?alt=sse"
+        return _retryable_gemini_stream(url=url, payload=payload, api_key=self.api_key)
 
 
 def _api_ssl_context() -> ssl.SSLContext:

@@ -108,15 +108,17 @@ done
 echo
 echo "Eval phase completed: $SUCCESS_COUNT/$TOTAL_RUNS runs successful."
 
-for output_dir in "${SUCCESSFUL_OUTPUT_DIRS[@]}"; do
-  echo "Scoring: $output_dir"
-  if "$PYTHON_BIN" scripts/score_continuation.py "$output_dir" --ignore-judge; then
-    SCORE_SUCCESS_COUNT=$((SCORE_SUCCESS_COUNT + 1))
-  else
-    SCORE_FAILED_RUNS+=("$output_dir")
-    echo "SCORE FAILED: $output_dir" >&2
-  fi
-done
+if (( ${#SUCCESSFUL_OUTPUT_DIRS[@]} > 0 )); then
+  for output_dir in "${SUCCESSFUL_OUTPUT_DIRS[@]}"; do
+    echo "Scoring: $output_dir"
+    if "$PYTHON_BIN" scripts/score_continuation.py "$output_dir" --ignore-judge; then
+      SCORE_SUCCESS_COUNT=$((SCORE_SUCCESS_COUNT + 1))
+    else
+      SCORE_FAILED_RUNS+=("$output_dir")
+      echo "SCORE FAILED: $output_dir" >&2
+    fi
+  done
+fi
 
 echo
 echo "Score phase completed: $SCORE_SUCCESS_COUNT/${#SUCCESSFUL_OUTPUT_DIRS[@]} runs successful."
