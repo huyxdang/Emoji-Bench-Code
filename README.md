@@ -157,18 +157,18 @@ The checked-in artifact bundle is intentionally narrower. It contains only
 For the current final-answer-only pipeline:
 
 ```bash
-./eval.sh artifacts/emoji-bench-dataset-100 -- --max-concurrent 8
+./run.sh artifacts/emoji-bench-dataset-100 -- --max-concurrent 8
 ```
 
-`eval.sh` will:
+`run.sh` will:
 
 1. Run `evaluate_continuation.py` over all 36 supported cells (resuming partially completed ones).
 2. Run the deterministic scorer with `--ignore-judge`.
 3. Regenerate B-variant final-answer plots in `artifacts/plots/`.
 4. Continue past failed cells and print a final failure summary.
 
-`run.sh` is still available for judge-backed recovery analysis, but it is not
-needed to reproduce the current `b_final_answer_l0.png` result.
+`eval.sh` is retained as an older alias for the same final-answer-only workflow.
+The LLM-as-judge path is no longer part of `run.sh`.
 
 The four matrix cells per model:
 
@@ -184,11 +184,12 @@ Artifacts for each cell land at:
 ```
 artifacts/evals/<model>-<B|C>-L<0|1>/
 ├── predictions.jsonl
-├── judge.jsonl
 ├── scores.jsonl
-├── nested_scores.jsonl
 └── score_summary.json
 ```
+
+Some checked-in result directories may also contain `judge.jsonl` and
+`nested_scores.jsonl` as audit artifacts from earlier judge-backed runs.
 
 For the current checked-in result set, only `artifacts/evals/*-B-L0/` is kept.
 
@@ -229,6 +230,9 @@ The checked-in results are the B-L0, final-answer-only summaries under:
 ```
 artifacts/evals/*-B-L0/score_summary.json
 ```
+
+The checked-in Gemini result artifacts were produced through the OpenRouter
+API, not the Google Gemini API.
 
 Each current `score_summary.json` reports:
 
@@ -271,8 +275,8 @@ This keeps `judge.jsonl` as an audit artifact while making the headline depend o
 - `emoji_bench/continuation_formatter.py` — Turn-1, prefill, and single-turn prompt formatting
 - `emoji_bench/model_registry.py` — model aliases and provider-specific defaults
 - `scripts/` — `generate_continuation_dataset.py`, `evaluate_continuation.py`, `judge_continuation.py`, `score_continuation.py`, `preview_dataset.py`, `plot_b_final_answer.py`
-- `eval.sh` — full-matrix eval → final-answer-only score → B final-answer plots
-- `run.sh` — full-matrix eval → judge → score batch runner for recovery analysis
+- `run.sh` — full-matrix eval → final-answer-only score → B final-answer plots
+- `eval.sh` — older alias for the final-answer-only batch runner
 
 ## License
 
