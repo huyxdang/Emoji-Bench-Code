@@ -105,7 +105,8 @@ def test_build_judge_prompt_allows_implicit_recovery(pilot_pair):
     pred["raw_continuation_text"] = ""
     step_values = compute_step_values(dataset_row=dataset_row)
     prompt = build_judge_prompt(prediction_row=pred, step_values=step_values)
-    assert "Implicit correction DOES count" in prompt
+    assert "silent corrections count" in prompt
+    assert "regardless of how it got" in prompt
     assert "Do not require the model to mention" in prompt
 
 

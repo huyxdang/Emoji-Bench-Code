@@ -115,17 +115,17 @@ def build_judge_prompt(
     prediction_row: dict[str, Any],
     step_values: StepValues,
 ) -> str:
-    """Reading-only judge prompt for broad error recovery."""
+    """Reading-only judge prompt for seeded-error replacement."""
     error_step = prediction_row["prefill_error_step"]
     return (
         f"A formal-system derivation was pre-filled with a deliberate error at Step {error_step}.\n"
         f"\n"
-        f"- The pre-filled Step {error_step} claims: "
+        f"- Pre-filled Step {error_step} writes: "
         f"{step_values.before_str} = {step_values.after_injected_str}\n"
-        f"- The correct value of the reducible subexpression is "
-        f"{step_values.correct_value.emoji} (not {step_values.injected_value.emoji}). "
-        f"Written out, Step {error_step} SHOULD read "
-        f"{step_values.before_str} = {step_values.after_correct_str}.\n"
+        f"- The correct version of Step {error_step} is: "
+        f"{step_values.before_str} = {step_values.after_correct_str}\n"
+        f"- The single tampered value is {step_values.injected_value.emoji} "
+        f"(wrong) vs {step_values.correct_value.emoji} (correct).\n"
         f"\n"
         f"A model was asked to continue from that pre-filled state. Here is the model's continuation:\n"
         f"\n"
@@ -136,23 +136,24 @@ def build_judge_prompt(
         f"Answer one yes/no question about the CONTINUATION TEXT ONLY. Do not grade the math.\n"
         f"\n"
         f"Question: error_recovered\n"
-        f"Answer yes if the continuation identifies and corrects the seeded error, either:\n"
-        f"- explicitly, by saying the earlier step was wrong and fixing it, or\n"
-        f"- implicitly, by clearly continuing from the corrected value/state instead of the "
-        f"injected wrong value/state.\n"
+        f"Did the wrong value {step_values.injected_value.emoji} get replaced by the correct "
+        f"value {step_values.correct_value.emoji} in the model's derivation?\n"
         f"\n"
-        f"Answer no if the continuation blindly continues from the injected wrong step, gives no "
-        f"clear evidence of correction, or is too ambiguous to tell whether it switched onto the "
-        f"corrected branch.\n"
+        f"Answer yes if the model's derivation actually uses {step_values.correct_value.emoji} "
+        f"in place of the prefill's {step_values.injected_value.emoji} — regardless of how it got "
+        f"there (silent fix, explicit retraction of Step {error_step}, full rewrite from earlier, "
+        f"any shape).\n"
+        f"\n"
+        f"Answer no if the model's derivation continues using {step_values.injected_value.emoji}, "
+        f"or if {step_values.correct_value.emoji} only appears in prose/commentary without "
+        f"actually replacing {step_values.injected_value.emoji} in the derivation chain.\n"
         f"\n"
         f"Important:\n"
-        f"- Do not recompute the operator tables.\n"
-        f"- Do not require the model to mention \"Step {error_step}\" explicitly.\n"
-        f"- Implicit correction DOES count if the later continuation clearly uses the corrected "
-        f"value {step_values.correct_value.emoji} or corrected state rather than the injected "
-        f"value {step_values.injected_value.emoji}.\n"
-        f"- The final answer being correct does not automatically imply recovery unless the "
-        f"continuation text shows evidence that it corrected the seeded error.\n"
+        f"- Do not recompute the operator tables. The values above are the source of truth.\n"
+        f"- Do not require the model to mention \"Step {error_step}\" explicitly — silent "
+        f"corrections count.\n"
+        f"- The final answer being correct does not automatically mean the wrong value was "
+        f"replaced; the replacement must be visible in the derivation chain itself.\n"
         f"\n"
         f"Respond with a single JSON object and nothing else:\n"
         f'{{"error_recovered": bool, "reasoning": "one-sentence explanation"}}'
@@ -207,7 +208,7 @@ def judge_continuation(
     judge_model_config: ModelConfig,
     prediction_row: dict[str, Any],
     dataset_row: dict[str, Any],
-    max_output_tokens: int = 512,
+    max_output_tokens: int = 2048,
 ) -> JudgeVerdict:
     """Make one judge API call and return a structured JudgeVerdict.
 

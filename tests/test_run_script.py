@@ -162,11 +162,11 @@ def test_run_sh_skips_score_when_judge_fails(tmp_path):
     result, calls = _run_script(
         ["artifacts/emoji-bench-dataset-100"],
         tmp_path=tmp_path,
-        extra_env={"FAKE_FAIL_JUDGE_SUBSTRING": "claude-opus-4-6-reasoning-high-B-L0"},
+        extra_env={"FAKE_FAIL_JUDGE_SUBSTRING": "claude-opus-4-6-reasoning-max-B-L0"},
     )
 
     assert result.returncode == 1
-    assert "JUDGE FAILED: artifacts/evals/claude-opus-4-6-reasoning-high-B-L0" in result.stderr
+    assert "JUDGE FAILED: artifacts/evals/claude-opus-4-6-reasoning-max-B-L0" in result.stderr
     assert "Failed judge runs:" in result.stdout
 
     judge_calls = [call for call in calls if call[0] == "scripts/judge_continuation.py"]
@@ -175,6 +175,6 @@ def test_run_sh_skips_score_when_judge_fails(tmp_path):
     assert len(judge_calls) == 36
     assert len(score_calls) == 35
     assert all(
-        call[1] != "artifacts/evals/claude-opus-4-6-reasoning-high-B-L0"
+        call[1] != "artifacts/evals/claude-opus-4-6-reasoning-max-B-L0"
         for call in score_calls
     )

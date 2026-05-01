@@ -1,50 +1,29 @@
 {
-  "predictions_path": "/Users/huy.dangxuan/Desktop/Emoji-Bench/artifacts/evals/claude-sonnet-4-6-reasoning-max-B-L0/predictions.jsonl",
-  "scores_path": "/Users/huy.dangxuan/Desktop/Emoji-Bench/artifacts/evals/claude-sonnet-4-6-reasoning-max-B-L0/scores.jsonl",
+  "predictions_path": "/Users/huydang/Desktop/Emoji-Bench/artifacts/evals/claude-sonnet-4-6-reasoning-max-B-L0/predictions.jsonl",
+  "scores_path": "/Users/huydang/Desktop/Emoji-Bench/artifacts/evals/claude-sonnet-4-6-reasoning-max-B-L0/scores.jsonl",
   "headline": {
     "total": 100,
-    "detect_rate": 0.66,
-    "detect_correct_rate": 0.66,
-    "detect_correct_finaloutput_correct_rate": 0.45,
-    "mechanical_correct_rate": 0.45,
+    "final_answer_correct_rate": 0.66,
     "by_difficulty": {
       "easy": {
         "total": 25,
-        "detect_rate": 0.56,
-        "detect_correct_rate": 0.56,
-        "detect_correct_finaloutput_correct_rate": 0.56,
-        "mechanical_correct_rate": 0.56
+        "final_answer_correct_rate": 0.56
       },
       "medium": {
         "total": 25,
-        "detect_rate": 0.6,
-        "detect_correct_rate": 0.6,
-        "detect_correct_finaloutput_correct_rate": 0.4,
-        "mechanical_correct_rate": 0.4
+        "final_answer_correct_rate": 0.6
       },
       "hard": {
         "total": 25,
-        "detect_rate": 0.72,
-        "detect_correct_rate": 0.72,
-        "detect_correct_finaloutput_correct_rate": 0.4,
-        "mechanical_correct_rate": 0.4
+        "final_answer_correct_rate": 0.72
       },
       "expert": {
         "total": 25,
-        "detect_rate": 0.76,
-        "detect_correct_rate": 0.76,
-        "detect_correct_finaloutput_correct_rate": 0.44,
-        "mechanical_correct_rate": 0.44
+        "final_answer_correct_rate": 0.76
       }
     }
   },
-  "headline_kind": "judge_plus_validator",
-  "nested_scores_path": "/Users/huy.dangxuan/Desktop/Emoji-Bench/artifacts/evals/claude-sonnet-4-6-reasoning-max-B-L0/nested_scores.jsonl",
-  "judge_path": "/Users/huy.dangxuan/Desktop/Emoji-Bench/artifacts/evals/claude-sonnet-4-6-reasoning-max-B-L0/judge.jsonl",
-  "judged_count": 100,
-  "judged_coverage": 1.0,
-  "validator_status": "ok",
-  "dataset_path": "/Users/huy.dangxuan/Desktop/Emoji-Bench/artifacts/emoji-bench-dataset-100/test.jsonl",
+  "headline_kind": "final_output_only",
   "regex_baseline": {
     "total": 100,
     "outcome_buckets": {
@@ -100,5 +79,6 @@
         "_total": 25
       }
     }
-  }
+  },
+  "note": "judge.jsonl was ignored via --ignore-judge; final-output-only headline emitted."
 }

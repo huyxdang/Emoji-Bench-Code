@@ -3,48 +3,27 @@
   "scores_path": "/Users/huydang/Desktop/Emoji-Bench/artifacts/evals/claude-opus-4-6-reasoning-high-C-L1/scores.jsonl",
   "headline": {
     "total": 100,
-    "detect_rate": 0.59,
-    "detect_correct_rate": 0.58,
-    "detect_correct_finaloutput_correct_rate": 0.45,
-    "mechanical_correct_rate": 0.46,
+    "final_answer_correct_rate": 0.58,
     "by_difficulty": {
       "easy": {
         "total": 25,
-        "detect_rate": 0.8,
-        "detect_correct_rate": 0.8,
-        "detect_correct_finaloutput_correct_rate": 0.8,
-        "mechanical_correct_rate": 0.8
+        "final_answer_correct_rate": 0.8
       },
       "medium": {
         "total": 25,
-        "detect_rate": 0.68,
-        "detect_correct_rate": 0.68,
-        "detect_correct_finaloutput_correct_rate": 0.48,
-        "mechanical_correct_rate": 0.48
+        "final_answer_correct_rate": 0.68
       },
       "hard": {
         "total": 25,
-        "detect_rate": 0.48,
-        "detect_correct_rate": 0.48,
-        "detect_correct_finaloutput_correct_rate": 0.28,
-        "mechanical_correct_rate": 0.28
+        "final_answer_correct_rate": 0.48
       },
       "expert": {
         "total": 25,
-        "detect_rate": 0.4,
-        "detect_correct_rate": 0.36,
-        "detect_correct_finaloutput_correct_rate": 0.24,
-        "mechanical_correct_rate": 0.28
+        "final_answer_correct_rate": 0.36
       }
     }
   },
-  "headline_kind": "judge_plus_validator",
-  "nested_scores_path": "/Users/huydang/Desktop/Emoji-Bench/artifacts/evals/claude-opus-4-6-reasoning-high-C-L1/nested_scores.jsonl",
-  "judge_path": "/Users/huydang/Desktop/Emoji-Bench/artifacts/evals/claude-opus-4-6-reasoning-high-C-L1/judge.jsonl",
-  "judged_count": 100,
-  "judged_coverage": 1.0,
-  "validator_status": "ok",
-  "dataset_path": "/Users/huydang/Desktop/Emoji-Bench/artifacts/emoji-bench-dataset-100/test.jsonl",
+  "headline_kind": "final_output_only",
   "regex_baseline": {
     "total": 100,
     "outcome_buckets": {
@@ -100,5 +79,6 @@
         "_total": 25
       }
     }
-  }
+  },
+  "note": "judge.jsonl was ignored via --ignore-judge; final-output-only headline emitted."
 }

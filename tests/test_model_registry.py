@@ -130,9 +130,9 @@ def test_pinned_gemini_thinking_high_aliases_are_present():
 def test_model_choices_put_stronger_claude_and_gemini_variants_first():
     choices = model_choices()
     assert choices.index("claude-opus-4-7-reasoning-max") < choices.index(
-        "claude-opus-4-6-reasoning-high"
+        "claude-opus-4-6-reasoning-max"
     )
-    assert choices.index("claude-opus-4-6-reasoning-high") < choices.index(
+    assert choices.index("claude-opus-4-6-reasoning-max") < choices.index(
         "claude-sonnet-4-6-reasoning-max"
     )
     assert choices.index("gemini-3.1-pro-preview-thinking-high") < choices.index(
@@ -142,9 +142,17 @@ def test_model_choices_put_stronger_claude_and_gemini_variants_first():
 
 
 def test_all_configured_models_use_expected_default_max_output_tokens():
+    from emoji_bench.model_registry import (
+        GEMINI_3_MAX_OUTPUT_TOKENS,
+        MISTRAL_MAX_OUTPUT_TOKENS,
+    )
+
     assert DEFAULT_MAX_OUTPUT_TOKENS == 4096
     for config in MODEL_CONFIGS.values():
-        if config.key == "claude-opus-4-7-reasoning-max":
+        if config.key in {
+            "claude-opus-4-7-reasoning-max",
+            "claude-opus-4-6-reasoning-max",
+        }:
             assert config.default_max_output_tokens == CLAUDE_OPUS_MAX_OUTPUT_TOKENS
         elif config.key in {"gpt-5.4-reasoning-xhigh", "gpt-5.4-mini-reasoning-xhigh", "gpt-5.4-nano"}:
             assert config.default_max_output_tokens == GPT_5_4_MAX_OUTPUT_TOKENS
@@ -154,6 +162,13 @@ def test_all_configured_models_use_expected_default_max_output_tokens():
             "claude-sonnet-4-6-reasoning-max",
         }:
             assert config.default_max_output_tokens == CLAUDE_SONNET_MAX_OUTPUT_TOKENS
+        elif config.key in {
+            "gemini-3-flash-preview-thinking-high",
+            "gemini-3.1-pro-preview-thinking-high",
+        }:
+            assert config.default_max_output_tokens == GEMINI_3_MAX_OUTPUT_TOKENS
+        elif config.key in {"mistral-large-2512", "magistral-medium-2509"}:
+            assert config.default_max_output_tokens == MISTRAL_MAX_OUTPUT_TOKENS
         else:
             assert config.default_max_output_tokens == DEFAULT_MAX_OUTPUT_TOKENS
 

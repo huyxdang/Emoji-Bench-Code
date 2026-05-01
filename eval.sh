@@ -4,21 +4,21 @@ set -euo pipefail
 if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
   cat <<'EOF'
 Usage:
-  ./run.sh [dataset_path] [-- extra evaluate_continuation.py args...]
+  ./eval.sh [dataset_path] [-- extra evaluate_continuation.py args...]
 
 Examples:
-  ./run.sh
-  ./run.sh artifacts/emoji-bench-dataset-100
-  ./run.sh artifacts/emoji-bench-dataset-100 -- --max-concurrent 8
+  ./eval.sh
+  ./eval.sh artifacts/emoji-bench-dataset-100
+  ./eval.sh artifacts/emoji-bench-dataset-100 -- --max-concurrent 8
 
 Notes:
   - Defaults to artifacts/emoji-bench-dataset-100
   - Runs the full 36-run matrix:
       9 models x 2 modes (prefill, single_turn) x 2 prompt levels (L0, L1)
   - Any args after -- are forwarded to every evaluate_continuation.py call
-  - Runs judge+score after the eval phase finishes
+  - Skips the LLM-as-judge entirely; only deterministic final-output scoring
+  - Generates B-variant final-answer plots in artifacts/plots/ after scoring
   - Continues past failed cells and prints a final failure summary
-  - Uses JUDGE_MODEL (default: gpt-5.4-mini-no-reasoning) and JUDGE_MAX_CONCURRENT (default: 8)
 EOF
   exit 0
 fi
@@ -28,8 +28,6 @@ cd "$REPO_ROOT"
 
 DATASET="${1:-artifacts/emoji-bench-dataset-100}"
 PYTHON_BIN="${PYTHON_BIN:-python}"
-JUDGE_MODEL="${JUDGE_MODEL:-gpt-5.4-mini-no-reasoning}"
-JUDGE_MAX_CONCURRENT="${JUDGE_MAX_CONCURRENT:-8}"
 
 declare -a EXTRA_ARGS=()
 if [[ $# -ge 2 ]]; then
@@ -43,7 +41,7 @@ fi
 if (( ${#EXTRA_ARGS[@]} > 0 )); then
   for arg in "${EXTRA_ARGS[@]}"; do
     if [[ "$arg" == "--output-dir" ]]; then
-      echo "run.sh does not support forwarding --output-dir because it breaks per-cell judge/score routing." >&2
+      echo "eval.sh does not support forwarding --output-dir because it breaks per-cell score routing." >&2
       exit 2
     fi
   done
@@ -68,8 +66,6 @@ RUN_INDEX=0
 SUCCESS_COUNT=0
 FAILED_RUNS=()
 SUCCESSFUL_OUTPUT_DIRS=()
-JUDGE_SUCCESS_COUNT=0
-JUDGE_FAILED_RUNS=()
 SCORE_SUCCESS_COUNT=0
 SCORE_FAILED_RUNS=()
 
@@ -113,19 +109,8 @@ echo
 echo "Eval phase completed: $SUCCESS_COUNT/$TOTAL_RUNS runs successful."
 
 for output_dir in "${SUCCESSFUL_OUTPUT_DIRS[@]}"; do
-  echo "Judging: $output_dir"
-  if "$PYTHON_BIN" scripts/judge_continuation.py "$output_dir" \
-    --judge-model "$JUDGE_MODEL" \
-    --max-concurrent "$JUDGE_MAX_CONCURRENT"; then
-    JUDGE_SUCCESS_COUNT=$((JUDGE_SUCCESS_COUNT + 1))
-  else
-    JUDGE_FAILED_RUNS+=("$output_dir")
-    echo "JUDGE FAILED: $output_dir" >&2
-    continue
-  fi
-
   echo "Scoring: $output_dir"
-  if "$PYTHON_BIN" scripts/score_continuation.py "$output_dir"; then
+  if "$PYTHON_BIN" scripts/score_continuation.py "$output_dir" --ignore-judge; then
     SCORE_SUCCESS_COUNT=$((SCORE_SUCCESS_COUNT + 1))
   else
     SCORE_FAILED_RUNS+=("$output_dir")
@@ -134,19 +119,21 @@ for output_dir in "${SUCCESSFUL_OUTPUT_DIRS[@]}"; do
 done
 
 echo
-echo "Judge phase completed: $JUDGE_SUCCESS_COUNT/${#SUCCESSFUL_OUTPUT_DIRS[@]} runs successful."
 echo "Score phase completed: $SCORE_SUCCESS_COUNT/${#SUCCESSFUL_OUTPUT_DIRS[@]} runs successful."
+
+PLOT_FAILED=0
+echo
+echo "Generating plots..."
+if "$PYTHON_BIN" scripts/plot_b_final_answer.py; then
+  echo "Plots written to artifacts/plots/"
+else
+  echo "PLOT FAILED" >&2
+  PLOT_FAILED=1
+fi
 
 if (( ${#FAILED_RUNS[@]} > 0 )); then
   echo "Failed eval runs:"
   for failed in "${FAILED_RUNS[@]}"; do
-    echo "  - $failed"
-  done
-fi
-
-if (( ${#JUDGE_FAILED_RUNS[@]} > 0 )); then
-  echo "Failed judge runs:"
-  for failed in "${JUDGE_FAILED_RUNS[@]}"; do
     echo "  - $failed"
   done
 fi
@@ -158,8 +145,8 @@ if (( ${#SCORE_FAILED_RUNS[@]} > 0 )); then
   done
 fi
 
-if (( ${#FAILED_RUNS[@]} > 0 || ${#JUDGE_FAILED_RUNS[@]} > 0 || ${#SCORE_FAILED_RUNS[@]} > 0 )); then
+if (( ${#FAILED_RUNS[@]} > 0 || ${#SCORE_FAILED_RUNS[@]} > 0 || PLOT_FAILED > 0 )); then
   exit 1
 fi
 
-echo "All eval, judge, and score runs completed successfully."
+echo "All eval, score, and plot steps completed successfully."

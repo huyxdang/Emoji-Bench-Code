@@ -159,6 +159,14 @@ def main() -> None:
             "headline does not use the source dataset."
         ),
     )
+    parser.add_argument(
+        "--ignore-judge",
+        action="store_true",
+        help=(
+            "Skip judge.jsonl even if present and emit a final-output-only "
+            "headline. Useful for judge-free pipelines."
+        ),
+    )
     args = parser.parse_args()
 
     predictions_path = _resolve_predictions_path(args.predictions_path)
@@ -182,7 +190,7 @@ def main() -> None:
         "scores_path": str(artifact_paths.scores_path.resolve()),
     }
 
-    if artifact_paths.judge_path.exists():
+    if artifact_paths.judge_path.exists() and not args.ignore_judge:
         judge_rows = load_validated_judge_rows(
             artifact_paths.judge_path,
             expected_fingerprints=prediction_fingerprints,
@@ -211,10 +219,16 @@ def main() -> None:
         summary["headline"] = summarize_final_answer_only(scored)
         summary["headline_kind"] = "final_output_only"
         summary["regex_baseline"] = regex_summary
-        summary["note"] = (
-            "judge.jsonl not found alongside predictions; error_recovery_rate is "
-            "unavailable. Run scripts/judge_continuation.py first to enable it."
-        )
+        if args.ignore_judge and artifact_paths.judge_path.exists():
+            summary["note"] = (
+                "judge.jsonl was ignored via --ignore-judge; final-output-only "
+                "headline emitted."
+            )
+        else:
+            summary["note"] = (
+                "judge.jsonl not found alongside predictions; error_recovery_rate "
+                "is unavailable. Run scripts/judge_continuation.py first to enable it."
+            )
 
     artifact_paths.score_summary_path.write_text(
         json.dumps(summary, ensure_ascii=False, indent=2) + "\n",

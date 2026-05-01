@@ -15,6 +15,8 @@ DEFAULT_MAX_OUTPUT_TOKENS = 4096
 GPT_5_4_MAX_OUTPUT_TOKENS = 128000
 CLAUDE_OPUS_MAX_OUTPUT_TOKENS = 128000
 CLAUDE_SONNET_MAX_OUTPUT_TOKENS = 64000
+GEMINI_3_MAX_OUTPUT_TOKENS = 64000
+MISTRAL_MAX_OUTPUT_TOKENS = 40000
 REASONING_EFFORT_CHOICES: tuple[ReasoningEffortOverride, ...] = (
     "none",
     "minimal",
@@ -143,6 +145,7 @@ def _mistral_model(
     label: str,
     api_model: str,
     docs_url: str,
+    default_max_output_tokens: int = DEFAULT_MAX_OUTPUT_TOKENS,
     notes: str | None = None,
 ) -> ModelConfig:
     return ModelConfig(
@@ -152,7 +155,7 @@ def _mistral_model(
         api_model=api_model,
         docs_url=docs_url,
         api_key_env_var="MISTRAL_API_KEY",
-        default_max_output_tokens=DEFAULT_MAX_OUTPUT_TOKENS,
+        default_max_output_tokens=default_max_output_tokens,
         notes=notes,
     )
 
@@ -251,9 +254,11 @@ MISTRAL_LARGE_2512 = _mistral_model(
     label="Mistral Large 3",
     api_model="mistral-large-2512",
     docs_url="https://docs.mistral.ai/models/mistral-large-3-25-12",
+    default_max_output_tokens=MISTRAL_MAX_OUTPUT_TOKENS,
     notes=(
         "Mistral Large 3 v25.12 supports chat completions and structured outputs "
-        "via the Chat Completions API."
+        "via the Chat Completions API. Default output budget set to 40k for "
+        "headroom; the API enforces prompt + max_tokens <= context (256k)."
     ),
 )
 MAGISTRAL_MEDIUM_2509 = _mistral_model(
@@ -261,10 +266,11 @@ MAGISTRAL_MEDIUM_2509 = _mistral_model(
     label="Magistral Medium 1.2",
     api_model="magistral-medium-2509",
     docs_url="https://docs.mistral.ai/models/magistral-medium-1-2-25-09",
+    default_max_output_tokens=MISTRAL_MAX_OUTPUT_TOKENS,
     notes=(
         "Magistral Medium 1.2 v25.09 is Mistral's frontier-class multimodal "
         "reasoning model and supports chat completions and structured outputs "
-        "via the Chat Completions API."
+        "via the Chat Completions API. Default output budget set to 40k."
     ),
 )
 MISTRAL_MEDIUM_2508 = _mistral_model(
@@ -329,6 +335,20 @@ MODEL_CONFIGS: dict[str, ModelConfig] = {
             "enabled at the minimum 1024-token budget and effort='high'."
         ),
     ),
+    "claude-opus-4-6-reasoning-max": _anthropic_model(
+        key="claude-opus-4-6-reasoning-max",
+        label="Claude Opus 4.6 (reasoning max)",
+        api_model="claude-opus-4-6",
+        anthropic_thinking=AnthropicThinkingConfig(enabled=True, mode="adaptive"),
+        anthropic_effort="max",
+        default_max_output_tokens=CLAUDE_OPUS_MAX_OUTPUT_TOKENS,
+        notes=(
+            "Pinned benchmark alias for Claude Opus 4.6 with adaptive extended "
+            "thinking enabled and effort='max'. Defaults to Anthropic's published "
+            "128k max output for synchronous Messages API requests. Used to put "
+            "Opus 4.6 on equal footing with Opus 4.7 reasoning-max."
+        ),
+    ),
     "claude-sonnet-4-6-reasoning-max": replace(
         CLAUDE_SONNET_4_6_REASONING,
         key="claude-sonnet-4-6-reasoning-max",
@@ -359,10 +379,12 @@ MODEL_CONFIGS: dict[str, ModelConfig] = {
         key="gemini-3-flash-preview-thinking-high",
         label="Gemini 3 Flash Preview (thinking high)",
         docs_url=GEMINI_THINKING_DOCS_URL,
+        default_max_output_tokens=GEMINI_3_MAX_OUTPUT_TOKENS,
         gemini_thinking=GeminiThinkingConfig(level="high"),
         notes=(
             "Pinned benchmark alias for Gemini 3 Flash Preview with explicit "
-            "thinkingConfig.thinkingLevel='high'."
+            "thinkingConfig.thinkingLevel='high'. Defaults to Google's published "
+            "64k max output tokens."
         ),
     ),
     GEMINI_3_1_PRO_PREVIEW.key: GEMINI_3_1_PRO_PREVIEW,
@@ -371,10 +393,12 @@ MODEL_CONFIGS: dict[str, ModelConfig] = {
         key="gemini-3.1-pro-preview-thinking-high",
         label="Gemini 3.1 Pro Preview (thinking high)",
         docs_url=GEMINI_THINKING_DOCS_URL,
+        default_max_output_tokens=GEMINI_3_MAX_OUTPUT_TOKENS,
         gemini_thinking=GeminiThinkingConfig(level="high"),
         notes=(
             "Pinned benchmark alias for Gemini 3.1 Pro Preview with explicit "
-            "thinkingConfig.thinkingLevel='high'."
+            "thinkingConfig.thinkingLevel='high'. Defaults to Google's published "
+            "64k max output tokens."
         ),
     ),
     MISTRAL_LARGE_2512.key: MISTRAL_LARGE_2512,
@@ -384,7 +408,7 @@ MODEL_CONFIGS: dict[str, ModelConfig] = {
 
 _MODEL_ORDER: tuple[str, ...] = (
     "claude-opus-4-7-reasoning-max",
-    "claude-opus-4-6-reasoning-high",
+    "claude-opus-4-6-reasoning-max",
     "claude-sonnet-4-6-reasoning-max",
     "gpt-5.4-reasoning-xhigh",
     "gpt-5.4-mini-reasoning-xhigh",

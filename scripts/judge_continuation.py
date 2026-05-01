@@ -90,7 +90,7 @@ def main() -> None:
     parser.add_argument(
         "--max-output-tokens",
         type=int,
-        default=512,
+        default=2048,
         help="Max output tokens for the judge response.",
     )
     parser.add_argument(
