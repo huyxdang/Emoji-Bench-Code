@@ -57,7 +57,7 @@ Run the test suite to confirm everything works:
 pytest
 ```
 
-The suite covers generation, the mechanical validator, the judge, and all four provider transports. One test in particular is worth pointing at if you want to verify the grader end-to-end on a known-good row:
+The suite covers generation, deterministic scoring, the optional judge path, and all four provider transports. One test in particular is worth pointing at if you want to verify the derivation validator on a known-good row:
 
 ```bash
 pytest tests/test_continuation_validator.py::test_validate_clean_chain_reaches_gt -v
@@ -141,31 +141,34 @@ The assertions will hold byte-for-byte on any machine as long as the generator c
 
 ---
 
-## Run the full experiment
+## Run experiments
 
-The current runner matrix is **9 models × 2 delivery shapes × 2 prompt strengths = 36 cells**.
+The benchmark code still supports the full matrix:
 
-The checked-in artifact bundle in `artifacts/evals/` is intentionally partial:
+**9 models × 2 delivery shapes × 2 prompt strengths = 36 cells**.
 
-- `claude-opus-4-7-reasoning-max`: `B-L0` only
-- `gemini-3.1-pro-preview-thinking-high`: `B-L0` and `B-L1` only
-- all other listed models: full `2 × 2` coverage
+The checked-in artifact bundle is intentionally narrower. It contains only
+**B-L0** evals scored on **final-answer correctness**:
+
+- **B**: native prefill / three-message delivery
+- **L0**: `Please continue.`
+- Result metric: `final_answer_correct_rate`
+
+For the current final-answer-only pipeline:
 
 ```bash
-./run.sh artifacts/emoji-bench-dataset-100 -- --max-concurrent 8
+./eval.sh artifacts/emoji-bench-dataset-100 -- --max-concurrent 8
 ```
 
-`run.sh` will:
+`eval.sh` will:
 
-1. Run `evaluate_continuation.py` over all 36 cells (resuming partially completed ones).
-2. Run the LLM-as-judge over each successful prediction set.
-3. Run the deterministic scorer.
+1. Run `evaluate_continuation.py` over all 36 supported cells (resuming partially completed ones).
+2. Run the deterministic scorer with `--ignore-judge`.
+3. Regenerate B-variant final-answer plots in `artifacts/plots/`.
 4. Continue past failed cells and print a final failure summary.
 
-Defaults:
-
-- Judge model: `gpt-5.4-mini-no-reasoning`
-- Judge concurrency: `8` (`JUDGE_MAX_CONCURRENT=N` to override)
+`run.sh` is still available for judge-backed recovery analysis, but it is not
+needed to reproduce the current `b_final_answer_l0.png` result.
 
 The four matrix cells per model:
 
@@ -187,6 +190,8 @@ artifacts/evals/<model>-<B|C>-L<0|1>/
 └── score_summary.json
 ```
 
+For the current checked-in result set, only `artifacts/evals/*-B-L0/` is kept.
+
 ### Running a single cell
 
 ```bash
@@ -196,58 +201,63 @@ python scripts/evaluate_continuation.py \
   --mode prefill \
   --turn-2-prompt-level 0
 
-python scripts/judge_continuation.py <predictions-dir>
-python scripts/score_continuation.py <predictions-dir>
+python scripts/score_continuation.py <predictions-dir> --ignore-judge
 ```
 
 ---
 
 ## Metrics
 
-The current headline report focuses on two questions:
+The current reported result focuses on final-answer correctness:
 
 | Metric | Meaning | Grader |
 |---|---|---|
-| `error_recovery_rate` | Continuation recovers from the seeded prefill error, either explicitly or implicitly | LLM judge |
 | `final_answer_correct_rate` | Extracted `Final Output:` equals `ground_truth_final_output`, regardless of how the model got there | Deterministic string match |
 
-This is intentionally simpler than the older DCF-style headline:
+This is intentionally simpler than the older recovery / DCF-style headline. The reported B-L0 chart answers one question:
 
-- We **do** care whether the model recovers from the seeded error.
-- We **do** care whether the final answer is correct.
-- We **do not** make the headline depend on explicit self-commentary or on a mechanically perfect derivation trace.
+- did the model's continuation end at the correct final symbol?
 
-### Judge behavior
-
-The judge is given the injected bad step and the correct value for that step, then asked a single reading-comprehension question:
-
-- did the continuation recover from the seeded error?
-
-Recovery can be:
-
-- **explicit**: "wait, step Y should be ..."
-- **implicit**: later steps clearly continue from the corrected state without spelling it out
+The judge path still exists in the codebase for recovery analysis, but it is not part of the current checked-in headline result.
 
 ---
 
 ## Results
 
-Each `score_summary.json` now reports:
+The checked-in results are the B-L0, final-answer-only summaries under:
 
-- `error_recovery_rate`
+```
+artifacts/evals/*-B-L0/score_summary.json
+```
+
+Each current `score_summary.json` reports:
+
 - `final_answer_correct_rate`
 - `by_difficulty`
 
-When `judge.jsonl` is present, both headline metrics are available. When it is missing, the scorer still reports `final_answer_correct_rate` and keeps the regex diagnostics as a non-headline baseline.
+The corresponding plot is:
 
-The checked-in artifact bundle may contain older summaries from earlier metric iterations. Re-run:
+<p align="center">
+  <img src="artifacts/plots/b_final_answer_l0.png" alt="B-L0 final-answer correctness" width="100%" />
+</p>
 
-```bash
-python scripts/judge_continuation.py <predictions-dir>
-python scripts/score_continuation.py <predictions-dir>
+```
+artifacts/plots/b_final_answer_l0.png
 ```
 
-to refresh a cell under the current two-metric scheme.
+Regenerate it after adding or removing B-L0 eval results:
+
+```bash
+python scripts/plot_b_final_answer.py
+```
+
+To rescore a cell using final-answer-only scoring, run:
+
+```bash
+python scripts/score_continuation.py <predictions-dir> --ignore-judge
+```
+
+This keeps `judge.jsonl` as an audit artifact while making the headline depend only on `Final Output:`.
 
 ---
 
@@ -260,8 +270,9 @@ to refresh a cell under the current two-metric scheme.
 - `emoji_bench/judge/` — judge artifact validation, LLM-as-judge prompting, score aggregation
 - `emoji_bench/continuation_formatter.py` — Turn-1, prefill, and single-turn prompt formatting
 - `emoji_bench/model_registry.py` — model aliases and provider-specific defaults
-- `scripts/` — `generate_continuation_dataset.py`, `evaluate_continuation.py`, `judge_continuation.py`, `score_continuation.py`, `preview_dataset.py`, `plot_b_results.py`
-- `run.sh` — full-matrix eval → judge → score batch runner
+- `scripts/` — `generate_continuation_dataset.py`, `evaluate_continuation.py`, `judge_continuation.py`, `score_continuation.py`, `preview_dataset.py`, `plot_b_final_answer.py`
+- `eval.sh` — full-matrix eval → final-answer-only score → B final-answer plots
+- `run.sh` — full-matrix eval → judge → score batch runner for recovery analysis
 
 ## License
 
