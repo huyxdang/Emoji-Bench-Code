@@ -4,6 +4,7 @@ from emoji_bench.model_registry import (
     CLAUDE_OPUS_MAX_OUTPUT_TOKENS,
     CLAUDE_SONNET_MAX_OUTPUT_TOKENS,
     DEFAULT_MAX_OUTPUT_TOKENS,
+    GPT_5_2_MAX_OUTPUT_TOKENS,
     GPT_5_4_MAX_OUTPUT_TOKENS,
     MODEL_CONFIGS,
     apply_reasoning_effort_override,
@@ -26,10 +27,13 @@ def test_requested_model_configs_are_present():
         "gemini-3.1-pro-preview-thinking-high",
         "gemini-3.1-pro-preview",
         "gpt-5.4-reasoning-xhigh",
+        "gpt-5.2-reasoning-xhigh",
+        "gpt-5.2",
         "gpt-5.4",
         "gpt-5.4-mini-no-reasoning",
         "gpt-5.4-mini-reasoning-xhigh",
         "gpt-5.4-mini",
+        "gpt-5.4-nano-reasoning-xhigh",
         "gpt-5.4-nano",
         "magistral-medium-2509",
         "mistral-large-2512",
@@ -37,12 +41,13 @@ def test_requested_model_configs_are_present():
     }.issubset(set(model_choices()))
 
 
-def test_gpt54_models_default_to_medium_reasoning():
-    for key in ("gpt-5.4", "gpt-5.4-mini", "gpt-5.4-nano"):
+def test_openai_models_default_to_medium_reasoning():
+    for key in ("gpt-5.2", "gpt-5.4", "gpt-5.4-mini", "gpt-5.4-nano"):
         config = get_model_config(key)
         assert config.provider == "openai"
         assert config.openai_reasoning is not None
         assert config.openai_reasoning.effort == "medium"
+    assert get_model_config("gpt-5.2").default_max_output_tokens == DEFAULT_MAX_OUTPUT_TOKENS
     assert get_model_config("gpt-5.4").default_max_output_tokens == DEFAULT_MAX_OUTPUT_TOKENS
     assert get_model_config("gpt-5.4-mini").default_max_output_tokens == DEFAULT_MAX_OUTPUT_TOKENS
     assert get_model_config("gpt-5.4-nano").default_max_output_tokens == GPT_5_4_MAX_OUTPUT_TOKENS
@@ -60,6 +65,18 @@ def test_pinned_openai_reasoning_xhigh_aliases_are_present():
     assert gpt_54_mini.openai_reasoning is not None
     assert gpt_54_mini.openai_reasoning.effort == "xhigh"
     assert gpt_54_mini.default_max_output_tokens == GPT_5_4_MAX_OUTPUT_TOKENS
+
+    gpt_52 = get_model_config("gpt-5.2-reasoning-xhigh")
+    assert gpt_52.provider == "openai"
+    assert gpt_52.openai_reasoning is not None
+    assert gpt_52.openai_reasoning.effort == "xhigh"
+    assert gpt_52.default_max_output_tokens == GPT_5_2_MAX_OUTPUT_TOKENS
+
+    gpt_54_nano = get_model_config("gpt-5.4-nano-reasoning-xhigh")
+    assert gpt_54_nano.provider == "openai"
+    assert gpt_54_nano.openai_reasoning is not None
+    assert gpt_54_nano.openai_reasoning.effort == "xhigh"
+    assert gpt_54_nano.default_max_output_tokens == GPT_5_4_MAX_OUTPUT_TOKENS
 
 
 def test_gpt54_mini_no_reasoning_alias_is_present():
@@ -138,6 +155,12 @@ def test_model_choices_put_stronger_claude_and_gemini_variants_first():
     assert choices.index("gemini-3.1-pro-preview-thinking-high") < choices.index(
         "gemini-3-flash-preview-thinking-high"
     )
+    assert choices.index("gpt-5.2-reasoning-xhigh") < choices.index(
+        "gpt-5.4-reasoning-xhigh"
+    )
+    assert choices.index("gpt-5.4-mini-reasoning-xhigh") < choices.index(
+        "gpt-5.4-nano-reasoning-xhigh"
+    )
     assert choices.index("mistral-large-2512") < choices.index("magistral-medium-2509")
 
 
@@ -154,7 +177,14 @@ def test_all_configured_models_use_expected_default_max_output_tokens():
             "claude-opus-4-6-reasoning-max",
         }:
             assert config.default_max_output_tokens == CLAUDE_OPUS_MAX_OUTPUT_TOKENS
-        elif config.key in {"gpt-5.4-reasoning-xhigh", "gpt-5.4-mini-reasoning-xhigh", "gpt-5.4-nano"}:
+        elif config.key == "gpt-5.2-reasoning-xhigh":
+            assert config.default_max_output_tokens == GPT_5_2_MAX_OUTPUT_TOKENS
+        elif config.key in {
+            "gpt-5.4-reasoning-xhigh",
+            "gpt-5.4-mini-reasoning-xhigh",
+            "gpt-5.4-nano",
+            "gpt-5.4-nano-reasoning-xhigh",
+        }:
             assert config.default_max_output_tokens == GPT_5_4_MAX_OUTPUT_TOKENS
         elif config.key in {
             "claude-sonnet-4-6",

@@ -12,6 +12,7 @@ AnthropicThinkingMode = Literal["manual", "adaptive"]
 ReasoningEffortOverride = Literal["none", "minimal", "low", "medium", "high", "xhigh", "max"]
 
 DEFAULT_MAX_OUTPUT_TOKENS = 4096
+GPT_5_2_MAX_OUTPUT_TOKENS = 128000
 GPT_5_4_MAX_OUTPUT_TOKENS = 128000
 CLAUDE_OPUS_MAX_OUTPUT_TOKENS = 128000
 CLAUDE_SONNET_MAX_OUTPUT_TOKENS = 64000
@@ -166,6 +167,17 @@ GPT_4_1_MINI = _openai_model(
     api_model="gpt-4.1-mini",
     notes="Legacy non-reasoning baseline kept for backward compatibility.",
 )
+GPT_5_2 = _openai_model(
+    key="gpt-5.2",
+    label="GPT-5.2",
+    api_model="gpt-5.2",
+    docs_suffix="gpt-5.2",
+    openai_reasoning=OpenAIReasoningConfig(effort="medium"),
+    notes=(
+        "Previous frontier model for professional work. Defaults to medium "
+        "reasoning for non-headline evaluation runs."
+    ),
+)
 GPT_5_4 = _openai_model(
     key="gpt-5.4",
     label="GPT-5.4",
@@ -287,6 +299,18 @@ MISTRAL_MEDIUM_2508 = _mistral_model(
 
 MODEL_CONFIGS: dict[str, ModelConfig] = {
     GPT_4_1_MINI.key: GPT_4_1_MINI,
+    GPT_5_2.key: GPT_5_2,
+    "gpt-5.2-reasoning-xhigh": replace(
+        GPT_5_2,
+        key="gpt-5.2-reasoning-xhigh",
+        label="GPT-5.2 (reasoning xhigh)",
+        default_max_output_tokens=GPT_5_2_MAX_OUTPUT_TOKENS,
+        openai_reasoning=OpenAIReasoningConfig(effort="xhigh"),
+        notes=(
+            "Pinned benchmark alias for GPT-5.2 at reasoning.effort='xhigh'. "
+            "Defaults to OpenAI's published 128k max output tokens."
+        ),
+    ),
     GPT_5_4.key: GPT_5_4,
     GPT_5_4_MINI.key: GPT_5_4_MINI,
     "gpt-5.4-mini-no-reasoning": replace(
@@ -321,6 +345,17 @@ MODEL_CONFIGS: dict[str, ModelConfig] = {
     GPT_5_4_NANO.key: replace(
         GPT_5_4_NANO,
         default_max_output_tokens=GPT_5_4_MAX_OUTPUT_TOKENS,
+    ),
+    "gpt-5.4-nano-reasoning-xhigh": replace(
+        GPT_5_4_NANO,
+        key="gpt-5.4-nano-reasoning-xhigh",
+        label="GPT-5.4 nano (reasoning xhigh)",
+        default_max_output_tokens=GPT_5_4_MAX_OUTPUT_TOKENS,
+        openai_reasoning=OpenAIReasoningConfig(effort="xhigh"),
+        notes=(
+            "Pinned benchmark alias for GPT-5.4 nano at reasoning.effort='xhigh'. "
+            "Defaults to OpenAI's published 128k max output tokens."
+        ),
     ),
     CLAUDE_SONNET_4_6.key: CLAUDE_SONNET_4_6,
     CLAUDE_SONNET_4_6_REASONING.key: CLAUDE_SONNET_4_6_REASONING,
@@ -410,8 +445,10 @@ _MODEL_ORDER: tuple[str, ...] = (
     "claude-opus-4-7-reasoning-max",
     "claude-opus-4-6-reasoning-max",
     "claude-sonnet-4-6-reasoning-max",
+    "gpt-5.2-reasoning-xhigh",
     "gpt-5.4-reasoning-xhigh",
     "gpt-5.4-mini-reasoning-xhigh",
+    "gpt-5.4-nano-reasoning-xhigh",
     "gemini-3.1-pro-preview-thinking-high",
     "gemini-3-flash-preview-thinking-high",
     "mistral-large-2512",
