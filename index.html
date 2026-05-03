@@ -409,7 +409,7 @@
       border-top: 1px solid var(--ink);
     }
     .method-step::before {
-      content: "§ 01." counter(step, decimal-leading-zero);
+      content: "§ 02." counter(step, decimal-leading-zero);
       display: block;
       margin-bottom: 14px;
       font-family: var(--mono);
@@ -515,20 +515,14 @@
     }
 
     .result-layout {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) 320px;
-      gap: 28px;
-      align-items: start;
       margin-top: 44px;
     }
-    .result-layout.full {
-      grid-template-columns: 1fr;
-    }
-    .result-layout.full .score-panel { display: none; }
 
     .table-frame {
       border: 1px solid var(--ink);
       background: var(--surface);
+      max-width: 1040px;
+      margin: 0 auto;
     }
     .table-caption {
       display: flex;
@@ -621,29 +615,11 @@
       border-color: var(--ink);
     }
 
-    .table-head {
-      display: grid;
-      grid-template-columns: 36px 30px minmax(150px, 1.4fr) minmax(120px, 1.6fr) 60px 80px;
-      gap: 14px;
-      padding: 11px 22px;
-      border-bottom: 1px solid var(--hair);
-      background: var(--paper);
-      font-family: var(--sans);
-      font-size: 10px;
-      font-weight: 600;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--muted);
-    }
-    .table-head span:nth-child(5),
-    .table-head span:nth-child(6) { text-align: right; }
-    .table-head .th-c { text-align: center; }
-
     .chart-bars { display: grid; }
 
     .bar-row {
       display: grid;
-      grid-template-columns: 36px 30px minmax(150px, 1.4fr) minmax(120px, 1.6fr) 60px 80px;
+      grid-template-columns: 50px 36px minmax(240px, 1fr) minmax(240px, 1.1fr) 90px;
       gap: 14px;
       align-items: center;
       padding: 14px 22px;
@@ -654,16 +630,8 @@
       color: inherit;
       font: inherit;
       text-align: left;
-      cursor: pointer;
-      transition: background 120ms ease;
     }
     .bar-row:last-child { border-bottom: 0; }
-    .bar-row:hover,
-    .bar-row:focus-visible,
-    .bar-row.is-active {
-      background: var(--paper);
-      outline: none;
-    }
     .bar-row.is-leader { background: rgba(122, 31, 35, 0.045); }
     .bar-row.is-leader .rank,
     .bar-row.is-leader .score-value { color: var(--accent); }
@@ -737,13 +705,6 @@
         var(--accent);
     }
 
-    .ratio {
-      font-family: var(--mono);
-      font-size: 11.5px;
-      color: var(--muted);
-      text-align: right;
-      font-variant-numeric: tabular-nums;
-    }
     .score-value {
       font-family: var(--serif);
       font-weight: 500;
@@ -755,13 +716,11 @@
     }
 
     /* per-difficulty layout (toggled) */
-    .chart-bars.is-detail .table-head,
     .chart-bars.is-detail .bar-row {
       grid-template-columns: 44px 32px minmax(220px, 1.6fr) repeat(4, minmax(74px, 1fr)) 96px;
       gap: 14px;
     }
-    .chart-bars.is-detail .bar-row .bar-track,
-    .chart-bars.is-detail .bar-row .ratio { display: none; }
+    .chart-bars.is-detail .bar-row .bar-track { display: none; }
     .diff-cell {
       align-self: stretch;
       display: grid;
@@ -808,79 +767,6 @@
       margin-right: 3px;
     }
 
-    /* ─── score panel ─── */
-    .score-panel {
-      border: 1px solid var(--ink);
-      background: var(--surface);
-      position: sticky;
-      top: 76px;
-    }
-    .score-callout {
-      padding: 22px 22px 24px;
-      border-bottom: 1px solid var(--hair);
-    }
-    .detail-heading {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 18px;
-    }
-    .detail-logo {
-      width: 28px;
-      height: 28px;
-      display: grid;
-      place-items: center;
-      border: 1px solid var(--hair);
-      background: var(--surface);
-    }
-    .detail-logo img {
-      max-width: 18px;
-      max-height: 18px;
-      object-fit: contain;
-      filter: grayscale(0.15);
-    }
-    .detail-heading span:last-child {
-      font-family: var(--serif);
-      font-weight: 500;
-      font-size: 17px;
-      letter-spacing: -0.005em;
-    }
-    #detail-score {
-      display: block;
-      font-family: var(--serif);
-      font-weight: 360;
-      font-size: 64px;
-      line-height: 0.95;
-      letter-spacing: -0.04em;
-      color: var(--ink);
-      font-variant-numeric: tabular-nums;
-    }
-    .mini-table { display: grid; }
-    .mini-row {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      gap: 10px;
-      padding: 11px 22px;
-      border-bottom: 1px solid var(--hair);
-      align-items: baseline;
-    }
-    .mini-row:last-child { border-bottom: 0; }
-    .mini-row span {
-      font-family: var(--sans);
-      font-size: 10.5px;
-      font-weight: 500;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--muted);
-    }
-    .mini-row strong {
-      font-family: var(--mono);
-      font-size: 12.5px;
-      font-weight: 500;
-      color: var(--ink);
-      text-align: right;
-      font-variant-numeric: tabular-nums;
-    }
 
     /* ─── observations ─── */
     .obs {
@@ -1178,10 +1064,6 @@
     }
 
     /* ─── responsive ─── */
-    @media (max-width: 1080px) {
-      .result-layout { grid-template-columns: 1fr; }
-      .score-panel { position: static; }
-    }
     @media (max-width: 980px) {
       .grid-2col { grid-template-columns: 1fr; gap: 28px; }
       .stat-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -1197,17 +1079,14 @@
       .takeaway { border-right: 0; border-bottom: 1px solid var(--hair); }
       .takeaway:last-child { border-bottom: 0; }
       .artifact:nth-child(2) { border-top: 1px solid var(--hair); }
-      .table-head, .bar-row {
+      .bar-row {
         grid-template-columns: 30px 26px minmax(0, 1fr) 70px;
         gap: 10px;
       }
-      .table-head span:nth-child(4), .table-head span:nth-child(5) { display: none; }
-      .bar-row .bar-track, .bar-row .ratio { display: none; }
-      .chart-bars.is-detail .table-head,
+      .bar-row .bar-track { display: none; }
       .chart-bars.is-detail .bar-row {
         grid-template-columns: 30px minmax(120px, 1fr) repeat(4, minmax(40px, 1fr)) 70px;
       }
-      .chart-bars.is-detail .table-head span:nth-child(2),
       .chart-bars.is-detail .bar-row .logo-box { display: none; }
       .setup { grid-template-columns: 130px minmax(0, 1fr); }
     }
@@ -1227,9 +1106,9 @@
     <nav class="nav" aria-label="Primary">
       <a class="brand" href="#top">Emoji&#8209;Bench</a>
       <div class="links">
+        <a href="#leaderboard">Leaderboard</a>
         <a href="#method">Method</a>
         <a href="#setup">Setup</a>
-        <a href="#results">Results</a>
         <a href="#observations">Observations</a>
         <a href="#interpretation">Interpretation</a>
         <a href="#changelog">Changelog</a>
@@ -1260,7 +1139,7 @@
         </div>
 
         <div class="actions reveal d5">
-          <a class="button primary" href="#results">Read results <span class="arrow">&rarr;</span></a>
+          <a class="button primary" href="#leaderboard">View leaderboard <span class="arrow">&rarr;</span></a>
           <a class="button" href="#cite">Cite</a>
           <a class="button" href="https://github.com/huyxdang/emoji-bench" target="_blank" rel="noopener noreferrer">GitHub</a>
           <a class="button" href="README.md">README</a>
@@ -1287,10 +1166,57 @@
       </div>
     </section>
 
+    <!-- ═════════════════════════ LEADERBOARD ═════════════════════════ -->
+    <section class="section result-band" id="leaderboard">
+      <div class="wrap">
+        <div class="section-marker"><span class="sect-num">§ 01</span><span>Leaderboard</span></div>
+        <div class="grid-2col">
+          <h2>Final-answer correctness, no hint.</h2>
+          <p class="body-copy">Final-answer-only scoring on native-prefill, no-hint artifacts. Higher is better. Toggle between <span class="mono">overall</span> and <span class="mono">per-difficulty</span> views.</p>
+        </div>
+
+        <div class="result-layout">
+          <div class="leaderboard-only">
+            <div class="table-frame">
+              <div class="table-caption">
+                <div class="left">
+                  <span class="tnum">Table 01</span>
+                  <span class="ttitle">No-hint final-answer accuracy across nine reported runs (<span class="mono">n = 100</span> each).</span>
+                </div>
+                <div class="table-tools">
+                  <div class="filters" aria-label="Filter by company">
+                    <button class="filter-button" type="button" data-provider="all" aria-pressed="true">All</button>
+                    <button class="filter-button" type="button" data-provider="OpenAI" aria-pressed="false">OpenAI</button>
+                    <button class="filter-button" type="button" data-provider="Anthropic" aria-pressed="false">Anthropic</button>
+                    <button class="filter-button" type="button" data-provider="Google" aria-pressed="false">Google</button>
+                    <button class="filter-button" type="button" data-provider="Mistral" aria-pressed="false">Mistral</button>
+                  </div>
+                  <div class="view-toggle" role="group" aria-label="View">
+                    <button type="button" data-view="overall" aria-pressed="true">Overall</button>
+                    <button type="button" data-view="diff" aria-pressed="false">Per-difficulty</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="chart-bars" id="result-chart"></div>
+              <div class="empty-chart" id="empty-chart">No results for this filter.</div>
+
+              <div class="table-footnote">
+                <span><sup>&dagger;</sup>All runs use native prefill, the <code>Please continue.</code> prompt, and final-answer-only scoring. Per-difficulty rows reflect 25 examples per bucket.</span>
+                <span><sup>&Dagger;</sup>Gemini results were produced via OpenRouter, not Google's official Gemini API.</span>
+                <span><sup>&sect;</sup>At <span class="mono">n=100</span>, the 95% binomial CI for any single percentage is roughly <span class="mono">±8</span> points; for the gap between two models it is roughly <span class="mono">±12</span>.</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
     <!-- ═════════════════════════ METHOD ═════════════════════════ -->
     <section class="section" id="method">
       <div class="wrap">
-        <div class="section-marker"><span class="sect-num">§ 01</span><span>Method</span></div>
+        <div class="section-marker"><span class="sect-num">§ 02</span><span>Method</span></div>
         <div class="grid-2col">
           <h2>The shortest useful test is a continuation.</h2>
           <p class="body-copy">Emoji-Bench keeps the task coherent while removing the usual review cue. The reported no-hint condition answers the headline question; an optional prompted-review condition (<code>L1</code>) is available for measuring how much an explicit cue helps.</p>
@@ -1387,7 +1313,7 @@
     <!-- ═════════════════════════ EXPERIMENTAL SETUP ═════════════════════════ -->
     <section class="section" id="setup">
       <div class="wrap">
-        <div class="section-marker"><span class="sect-num">§ 02</span><span>Experimental setup</span></div>
+        <div class="section-marker"><span class="sect-num">§ 03</span><span>Experimental setup</span></div>
         <div class="grid-2col">
           <h2>What was held constant.</h2>
           <p class="body-copy">All reported runs share the same dataset, prompt, delivery shape, and scoring rubric. The only intentional axis of variation is the model. Per-model differences in token budget or reasoning preset reflect each provider's own maximum-capability defaults.</p>
@@ -1402,73 +1328,6 @@
           <div class="row"><div class="k">Token budget</div><div class="v">Each model uses its provider's maximum configured output. Reasoning / thinking presets are <span class="mono">high</span>, <span class="mono">max</span>, or <span class="mono">xhigh</span> as recorded in artifact directory names.</div></div>
           <div class="row"><div class="k">Scorer</div><div class="v">Deterministic regex extraction of <code>Final Output:</code>. Match against the stored ground-truth terminal (<em>not</em> the cascade terminal). No LLM judge in the headline metric.</div></div>
           <div class="row"><div class="k">Reproduce</div><div class="v"><code>./run.sh</code> for the full matrix &middot; <code>./run_opus-46.sh</code> for a single cell.</div></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ═════════════════════════ RESULTS ═════════════════════════ -->
-    <section class="section result-band" id="results">
-      <div class="wrap">
-        <div class="section-marker"><span class="sect-num">§ 03</span><span>Results</span></div>
-        <div class="grid-2col">
-          <h2>Final-answer correctness, no hint.</h2>
-          <p class="body-copy">Final-answer-only scoring on native-prefill, no-hint artifacts. Higher is better. Toggle <span class="mono">overall</span> ↔ <span class="mono">per-difficulty</span>; hover or focus a row to inspect a model in detail.</p>
-        </div>
-
-        <div class="result-layout">
-          <div>
-            <div class="table-frame">
-              <div class="table-caption">
-                <div class="left">
-                  <span class="tnum">Table 01</span>
-                  <span class="ttitle">No-hint final-answer accuracy across nine reported runs (<span class="mono">n = 100</span> each).</span>
-                </div>
-                <div class="table-tools">
-                  <div class="filters" aria-label="Filter by company">
-                    <button class="filter-button" type="button" data-provider="all" aria-pressed="true">All</button>
-                    <button class="filter-button" type="button" data-provider="OpenAI" aria-pressed="false">OpenAI</button>
-                    <button class="filter-button" type="button" data-provider="Anthropic" aria-pressed="false">Anthropic</button>
-                    <button class="filter-button" type="button" data-provider="Google" aria-pressed="false">Google</button>
-                    <button class="filter-button" type="button" data-provider="Mistral" aria-pressed="false">Mistral</button>
-                  </div>
-                  <div class="view-toggle" role="group" aria-label="View">
-                    <button type="button" data-view="overall" aria-pressed="true">Overall</button>
-                    <button type="button" data-view="diff" aria-pressed="false">Per-difficulty</button>
-                  </div>
-                </div>
-              </div>
-
-              <div class="chart-bars" id="result-chart"></div>
-              <div class="empty-chart" id="empty-chart">No results for this filter.</div>
-
-              <div class="table-footnote">
-                <span><sup>&dagger;</sup>All runs use native prefill, the <code>Please continue.</code> prompt, and final-answer-only scoring. Per-difficulty rows reflect 25 examples per bucket.</span>
-                <span><sup>&Dagger;</sup>Gemini results were produced via OpenRouter, not Google's official Gemini API.</span>
-                <span><sup>&sect;</sup>At <span class="mono">n=100</span>, the 95% binomial CI for any single percentage is roughly <span class="mono">±8</span> points; for the gap between two models it is roughly <span class="mono">±12</span>.</span>
-              </div>
-            </div>
-          </div>
-
-          <aside class="score-panel" aria-label="Result detail">
-            <div class="score-callout">
-              <div class="detail-heading">
-                <span class="detail-logo"><img id="detail-logo" src="public/openai.svg" alt=""></span>
-                <span id="detail-model">GPT-5.4</span>
-              </div>
-              <strong id="detail-score">96%</strong>
-            </div>
-            <div class="mini-table" aria-label="Run configuration">
-              <div class="mini-row"><span>Correct</span><strong id="detail-correct">96 / 100</strong></div>
-              <div class="mini-row"><span>API model</span><strong id="detail-api-model">gpt-5.4</strong></div>
-              <div class="mini-row"><span>Max output</span><strong id="detail-max-output">128k tokens</strong></div>
-              <div class="mini-row"><span>Reasoning</span><strong id="detail-reasoning">xhigh</strong></div>
-              <div class="mini-row"><span>Route</span><strong id="detail-route">OpenAI API</strong></div>
-              <div class="mini-row"><span>Easy</span><strong id="detail-easy">100%</strong></div>
-              <div class="mini-row"><span>Medium</span><strong id="detail-medium">92%</strong></div>
-              <div class="mini-row"><span>Hard</span><strong id="detail-hard">96%</strong></div>
-              <div class="mini-row"><span>Expert</span><strong id="detail-expert">96%</strong></div>
-            </div>
-          </aside>
         </div>
       </div>
     </section>
@@ -1729,27 +1588,13 @@
       }
     ];
 
-    // ─── refs ──────────────────────────────────────────────────────────
-    const chart        = document.querySelector("#result-chart");
-    const emptyChart   = document.querySelector("#empty-chart");
-    const filterBtns   = Array.from(document.querySelectorAll(".filter-button"));
-    const viewBtns     = Array.from(document.querySelectorAll(".view-toggle button"));
-    const detailScore  = document.querySelector("#detail-score");
-    const detailModel  = document.querySelector("#detail-model");
-    const detailLogo   = document.querySelector("#detail-logo");
-    const detailCorrect= document.querySelector("#detail-correct");
-    const detailApi    = document.querySelector("#detail-api-model");
-    const detailMax    = document.querySelector("#detail-max-output");
-    const detailReas   = document.querySelector("#detail-reasoning");
-    const detailRoute  = document.querySelector("#detail-route");
-    const detailEasy   = document.querySelector("#detail-easy");
-    const detailMed    = document.querySelector("#detail-medium");
-    const detailHard   = document.querySelector("#detail-hard");
-    const detailExp    = document.querySelector("#detail-expert");
+    const chart      = document.querySelector("#result-chart");
+    const emptyChart = document.querySelector("#empty-chart");
+    const filterBtns = Array.from(document.querySelectorAll(".filter-button"));
+    const viewBtns   = Array.from(document.querySelectorAll(".view-toggle button"));
 
     let activeProvider = "all";
     let activeView     = "overall";
-    let activeModel    = resultData[0].model;
 
     function selectedResults() {
       return resultData
@@ -1759,57 +1604,8 @@
 
     function pad(n) { return String(n).padStart(2, "0"); }
 
-    function setActive(item) {
-      activeModel = item.model;
-      detailScore.textContent  = `${item.score}%`;
-      detailModel.textContent  = item.model;
-      detailLogo.src           = item.logo;
-      detailLogo.alt           = `${item.provider} logo`;
-      detailCorrect.textContent= `${Math.round(item.score / 100 * item.rows)} / ${item.rows}`;
-      detailApi.textContent    = item.apiModel;
-      detailMax.textContent    = item.maxOutput;
-      detailReas.textContent   = item.reasoning;
-      detailRoute.textContent  = item.route;
-      detailEasy.textContent   = `${item.byDifficulty.easy}%`;
-      detailMed.textContent    = `${item.byDifficulty.medium}%`;
-      detailHard.textContent   = `${item.byDifficulty.hard}%`;
-      detailExp.textContent    = `${item.byDifficulty.expert}%`;
-
-      chart.querySelectorAll(".bar-row").forEach(r => {
-        r.classList.toggle("is-active", r.dataset.model === activeModel);
-      });
-    }
-
-    function renderHead() {
-      const wrapper = document.createElement("div");
-      wrapper.className = "table-head";
-      if (activeView === "diff") {
-        wrapper.innerHTML = `
-          <span>Rank</span>
-          <span></span>
-          <span>Model</span>
-          <span class="th-c">Easy</span>
-          <span class="th-c">Med</span>
-          <span class="th-c">Hard</span>
-          <span class="th-c">Expert</span>
-          <span>Overall</span>
-        `;
-      } else {
-        wrapper.innerHTML = `
-          <span>Rank</span>
-          <span></span>
-          <span>Model</span>
-          <span>Distribution</span>
-          <span>n / N</span>
-          <span>Score</span>
-        `;
-      }
-      return wrapper;
-    }
-
     function renderRow(item, idx) {
-      const row = document.createElement("button");
-      row.type = "button";
+      const row = document.createElement("div");
       row.className = "bar-row" + (idx === 0 ? " is-leader" : "");
       row.dataset.model = item.model;
       row.style.setProperty("--score", item.score);
@@ -1837,30 +1633,20 @@
             <span class="model-cfg">${item.provider} &middot; ${item.config}</span>
           </span>
           <span class="bar-track" aria-hidden="true"><span class="bar-fill"></span></span>
-          <span class="ratio">${item.score}/${item.rows}</span>
           <span class="score-value">${item.score}%</span>
         `;
       }
 
-      row.addEventListener("mouseenter", () => setActive(item));
-      row.addEventListener("focus",      () => setActive(item));
-      row.addEventListener("click",      () => setActive(item));
       return row;
     }
-
-    const resultLayout = document.querySelector(".result-layout");
 
     function renderChart() {
       const rows = selectedResults();
       chart.innerHTML = "";
       chart.classList.toggle("is-detail", activeView === "diff");
-      resultLayout.classList.toggle("full", activeView === "diff");
       emptyChart.style.display = rows.length ? "none" : "block";
       if (!rows.length) return;
-      chart.appendChild(renderHead());
       rows.forEach((item, idx) => chart.appendChild(renderRow(item, idx)));
-      const stillVisible = rows.find(r => r.model === activeModel);
-      setActive(stillVisible || rows[0]);
     }
 
     filterBtns.forEach(btn => {
