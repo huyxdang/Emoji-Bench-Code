@@ -1,0 +1,84 @@
+{
+  "predictions_path": "/Users/huydang/Desktop/Emoji-Bench/artifacts/evals/gpt-5.2-reasoning-xhigh-B-L0/predictions.jsonl",
+  "scores_path": "/Users/huydang/Desktop/Emoji-Bench/artifacts/evals/gpt-5.2-reasoning-xhigh-B-L0/scores.jsonl",
+  "headline": {
+    "total": 100,
+    "final_answer_correct_rate": 0.58,
+    "by_difficulty": {
+      "easy": {
+        "total": 25,
+        "final_answer_correct_rate": 0.64
+      },
+      "medium": {
+        "total": 25,
+        "final_answer_correct_rate": 0.64
+      },
+      "hard": {
+        "total": 25,
+        "final_answer_correct_rate": 0.48
+      },
+      "expert": {
+        "total": 25,
+        "final_answer_correct_rate": 0.56
+      }
+    }
+  },
+  "headline_kind": "final_output_only",
+  "regex_baseline": {
+    "total": 100,
+    "outcome_buckets": {
+      "detect_recover": 10,
+      "silent_recovery": 48,
+      "detect_only": 0,
+      "blind_wrong_branch": 41,
+      "off_rails": 0,
+      "extraction_failed": 1
+    },
+    "rates": {
+      "self_detection_loose": 0.1,
+      "self_detection_strict": 0.08,
+      "final_answer_recovery": 0.58,
+      "blind_cascade": 0.41,
+      "extraction_ok": 0.99
+    },
+    "by_difficulty": {
+      "easy": {
+        "detect_recover": 0,
+        "silent_recovery": 16,
+        "detect_only": 0,
+        "blind_wrong_branch": 9,
+        "off_rails": 0,
+        "extraction_failed": 0,
+        "_total": 25
+      },
+      "medium": {
+        "detect_recover": 3,
+        "silent_recovery": 13,
+        "detect_only": 0,
+        "blind_wrong_branch": 8,
+        "off_rails": 0,
+        "extraction_failed": 1,
+        "_total": 25
+      },
+      "hard": {
+        "detect_recover": 3,
+        "silent_recovery": 9,
+        "detect_only": 0,
+        "blind_wrong_branch": 13,
+        "off_rails": 0,
+        "extraction_failed": 0,
+        "_total": 25
+      },
+      "expert": {
+        "detect_recover": 4,
+        "silent_recovery": 10,
+        "detect_only": 0,
+        "blind_wrong_branch": 11,
+        "off_rails": 0,
+        "extraction_failed": 0,
+        "_total": 25
+      }
+    }
+  },
+  "note": "judge.jsonl not found alongside predictions; error_recovery_rate is unavailable. Run scripts/judge_continuation.py first to enable it."
+}
