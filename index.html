@@ -3,960 +3,1453 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Emoji-Bench: LLMs Don't Look Back</title>
-  <meta name="description" content="Emoji-Bench measures whether language models catch and fix their own derivation mistakes when asked only to continue.">
+  <title>Emoji-Bench &middot; LLMs Don't Look Back</title>
+  <meta name="description" content="A continuation benchmark measuring whether language models notice and repair their own mistakes when prompted only with 'Please continue.'">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300..900;1,8..60,300..900&family=Geist:wght@300..800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
   <style>
     :root {
       color-scheme: light;
-      --ink: #17191f;
-      --muted: #626772;
-      --quiet: #8a909b;
-      --paper: #fffdf9;
-      --surface: #ffffff;
-      --soft: #f4f6f8;
-      --line: #d9dde4;
-      --blue: #2f6fbc;
-      --red: #d84b42;
-      --green: #2a8f5a;
-      --yellow: #e2aa1d;
-      --max: 1180px;
+      --paper:    #faf7f0;
+      --paper-2:  #f3efe4;
+      --surface:  #ffffff;
+      --ink:      #15140f;
+      --ink-2:    #2b2a23;
+      --muted:    #59574d;
+      --quiet:    #8c8a7e;
+      --rule:     #15140f;
+      --hair:     #d6d1c2;
+      --accent:   #7a1f23;
+      --accent-2: #b8443a;
+      --max:      1180px;
+
+      --serif: "Source Serif 4", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+      --sans:  "Geist", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+      --mono:  "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     }
 
-    * {
-      box-sizing: border-box;
-    }
-
-    html {
-      scroll-behavior: smooth;
-    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
 
     body {
       margin: 0;
       color: var(--ink);
       background: var(--paper);
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      font-size: 16px;
-      line-height: 1.55;
+      font-family: var(--serif);
+      font-size: 18px;
+      line-height: 1.62;
+      font-feature-settings: "kern", "liga", "onum";
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+      background-image:
+        radial-gradient(rgba(21,20,15,0.028) 1px, transparent 1px),
+        radial-gradient(rgba(21,20,15,0.018) 1px, transparent 1px);
+      background-size: 3px 3px, 7px 7px;
+      background-position: 0 0, 1px 2px;
     }
 
-    a {
-      color: inherit;
-      text-decoration: none;
-    }
+    a { color: inherit; text-decoration: none; }
+    img { display: block; max-width: 100%; }
 
-    img {
-      display: block;
-      max-width: 100%;
+    code, .mono, .num {
+      font-family: var(--mono);
+      font-feature-settings: "tnum", "zero";
     }
-
     code {
-      padding: 2px 5px;
-      border-radius: 4px;
-      background: #edf1f5;
-      color: #313741;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: 0.92em;
+      padding: 1px 5px;
+      background: rgba(21,20,15,0.06);
+      color: var(--ink-2);
+      font-size: 0.86em;
+      border-radius: 2px;
     }
+    .num { font-variant-numeric: tabular-nums; }
 
+    /* ─── topbar ─── */
     .topbar {
       position: sticky;
       top: 0;
-      z-index: 20;
-      border-bottom: 1px solid rgba(217, 221, 228, 0.9);
-      background: rgba(255, 253, 249, 0.94);
-      backdrop-filter: blur(14px);
+      z-index: 30;
+      border-bottom: 1px solid var(--rule);
+      background: rgba(250, 247, 240, 0.93);
+      backdrop-filter: blur(10px) saturate(120%);
     }
-
     .nav {
       max-width: var(--max);
-      height: 62px;
+      height: 56px;
       margin: 0 auto;
-      padding: 0 24px;
+      padding: 0 28px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 28px;
+      font-family: var(--sans);
     }
-
     .brand {
       display: inline-flex;
       align-items: center;
-      gap: 10px;
-      font-weight: 700;
+      padding: 5px 10px 4px;
+      border: 1px solid var(--ink);
+      font-family: var(--mono);
+      font-weight: 500;
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
       white-space: nowrap;
+      transition: background 140ms ease, color 140ms ease;
     }
-
-    .mark {
-      width: 30px;
-      height: 30px;
-      display: grid;
-      place-items: center;
-      border: 1px solid #cfd5de;
-      border-radius: 7px;
-      background: var(--surface);
-      color: var(--blue);
-      font-size: 17px;
-      box-shadow: inset 0 -2px 0 rgba(47, 111, 188, 0.08);
+    .brand:hover {
+      background: var(--ink);
+      color: var(--paper);
     }
-
     .links {
       display: flex;
       align-items: center;
       gap: 22px;
-      color: var(--muted);
-      font-size: 14px;
-      font-weight: 600;
+      font-family: var(--sans);
+      color: var(--ink-2);
+      font-size: 12.5px;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+    }
+    .links a { display: inline-flex; align-items: baseline; gap: 5px; }
+    .links a:hover { color: var(--accent); }
+    .links .num-link {
+      color: var(--quiet);
+      font-family: var(--mono);
+      font-size: 10.5px;
+      letter-spacing: 0.05em;
+    }
+    .links .ext {
+      padding: 4px 9px 3px;
+      border: 1px solid var(--ink);
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .links .ext:hover {
+      background: var(--ink);
+      color: var(--paper);
     }
 
-    .links a:hover {
-      color: var(--blue);
-    }
-
-    main {
-      overflow: hidden;
-    }
-
+    /* ─── layout ─── */
+    main { overflow-x: hidden; }
     .section {
-      border-bottom: 1px solid var(--line);
+      border-bottom: 1px solid var(--hair);
+      position: relative;
     }
-
+    .section:last-of-type { border-bottom: 0; }
     .wrap {
       max-width: var(--max);
       margin: 0 auto;
-      padding: 72px 24px;
+      padding: 88px 28px;
+      position: relative;
     }
 
-    .hero {
-      min-height: auto;
-      display: flex;
+    .section-marker {
+      display: inline-flex;
       align-items: center;
-      background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(244, 246, 248, 0.76)),
-        var(--paper);
-    }
-
-    .hero .wrap {
-      width: 100%;
-      padding-top: 76px;
-      padding-bottom: 72px;
-    }
-
-    .hero-grid {
-      display: grid;
-      grid-template-columns: minmax(0, 0.82fr) minmax(420px, 1.18fr);
-      gap: 42px;
-      align-items: center;
-    }
-
-    .eyebrow {
-      margin: 0 0 16px;
-      color: var(--red);
-      font-size: 13px;
-      font-weight: 800;
+      gap: 14px;
+      margin-bottom: 28px;
+      font-family: var(--sans);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.18em;
       text-transform: uppercase;
+      color: var(--muted);
+    }
+    .section-marker .sect-num {
+      font-family: var(--mono);
+      font-weight: 500;
+      color: var(--accent);
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      text-transform: none;
+    }
+    .section-marker::after {
+      content: "";
+      flex: 1;
+      max-width: 90px;
+      height: 1px;
+      background: var(--ink);
+      opacity: 0.4;
     }
 
-    h1,
-    h2,
-    h3,
-    p {
-      margin-top: 0;
-    }
+    h1, h2, h3, h4, p { margin-top: 0; }
 
     h1 {
-      max-width: 720px;
-      margin-bottom: 22px;
-      font-size: 66px;
-      line-height: 1;
-      font-weight: 760;
+      font-family: var(--serif);
+      font-weight: 360;
+      font-size: clamp(58px, 9.4vw, 124px);
+      line-height: 0.94;
+      letter-spacing: -0.038em;
+      margin-bottom: 30px;
+      font-variation-settings: "opsz" 60, "wght" 380;
     }
-
+    h1 em {
+      font-style: italic;
+      font-weight: 360;
+      color: var(--accent);
+    }
     h2 {
-      max-width: 760px;
-      margin-bottom: 18px;
-      font-size: 44px;
-      line-height: 1.08;
-      font-weight: 720;
+      font-family: var(--serif);
+      font-weight: 420;
+      font-size: clamp(32px, 4.4vw, 50px);
+      line-height: 1.04;
+      letter-spacing: -0.022em;
+      margin-bottom: 24px;
+      font-variation-settings: "opsz" 36, "wght" 420;
+      max-width: 800px;
     }
-
     h3 {
-      margin-bottom: 8px;
-      font-size: 18px;
+      font-family: var(--serif);
+      font-weight: 600;
+      font-size: 19px;
       line-height: 1.25;
-      font-weight: 720;
+      letter-spacing: -0.005em;
+      margin-bottom: 8px;
     }
 
     .lede {
-      max-width: 660px;
-      margin-bottom: 14px;
-      color: var(--muted);
-      font-size: 22px;
+      font-family: var(--serif);
+      font-style: italic;
+      font-weight: 360;
+      font-size: clamp(20px, 2.2vw, 26px);
       line-height: 1.42;
+      color: var(--ink-2);
+      max-width: 720px;
+      margin-bottom: 36px;
     }
-
-    .byline {
-      margin: 0 0 28px;
-      color: var(--muted);
-      font-size: 15px;
-      font-weight: 650;
-    }
-
-    .byline a,
-    .footer a {
-      color: var(--ink);
-      text-decoration: underline;
-      text-underline-offset: 3px;
-    }
-
-    .prompt-row {
-      max-width: 680px;
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      gap: 12px;
-      align-items: center;
-      margin-bottom: 22px;
-      padding: 14px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: var(--surface);
-      box-shadow: 0 20px 60px rgba(35, 41, 51, 0.08);
-    }
-
-    .prompt-text {
-      min-width: 0;
-      padding: 12px 14px;
-      border-left: 4px solid var(--blue);
-      background: #f7f9fc;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    .body-copy {
+      color: var(--ink-2);
       font-size: 18px;
-      font-weight: 700;
-      overflow-wrap: anywhere;
-    }
-
-    .prompt-label {
-      color: var(--quiet);
-      font-size: 13px;
-      font-weight: 800;
-      text-transform: uppercase;
-      white-space: nowrap;
-    }
-
-    .quick-stats {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 1px;
+      line-height: 1.62;
       max-width: 680px;
-      overflow: hidden;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: var(--line);
     }
-
-    .quick-stat {
-      min-height: 94px;
-      padding: 18px;
-      background: var(--surface);
-    }
-
-    .quick-stat strong {
-      display: block;
-      margin-bottom: 6px;
-      font-size: 31px;
-      line-height: 1;
-      font-weight: 760;
-    }
-
-    .quick-stat span {
-      display: block;
+    .body-copy.small {
+      font-size: 16px;
       color: var(--muted);
-      font-size: 13px;
-      line-height: 1.35;
-      font-weight: 650;
+    }
+
+    /* ─── hero ─── */
+    .hero { padding: 0; }
+    .hero .wrap {
+      padding-top: 96px;
+      padding-bottom: 88px;
+    }
+
+    .meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 32px;
+      align-items: baseline;
+      margin-bottom: 52px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid var(--hair);
+      font-family: var(--sans);
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .meta-row .item strong {
+      display: block;
+      margin-top: 5px;
+      font-family: var(--serif);
+      font-weight: 500;
+      font-size: 15px;
+      letter-spacing: 0;
+      text-transform: none;
+      color: var(--ink);
+    }
+    .meta-row strong a {
+      border-bottom: 1px solid var(--accent);
+      padding-bottom: 1px;
+    }
+
+    .abstract {
+      max-width: 760px;
+      margin: 44px 0 36px;
+      padding-left: 24px;
+      border-left: 2px solid var(--accent);
+      font-family: var(--serif);
+      font-size: 19.5px;
+      line-height: 1.62;
+      color: var(--ink-2);
+    }
+    .abstract::first-line {
+      font-variant: small-caps;
+      letter-spacing: 0.025em;
+    }
+
+    .prompt-aside {
+      display: inline-flex;
+      align-items: stretch;
+      gap: 0;
+      margin: 4px 0 8px;
+      background: var(--surface);
+      border: 1px solid var(--ink);
+    }
+    .prompt-aside .ptag {
+      padding: 12px 14px;
+      font-family: var(--mono);
+      font-size: 10.5px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--paper);
+      background: var(--ink);
+      align-self: stretch;
+      display: flex;
+      align-items: center;
+    }
+    .prompt-aside .ptext {
+      padding: 12px 18px;
+      font-family: var(--mono);
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--ink);
     }
 
     .actions {
       display: flex;
       flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 22px;
+      gap: 12px;
+      margin-top: 42px;
+      font-family: var(--sans);
     }
-
     .button {
       display: inline-flex;
       align-items: center;
+      gap: 10px;
       min-height: 42px;
-      padding: 0 15px;
-      border: 1px solid var(--line);
-      border-radius: 7px;
-      background: var(--surface);
+      padding: 0 18px;
+      border: 1px solid var(--ink);
+      background: transparent;
       color: var(--ink);
-      font-size: 14px;
-      font-weight: 750;
-    }
-
-    .button.primary {
-      border-color: var(--ink);
-      background: var(--ink);
-      color: #fff;
-    }
-
-    .hero-media {
-      position: relative;
-      overflow: hidden;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: var(--surface);
-      box-shadow: 0 24px 70px rgba(35, 41, 51, 0.12);
-    }
-
-    .hero-media img {
-      width: 100%;
-      aspect-ratio: 16 / 10;
-      object-fit: cover;
-    }
-
-    .media-caption {
-      position: absolute;
-      right: 14px;
-      bottom: 14px;
-      max-width: 310px;
-      padding: 10px 12px;
-      border: 1px solid rgba(217, 221, 228, 0.9);
-      border-radius: 7px;
-      background: rgba(255, 255, 255, 0.92);
-      color: var(--muted);
-      font-size: 13px;
-      line-height: 1.35;
-      box-shadow: 0 12px 30px rgba(35, 41, 51, 0.12);
-    }
-
-    .section-head {
-      display: grid;
-      grid-template-columns: minmax(0, 0.82fr) minmax(280px, 0.36fr);
-      gap: 44px;
-      align-items: end;
-      margin-bottom: 34px;
-    }
-
-    .section-kicker {
-      margin-bottom: 10px;
-      color: var(--blue);
-      font-size: 13px;
-      font-weight: 800;
+      font-size: 12.5px;
+      font-weight: 500;
+      letter-spacing: 0.06em;
       text-transform: uppercase;
+      cursor: pointer;
+      transition: background 140ms ease, color 140ms ease;
+    }
+    .button:hover {
+      background: var(--ink);
+      color: var(--paper);
+    }
+    .button.primary {
+      background: var(--ink);
+      color: var(--paper);
+    }
+    .button.primary:hover {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+    .button .arrow {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 16px;
+      transform: translateY(-1px);
     }
 
-    .body-copy {
+    /* ─── stat strip ─── */
+    .stat-strip {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0;
+      margin-top: 52px;
+      border-top: 1px solid var(--ink);
+      border-bottom: 1px solid var(--ink);
+    }
+    .stat {
+      padding: 24px 26px 22px;
+      border-right: 1px solid var(--hair);
+    }
+    .stat:last-child { border-right: 0; }
+    .stat-num {
+      font-family: var(--serif);
+      font-weight: 380;
+      font-size: 48px;
+      line-height: 1;
+      letter-spacing: -0.028em;
+      font-variant-numeric: tabular-nums oldstyle-nums;
+      color: var(--ink);
+      margin-bottom: 8px;
+    }
+    .stat-num .sm { font-size: 0.55em; color: var(--muted); }
+    .stat-label {
+      font-family: var(--sans);
+      font-size: 10.5px;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
       color: var(--muted);
-      font-size: 18px;
+    }
+
+    /* ─── method ─── */
+    .grid-2col {
+      display: grid;
+      grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+      gap: 56px;
+      align-items: start;
+    }
+
+    .method-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: 56px;
+      row-gap: 40px;
+      counter-reset: step;
+      margin-top: 52px;
+    }
+    .method-step {
+      counter-increment: step;
+      padding-top: 24px;
+      border-top: 1px solid var(--ink);
+    }
+    .method-step::before {
+      content: "§ 01." counter(step, decimal-leading-zero);
+      display: block;
+      margin-bottom: 14px;
+      font-family: var(--mono);
+      font-size: 11.5px;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      color: var(--accent);
+    }
+    .method-step h3 {
+      font-family: var(--serif);
+      font-weight: 500;
+      font-size: 22px;
+      line-height: 1.2;
+      letter-spacing: -0.01em;
+      margin-bottom: 10px;
+    }
+    .method-step p {
+      margin: 0;
+      color: var(--ink-2);
+      font-size: 16.5px;
       line-height: 1.55;
     }
 
-    .body-copy:last-child {
-      margin-bottom: 0;
-    }
-
-    .method-path {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 1px;
-      overflow: hidden;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: var(--line);
-    }
-
-    .method-step {
-      min-height: 220px;
-      padding: 22px;
+    .pipeline {
+      margin: 64px 0 0;
+      padding: 28px 24px;
+      border: 1px solid var(--ink);
       background: var(--surface);
     }
-
-    .step-index {
-      width: 32px;
-      height: 32px;
-      display: grid;
-      place-items: center;
-      margin-bottom: 34px;
-      border-radius: 7px;
-      color: #fff;
-      background: var(--ink);
-      font-size: 14px;
-      font-weight: 800;
+    .pipeline-cap {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 22px;
+      font-family: var(--sans);
     }
-
-    .method-step:nth-child(2) .step-index {
-      background: var(--red);
+    .pipeline-cap .label {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
     }
-
-    .method-step:nth-child(3) .step-index {
-      background: var(--blue);
-    }
-
-    .method-step:nth-child(4) .step-index {
-      background: var(--green);
-    }
-
-    .method-step p {
-      margin-bottom: 0;
-      color: var(--muted);
+    .pipeline-cap .title {
+      font-family: var(--serif);
+      font-style: italic;
       font-size: 15px;
-      line-height: 1.48;
+      color: var(--ink-2);
+    }
+    .pipeline svg {
+      width: 100%;
+      height: auto;
+      display: block;
     }
 
+    /* ─── experimental setup ─── */
+    .setup {
+      display: grid;
+      grid-template-columns: 200px minmax(0, 1fr);
+      gap: 0;
+      margin-top: 48px;
+      border-top: 1px solid var(--ink);
+    }
+    .setup .row {
+      display: contents;
+    }
+    .setup .row > .k,
+    .setup .row > .v {
+      padding: 16px 24px 16px 0;
+      border-bottom: 1px solid var(--hair);
+    }
+    .setup .row > .k {
+      font-family: var(--sans);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding-top: 18px;
+    }
+    .setup .row > .v {
+      font-family: var(--serif);
+      font-size: 16.5px;
+      color: var(--ink-2);
+      padding-top: 18px;
+    }
+    .setup .row > .v code,
+    .setup .row > .v .mono {
+      font-size: 14.5px;
+    }
+    .setup .row:last-child > .k,
+    .setup .row:last-child > .v {
+      border-bottom: 0;
+    }
+
+    /* ─── results ─── */
     .result-band {
-      background: var(--soft);
+      background: var(--paper-2);
+      background-image:
+        radial-gradient(rgba(21,20,15,0.032) 1px, transparent 1px);
+      background-size: 5px 5px;
     }
 
     .result-layout {
       display: grid;
       grid-template-columns: minmax(0, 1fr) 320px;
-      gap: 24px;
+      gap: 28px;
       align-items: start;
+      margin-top: 44px;
     }
+    .result-layout.full {
+      grid-template-columns: 1fr;
+    }
+    .result-layout.full .score-panel { display: none; }
 
-    .chart-shell {
-      overflow: hidden;
-      border: 1px solid var(--line);
-      border-radius: 8px;
+    .table-frame {
+      border: 1px solid var(--ink);
       background: var(--surface);
     }
-
-    .chart-toolbar {
+    .table-caption {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 14px;
-      padding: 14px;
-      border-bottom: 1px solid var(--line);
+      gap: 24px;
+      padding: 16px 22px;
+      border-bottom: 1px solid var(--ink);
+      font-family: var(--sans);
+      flex-wrap: wrap;
     }
-
-    .chart-title {
-      color: var(--muted);
-      font-size: 13px;
-      font-weight: 750;
+    .table-caption .left {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .table-caption .tnum {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      font-weight: 500;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
+      color: var(--accent);
     }
-
+    .table-caption .ttitle {
+      font-family: var(--serif);
+      font-style: italic;
+      font-weight: 400;
+      font-size: 15.5px;
+      color: var(--ink-2);
+    }
+    .table-tools {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
     .filters {
       display: flex;
       flex-wrap: wrap;
-      gap: 6px;
-      justify-content: flex-end;
+      gap: 0;
+      border: 1px solid var(--hair);
     }
-
     .filter-button {
-      min-height: 32px;
-      padding: 0 10px;
-      border: 1px solid var(--line);
-      border-radius: 6px;
+      min-height: 28px;
+      padding: 0 11px;
+      border: 0;
+      border-right: 1px solid var(--hair);
       background: var(--surface);
       color: var(--muted);
-      font: inherit;
-      font-size: 13px;
-      font-weight: 750;
+      font-family: var(--sans);
+      font-size: 10.5px;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 120ms, color 120ms;
+    }
+    .filter-button:last-child { border-right: 0; }
+    .filter-button:hover { color: var(--ink); }
+    .filter-button[aria-pressed="true"] {
+      background: var(--ink);
+      color: var(--paper);
+    }
+    .view-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--mono);
+      font-size: 10.5px;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      text-transform: uppercase;
+      padding: 4px 0;
+    }
+    .view-toggle button {
+      border: 1px solid var(--hair);
+      background: var(--surface);
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 10.5px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 4px 9px;
       cursor: pointer;
     }
-
-    .filter-button[aria-pressed="true"] {
-      border-color: var(--ink);
+    .view-toggle button[aria-pressed="true"] {
       background: var(--ink);
-      color: #fff;
+      color: var(--paper);
+      border-color: var(--ink);
     }
 
-    .chart-bars {
+    .table-head {
       display: grid;
+      grid-template-columns: 36px 30px minmax(150px, 1.4fr) minmax(120px, 1.6fr) 60px 80px;
+      gap: 14px;
+      padding: 11px 22px;
+      border-bottom: 1px solid var(--hair);
+      background: var(--paper);
+      font-family: var(--sans);
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
     }
+    .table-head span:nth-child(5),
+    .table-head span:nth-child(6) { text-align: right; }
+    .table-head .th-c { text-align: center; }
+
+    .chart-bars { display: grid; }
 
     .bar-row {
-      width: 100%;
       display: grid;
-      grid-template-columns: 34px minmax(120px, 172px) minmax(160px, 1fr) 58px;
+      grid-template-columns: 36px 30px minmax(150px, 1.4fr) minmax(120px, 1.6fr) 60px 80px;
       gap: 14px;
       align-items: center;
-      padding: 13px 14px;
+      padding: 14px 22px;
+      width: 100%;
       border: 0;
-      border-bottom: 1px solid var(--line);
-      background: var(--surface);
+      border-bottom: 1px solid var(--hair);
+      background: transparent;
       color: inherit;
       font: inherit;
       text-align: left;
       cursor: pointer;
+      transition: background 120ms ease;
     }
-
-    .bar-row:last-child {
-      border-bottom: 0;
-    }
-
+    .bar-row:last-child { border-bottom: 0; }
     .bar-row:hover,
     .bar-row:focus-visible,
     .bar-row.is-active {
-      background: #f8fafc;
+      background: var(--paper);
       outline: none;
     }
+    .bar-row.is-leader { background: rgba(122, 31, 35, 0.045); }
+    .bar-row.is-leader .rank,
+    .bar-row.is-leader .score-value { color: var(--accent); }
 
+    .rank {
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--quiet);
+      letter-spacing: 0.04em;
+    }
     .logo-box {
-      width: 34px;
-      height: 34px;
+      width: 26px;
+      height: 26px;
       display: grid;
       place-items: center;
-      border: 1px solid var(--line);
-      border-radius: 7px;
-      background: #fff;
+      border: 1px solid var(--hair);
+      background: var(--surface);
     }
-
     .logo-box img {
-      max-width: 22px;
-      max-height: 22px;
+      max-width: 16px;
+      max-height: 16px;
       object-fit: contain;
+      filter: grayscale(0.15);
     }
-
-    .model-label {
+    .model-cell {
       min-width: 0;
-      font-size: 15px;
-      font-weight: 760;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .model-name {
+      font-family: var(--serif);
+      font-weight: 500;
+      font-size: 16px;
+      letter-spacing: -0.005em;
+      color: var(--ink);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
+    .model-cfg {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      letter-spacing: 0.04em;
+      color: var(--quiet);
+    }
 
     .bar-track {
-      height: 24px;
-      border-radius: 5px;
-      background: #e9edf2;
-      overflow: hidden;
+      position: relative;
+      height: 12px;
+      background: transparent;
+      border-bottom: 1px solid var(--hair);
     }
-
     .bar-fill {
       display: block;
+      position: absolute;
+      left: 0;
+      bottom: 0;
       width: calc(var(--score) * 1%);
-      min-width: 3px;
+      min-width: 2px;
       height: 100%;
-      border-radius: 5px;
-      background: var(--accent);
-      transition: width 180ms ease;
+      background:
+        repeating-linear-gradient(135deg, var(--ink) 0, var(--ink) 1px, transparent 1px, transparent 4px),
+        var(--ink);
+      transition: width 220ms ease;
+    }
+    .bar-row.is-leader .bar-fill {
+      background:
+        repeating-linear-gradient(135deg, var(--accent) 0, var(--accent) 1px, transparent 1px, transparent 4px),
+        var(--accent);
     }
 
-    .score-value {
-      color: var(--ink);
-      font-size: 15px;
-      font-weight: 800;
+    .ratio {
+      font-family: var(--mono);
+      font-size: 11.5px;
+      color: var(--muted);
       text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+    .score-value {
+      font-family: var(--serif);
+      font-weight: 500;
+      font-size: 18px;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      color: var(--ink);
+      letter-spacing: -0.01em;
+    }
+
+    /* per-difficulty layout (toggled) */
+    .chart-bars.is-detail .table-head,
+    .chart-bars.is-detail .bar-row {
+      grid-template-columns: 44px 32px minmax(220px, 1.6fr) repeat(4, minmax(74px, 1fr)) 96px;
+      gap: 14px;
+    }
+    .chart-bars.is-detail .bar-row .bar-track,
+    .chart-bars.is-detail .bar-row .ratio { display: none; }
+    .diff-cell {
+      align-self: stretch;
+      display: grid;
+      place-items: center;
+      padding: 6px 4px;
+      font-family: var(--mono);
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--ink);
+      font-variant-numeric: tabular-nums;
+      background: rgba(21, 20, 15, calc(var(--d) * 0.0042));
+      border-left: 1px solid var(--hair);
+    }
+    .diff-cell.first { border-left: 1px solid var(--ink); }
+    .diff-cell.last  { border-right: 1px solid var(--ink); }
+    .bar-row.is-leader .diff-cell {
+      background: rgba(122, 31, 35, calc(var(--d) * 0.0055));
+      color: var(--accent);
     }
 
     .empty-chart {
       display: none;
-      padding: 24px;
+      padding: 28px 22px;
       color: var(--muted);
-      font-size: 14px;
-    }
-
-    .caption {
-      margin: 12px 0 0;
-      color: var(--muted);
+      font-family: var(--sans);
       font-size: 13px;
-      line-height: 1.4;
     }
 
-    .score-panel {
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: var(--surface);
-      overflow: hidden;
-    }
-
-    .score-callout {
-      padding: 22px;
-      border-bottom: 1px solid var(--line);
-    }
-
-    .score-callout strong {
-      display: block;
-      margin-top: 14px;
-      font-size: 54px;
-      line-height: 0.95;
-      font-weight: 790;
-    }
-
-    .score-callout span {
+    .table-footnote {
+      display: grid;
+      gap: 6px;
+      padding: 14px 22px;
+      border-top: 1px solid var(--hair);
+      background: var(--paper);
+      font-family: var(--sans);
+      font-size: 12px;
       color: var(--muted);
-      font-size: 14px;
-      font-weight: 650;
+      line-height: 1.5;
+    }
+    .table-footnote sup {
+      font-family: var(--mono);
+      color: var(--accent);
+      font-size: 10px;
+      margin-right: 3px;
     }
 
+    /* ─── score panel ─── */
+    .score-panel {
+      border: 1px solid var(--ink);
+      background: var(--surface);
+      position: sticky;
+      top: 76px;
+    }
+    .score-callout {
+      padding: 22px 22px 24px;
+      border-bottom: 1px solid var(--hair);
+    }
     .detail-heading {
       display: flex;
       align-items: center;
       gap: 10px;
-      margin-bottom: 8px;
-      color: var(--ink);
-      font-size: 18px;
-      line-height: 1.2;
-      font-weight: 760;
+      margin-bottom: 18px;
     }
-
     .detail-logo {
       width: 28px;
       height: 28px;
       display: grid;
       place-items: center;
-      flex: 0 0 auto;
-      border: 1px solid var(--line);
-      border-radius: 6px;
-      background: #fff;
+      border: 1px solid var(--hair);
+      background: var(--surface);
     }
-
     .detail-logo img {
       max-width: 18px;
       max-height: 18px;
       object-fit: contain;
+      filter: grayscale(0.15);
     }
-
-    .mini-table {
-      display: grid;
+    .detail-heading span:last-child {
+      font-family: var(--serif);
+      font-weight: 500;
+      font-size: 17px;
+      letter-spacing: -0.005em;
     }
-
+    #detail-score {
+      display: block;
+      font-family: var(--serif);
+      font-weight: 360;
+      font-size: 64px;
+      line-height: 0.95;
+      letter-spacing: -0.04em;
+      color: var(--ink);
+      font-variant-numeric: tabular-nums;
+    }
+    .mini-table { display: grid; }
     .mini-row {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(72px, auto);
+      grid-template-columns: minmax(0, 1fr) auto;
       gap: 10px;
-      padding: 13px 16px;
-      border-bottom: 1px solid var(--line);
+      padding: 11px 22px;
+      border-bottom: 1px solid var(--hair);
+      align-items: baseline;
+    }
+    .mini-row:last-child { border-bottom: 0; }
+    .mini-row span {
+      font-family: var(--sans);
+      font-size: 10.5px;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
       color: var(--muted);
-      font-size: 13px;
-      align-items: center;
     }
-
-    .mini-row:last-child {
-      border-bottom: 0;
-    }
-
     .mini-row strong {
+      font-family: var(--mono);
+      font-size: 12.5px;
+      font-weight: 500;
       color: var(--ink);
-      font-size: 13px;
-      line-height: 1.35;
-      font-weight: 750;
       text-align: right;
-      overflow-wrap: anywhere;
+      font-variant-numeric: tabular-nums;
     }
 
+    /* ─── observations ─── */
+    .obs {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0;
+      margin-top: 52px;
+      border-top: 1px solid var(--ink);
+    }
+    .obs-item {
+      padding: 28px 32px 32px 0;
+      border-bottom: 1px solid var(--hair);
+    }
+    .obs-item:nth-child(2n) { padding-right: 0; padding-left: 32px; border-left: 1px solid var(--hair); }
+    .obs-item:nth-last-child(-n+2) { border-bottom: 0; }
+    .obs-tag {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 12px;
+    }
+    .obs-item h3 {
+      font-family: var(--serif);
+      font-weight: 500;
+      font-size: 22px;
+      line-height: 1.18;
+      letter-spacing: -0.01em;
+      margin-bottom: 14px;
+    }
+    .obs-item p {
+      margin: 0 0 16px;
+      color: var(--ink-2);
+      font-size: 16px;
+      line-height: 1.56;
+    }
+    .obs-quote {
+      margin: 0;
+      padding: 12px 0 12px 18px;
+      border-left: 2px solid var(--accent);
+      font-family: var(--serif);
+      font-style: italic;
+      font-weight: 360;
+      font-size: 16.5px;
+      line-height: 1.5;
+      color: var(--ink);
+    }
+    .obs-quote .att {
+      display: block;
+      margin-top: 8px;
+      font-family: var(--mono);
+      font-style: normal;
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      color: var(--quiet);
+      text-transform: uppercase;
+    }
+
+    /* ─── interpretation ─── */
     .takeaways {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 1px;
-      overflow: hidden;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: var(--line);
+      gap: 0;
+      margin-top: 48px;
+      border-top: 1px solid var(--ink);
+      border-bottom: 1px solid var(--ink);
     }
-
     .takeaway {
-      min-height: 178px;
-      padding: 22px;
-      background: var(--surface);
+      padding: 32px 28px;
+      border-right: 1px solid var(--hair);
     }
-
+    .takeaway:last-child { border-right: 0; }
+    .takeaway .ti {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 18px;
+    }
+    .takeaway h3 {
+      font-family: var(--serif);
+      font-weight: 500;
+      font-size: 21px;
+      line-height: 1.2;
+      letter-spacing: -0.01em;
+      margin-bottom: 12px;
+    }
     .takeaway p {
-      margin-bottom: 0;
+      margin: 0;
       color: var(--muted);
-      font-size: 15px;
+      font-size: 15.5px;
+      line-height: 1.55;
     }
 
-    .artifact-grid {
+    /* ─── changelog ─── */
+    .changelog {
+      margin-top: 48px;
+      border-top: 1px solid var(--ink);
+    }
+    .clog-row {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 1px;
-      overflow: hidden;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: var(--line);
+      grid-template-columns: 140px minmax(0, 1fr);
+      gap: 32px;
+      padding: 22px 0;
+      border-bottom: 1px solid var(--hair);
     }
-
-    .artifact {
-      min-height: 174px;
-      padding: 20px;
-      background: var(--surface);
+    .clog-row:last-child { border-bottom: 0; }
+    .clog-date {
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      color: var(--accent);
+      padding-top: 4px;
     }
-
-    .artifact a {
-      display: inline-flex;
-      color: var(--blue);
-      font-weight: 760;
-      overflow-wrap: anywhere;
+    .clog-body p {
+      margin: 0;
+      font-family: var(--serif);
+      font-size: 16.5px;
+      line-height: 1.55;
+      color: var(--ink-2);
     }
+    .clog-body p + p { margin-top: 6px; color: var(--muted); font-size: 15px; }
 
-    .artifact p {
-      margin: 10px 0 0;
-      color: var(--muted);
-      font-size: 14px;
+    /* ─── cite (dark band) ─── */
+    .cite-band {
+      background: var(--ink);
+      color: var(--paper);
+      border-bottom: 0;
+      background-image:
+        radial-gradient(rgba(250,247,240,0.025) 1px, transparent 1px);
+      background-size: 5px 5px;
     }
+    .cite-band .section-marker { color: rgba(250,247,240,0.65); }
+    .cite-band .section-marker .sect-num { color: var(--accent-2); }
+    .cite-band .section-marker::after { background: var(--paper); opacity: 0.3; }
+    .cite-band h2 { color: var(--paper); }
+    .cite-band .body-copy { color: rgba(250,247,240,0.78); }
 
-    .note {
-      margin-top: 18px;
-      padding: 16px 18px;
-      border-left: 4px solid var(--yellow);
-      background: var(--surface);
-      color: var(--muted);
-      font-size: 14px;
+    .bibtex-shell {
+      margin-top: 32px;
+      border: 1px solid rgba(250,247,240,0.18);
+      background: rgba(250,247,240,0.04);
     }
-
-    .footer {
+    .bibtex-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 16px;
+      border-bottom: 1px solid rgba(250,247,240,0.18);
+      font-family: var(--mono);
+      font-size: 10.5px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(250,247,240,0.6);
+    }
+    .copy-btn {
+      background: transparent;
+      border: 1px solid rgba(250,247,240,0.4);
+      color: rgba(250,247,240,0.85);
+      font-family: var(--mono);
+      font-size: 10.5px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 5px 10px;
+      cursor: pointer;
+      transition: background 120ms, color 120ms;
+    }
+    .copy-btn:hover {
       background: var(--paper);
+      color: var(--ink);
+    }
+    .copy-btn.ok {
+      background: var(--accent-2);
+      color: var(--paper);
+      border-color: var(--accent-2);
+    }
+    .bibtex {
+      margin: 0;
+      padding: 22px 24px;
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.65;
+      color: rgba(250,247,240,0.92);
+      overflow-x: auto;
+      white-space: pre;
+    }
+    .bibtex .k { color: var(--accent-2); }
+
+    /* ─── artifacts ─── */
+    .artifact-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: 64px;
+      row-gap: 0;
+      counter-reset: art;
+      margin-top: 48px;
+    }
+    .artifact {
+      counter-increment: art;
+      display: grid;
+      grid-template-columns: 48px minmax(0, 1fr);
+      gap: 0;
+      padding: 22px 0;
+      border-top: 1px solid var(--hair);
+    }
+    .artifact:first-child,
+    .artifact:nth-child(2) {
+      border-top: 1px solid var(--ink);
+    }
+    .artifact::before {
+      content: "[" counter(art, decimal-leading-zero) "]";
+      font-family: var(--mono);
+      font-size: 11.5px;
+      font-weight: 500;
+      color: var(--accent);
+      letter-spacing: 0.04em;
+      padding-top: 2px;
+    }
+    .artifact h3 {
+      font-family: var(--sans);
+      font-size: 10.5px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .artifact a {
+      display: inline-block;
+      font-family: var(--mono);
+      font-size: 13.5px;
+      font-weight: 500;
+      color: var(--ink);
+      border-bottom: 1px solid var(--accent);
+      padding-bottom: 1px;
+      overflow-wrap: anywhere;
+      margin-bottom: 8px;
+    }
+    .artifact a:hover { color: var(--accent); }
+    .artifact p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14.5px;
+      line-height: 1.5;
+    }
+
+    /* ─── footer ─── */
+    .footer .wrap {
+      padding-top: 36px;
+      padding-bottom: 36px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      align-items: baseline;
+      justify-content: space-between;
+      font-family: var(--sans);
+      font-size: 12.5px;
       color: var(--muted);
     }
-
-    .footer .wrap {
-      padding-top: 30px;
-      padding-bottom: 30px;
+    .footer a {
+      color: var(--ink);
+      border-bottom: 1px solid var(--accent);
+      padding-bottom: 1px;
+    }
+    .footer .stamp {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--quiet);
     }
 
-    .footer p {
-      margin-bottom: 0;
-      font-size: 14px;
+    /* ─── motion ─── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(8px);
+      animation: reveal 700ms cubic-bezier(0.2,0.7,0.2,1) forwards;
+    }
+    .reveal.d1 { animation-delay: 80ms; }
+    .reveal.d2 { animation-delay: 160ms; }
+    .reveal.d3 { animation-delay: 240ms; }
+    .reveal.d4 { animation-delay: 320ms; }
+    .reveal.d5 { animation-delay: 400ms; }
+    .reveal.d6 { animation-delay: 480ms; }
+    @keyframes reveal {
+      to { opacity: 1; transform: none; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .reveal { animation: none; opacity: 1; transform: none; }
     }
 
+    /* ─── responsive ─── */
+    @media (max-width: 1080px) {
+      .result-layout { grid-template-columns: 1fr; }
+      .score-panel { position: static; }
+    }
     @media (max-width: 980px) {
-      .hero {
-        min-height: auto;
-      }
-
-      .hero-grid,
-      .section-head,
-      .result-layout {
-        grid-template-columns: 1fr;
-      }
-
-      .hero-grid {
-        gap: 32px;
-      }
-
-      .method-path,
-      .artifact-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-
-      .result-layout {
-        gap: 18px;
-      }
-
-      .score-panel {
-        display: grid;
-        grid-template-columns: 220px minmax(0, 1fr);
-      }
-
-      .score-callout {
-        border-right: 1px solid var(--line);
-        border-bottom: 0;
-      }
-
-      .chart-toolbar {
-        align-items: flex-start;
-        flex-direction: column;
-      }
-
-      .filters {
-        justify-content: flex-start;
-      }
-    }
-
-    @media (max-width: 720px) {
-      .links {
-        display: none;
-      }
-
-      .nav {
-        padding: 0 18px;
-      }
-
-      .wrap {
-        padding: 50px 18px;
-      }
-
-      .hero .wrap {
-        padding-top: 40px;
-      }
-
-      h1 {
-        font-size: 44px;
-      }
-
-      h2 {
-        font-size: 34px;
-      }
-
-      .lede {
-        font-size: 19px;
-      }
-
-      .prompt-row,
-      .quick-stats,
-      .method-path,
+      .grid-2col { grid-template-columns: 1fr; gap: 28px; }
+      .stat-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .stat:nth-child(2) { border-right: 0; }
+      .stat:nth-child(1), .stat:nth-child(2) { border-bottom: 1px solid var(--hair); }
+      .method-list,
       .takeaways,
-      .artifact-grid,
-      .score-panel {
+      .artifact-list,
+      .obs {
         grid-template-columns: 1fr;
       }
-
-      .prompt-row {
-        align-items: start;
-      }
-
-      .prompt-label {
-        order: -1;
-      }
-
-      .media-caption {
-        position: static;
-        max-width: none;
-        border-width: 1px 0 0;
-        border-radius: 0;
-        box-shadow: none;
-      }
-
-      .score-callout {
-        border-right: 0;
-        border-bottom: 1px solid var(--line);
-      }
-
-      .bar-row {
-        grid-template-columns: 34px minmax(0, 1fr) 56px;
+      .obs-item:nth-child(2n) { border-left: 0; padding-left: 0; padding-right: 0; }
+      .takeaway { border-right: 0; border-bottom: 1px solid var(--hair); }
+      .takeaway:last-child { border-bottom: 0; }
+      .artifact:nth-child(2) { border-top: 1px solid var(--hair); }
+      .table-head, .bar-row {
+        grid-template-columns: 30px 26px minmax(0, 1fr) 70px;
         gap: 10px;
       }
-
-      .bar-track {
-        grid-row: 2;
-        grid-column: 2 / -1;
+      .table-head span:nth-child(4), .table-head span:nth-child(5) { display: none; }
+      .bar-row .bar-track, .bar-row .ratio { display: none; }
+      .chart-bars.is-detail .table-head,
+      .chart-bars.is-detail .bar-row {
+        grid-template-columns: 30px minmax(120px, 1fr) repeat(4, minmax(40px, 1fr)) 70px;
       }
-
-      .score-value {
-        grid-column: 3;
-        grid-row: 1;
-      }
+      .chart-bars.is-detail .table-head span:nth-child(2),
+      .chart-bars.is-detail .bar-row .logo-box { display: none; }
+      .setup { grid-template-columns: 130px minmax(0, 1fr); }
+    }
+    @media (max-width: 700px) {
+      .links a:not(.ext) { display: none; }
+      .nav { padding: 0 18px; }
+      .wrap { padding: 56px 18px; }
+      .hero .wrap { padding-top: 56px; padding-bottom: 56px; }
+      .meta-row { gap: 18px; padding-bottom: 14px; margin-bottom: 36px; }
+      .table-caption { flex-direction: column; align-items: stretch; gap: 14px; }
+      .clog-row { grid-template-columns: 1fr; gap: 8px; }
     }
   </style>
 </head>
 <body>
   <header class="topbar">
     <nav class="nav" aria-label="Primary">
-      <a class="brand" href="#">
-        <span class="mark" aria-hidden="true">E</span>
-        <span>Emoji-Bench</span>
-      </a>
+      <a class="brand" href="#top">Emoji&#8209;Bench</a>
       <div class="links">
         <a href="#method">Method</a>
+        <a href="#setup">Setup</a>
         <a href="#results">Results</a>
-        <a href="#artifacts">Artifacts</a>
-        <a href="README.md">README</a>
+        <a href="#observations">Observations</a>
+        <a href="#interpretation">Interpretation</a>
+        <a href="#changelog">Changelog</a>
+        <a class="ext" href="https://github.com/huyxdang/emoji-bench" target="_blank" rel="noopener noreferrer">GitHub &nearr;</a>
       </div>
     </nav>
   </header>
 
-  <main>
-    <section class="hero section" id="question">
-      <div class="wrap hero-grid">
-        <div>
-          <p class="eyebrow">LLMs Don't Look Back</p>
-          <h1>Emoji&#8209;Bench</h1>
-          <p class="lede">Can a model notice and fix its own mistake without being asked to check?</p>
-          <p class="byline">By <a href="https://www.huyxdang.com/">Huy Dang</a></p>
-
-          <div class="prompt-row" aria-label="Reported no-hint continuation prompt">
-            <div class="prompt-text">Please continue.</div>
-            <div class="prompt-label">No-hint prompt</div>
-          </div>
-
-          <div class="quick-stats" aria-label="Benchmark at a glance">
-            <div class="quick-stat">
-              <strong>100</strong>
-              <span>seeded continuation rows</span>
-            </div>
-            <div class="quick-stat">
-              <strong>9</strong>
-              <span>no-hint model result sets</span>
-            </div>
-            <div class="quick-stat">
-              <strong>96%</strong>
-              <span>best final-answer score</span>
-            </div>
-          </div>
-
-          <div class="actions">
-            <a class="button primary" href="#results">View results</a>
-            <a class="button" href="#artifacts">Open artifacts</a>
-          </div>
+  <main id="top">
+    <!-- ═════════════════════════ HERO ═════════════════════════ -->
+    <section class="hero section" id="hero">
+      <div class="wrap">
+        <div class="meta-row reveal">
+          <span class="item">Author<strong><a href="https://www.huyxdang.com/">Huy Dang</a></strong></span>
+          <span class="item">Released<strong>May 2026</strong></span>
+          <span class="item">Status<strong>Ongoing Draft</strong></span>
         </div>
 
-        <figure class="hero-media" aria-label="Emoji-Bench derivation visual">
-          <img src="public/emoji-bench-hero-v2.png" alt="Emoji symbols arranged as a formal derivation with a highlighted wrong step">
-          <figcaption class="media-caption">Each row hides one bad assistant step before the model is asked to continue.</figcaption>
+        <h1 class="reveal d1">LLMs <em>don't</em><br>look back.</h1>
+
+        <p class="lede reveal d2">A continuation test for whether language models notice and repair their own mistakes &mdash; without being asked to check.</p>
+
+        <p class="abstract reveal d3">Emoji-Bench gives a model a procedurally-generated formal system, an expression to derive, and an assistant transcript whose final step is deliberately wrong. The model is then asked, with no review cue, to <em>please continue</em>. We score whether the extracted final symbol matches ground truth. Across nine reported runs at <span class="num">n=100</span>, no-hint final-answer accuracy spans <span class="num">10%</span> to <span class="num">96%</span>.</p>
+
+        <div class="prompt-aside reveal d4" aria-label="No-hint continuation prompt">
+          <span class="ptag">Prompt L0</span>
+          <span class="ptext">Please continue.</span>
+        </div>
+
+        <div class="actions reveal d5">
+          <a class="button primary" href="#results">Read results <span class="arrow">&rarr;</span></a>
+          <a class="button" href="#cite">Cite</a>
+          <a class="button" href="https://github.com/huyxdang/emoji-bench" target="_blank" rel="noopener noreferrer">GitHub</a>
+          <a class="button" href="README.md">README</a>
+        </div>
+
+        <div class="stat-strip reveal d6" aria-label="Benchmark at a glance">
+          <div class="stat">
+            <div class="stat-num num">100</div>
+            <div class="stat-label">Seeded rows</div>
+          </div>
+          <div class="stat">
+            <div class="stat-num num">09</div>
+            <div class="stat-label">Reported runs</div>
+          </div>
+          <div class="stat">
+            <div class="stat-num num">96<span class="sm">%</span></div>
+            <div class="stat-label">Best score</div>
+          </div>
+          <div class="stat">
+            <div class="stat-num num">45<span class="sm">%</span></div>
+            <div class="stat-label">Median run</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═════════════════════════ METHOD ═════════════════════════ -->
+    <section class="section" id="method">
+      <div class="wrap">
+        <div class="section-marker"><span class="sect-num">§ 01</span><span>Method</span></div>
+        <div class="grid-2col">
+          <h2>The shortest useful test is a continuation.</h2>
+          <p class="body-copy">Emoji-Bench keeps the task coherent while removing the usual review cue. The reported no-hint condition answers the headline question; an optional prompted-review condition (<code>L1</code>) is available for measuring how much an explicit cue helps.</p>
+        </div>
+
+        <div class="method-list">
+          <article class="method-step">
+            <h3>Define rules</h3>
+            <p>The user message contains a procedurally generated emoji formal system, an expression to derive, and a strict step format.</p>
+          </article>
+          <article class="method-step">
+            <h3>Prefill a wrong step</h3>
+            <p>The assistant transcript ends on a deliberately injected error. The model is told nothing is wrong.</p>
+          </article>
+          <article class="method-step">
+            <h3>Ask to continue</h3>
+            <p>The reported setting uses exactly <code>Please continue.</code> &mdash; no review instruction, no inspection cue.</p>
+          </article>
+          <article class="method-step">
+            <h3>Score the terminal</h3>
+            <p>The extracted <code>Final Output:</code> symbol must match ground truth, not the wrong branch implied by the prefilled error.</p>
+          </article>
+        </div>
+
+        <figure class="pipeline" aria-label="Emoji-Bench evaluation pipeline diagram">
+          <div class="pipeline-cap">
+            <span class="label">Figure 01</span>
+            <span class="title">Three-turn continuation pipeline.</span>
+          </div>
+          <svg viewBox="0 0 880 220" role="img" aria-hidden="true">
+            <defs>
+              <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M0,0 L10,5 L0,10 Z" fill="#15140f"/>
+              </marker>
+              <pattern id="hatch" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
+                <line x1="0" y1="0" x2="0" y2="6" stroke="#7a1f23" stroke-width="1.4"/>
+              </pattern>
+            </defs>
+
+            <!-- node 1: rules -->
+            <g>
+              <rect x="14" y="40" width="170" height="100" fill="#faf7f0" stroke="#15140f" stroke-width="1.2"/>
+              <text x="26" y="62" font-family="JetBrains Mono, monospace" font-size="10" fill="#7a1f23" letter-spacing="1">USER · TURN 1</text>
+              <text x="26" y="86" font-family="Source Serif 4, serif" font-size="15" font-style="italic" fill="#15140f">Rules + expression</text>
+              <text x="26" y="108" font-family="Source Serif 4, serif" font-size="13" fill="#59574d">Procedural emoji</text>
+              <text x="26" y="124" font-family="Source Serif 4, serif" font-size="13" fill="#59574d">formal system</text>
+            </g>
+
+            <!-- arrow -->
+            <line x1="190" y1="90" x2="226" y2="90" stroke="#15140f" stroke-width="1.2" marker-end="url(#arr)"/>
+
+            <!-- node 2: assistant prefill (with hatched error region) -->
+            <g>
+              <rect x="232" y="40" width="200" height="100" fill="#faf7f0" stroke="#15140f" stroke-width="1.2"/>
+              <text x="244" y="62" font-family="JetBrains Mono, monospace" font-size="10" fill="#7a1f23" letter-spacing="1">ASSISTANT · TURN 1</text>
+              <text x="244" y="86" font-family="Source Serif 4, serif" font-size="15" font-style="italic" fill="#15140f">Prefilled steps</text>
+              <text x="244" y="108" font-family="Source Serif 4, serif" font-size="13" fill="#59574d">Step 1, Step 2,</text>
+              <text x="244" y="124" font-family="Source Serif 4, serif" font-size="13" fill="#59574d">Step k <tspan fill="#7a1f23">← planted error</tspan></text>
+              <rect x="232" y="40" width="200" height="100" fill="url(#hatch)" opacity="0.18"/>
+            </g>
+
+            <!-- arrow -->
+            <line x1="438" y1="90" x2="474" y2="90" stroke="#15140f" stroke-width="1.2" marker-end="url(#arr)"/>
+
+            <!-- node 3: please continue -->
+            <g>
+              <rect x="480" y="40" width="170" height="100" fill="#15140f" stroke="#15140f" stroke-width="1.2"/>
+              <text x="492" y="62" font-family="JetBrains Mono, monospace" font-size="10" fill="#b8443a" letter-spacing="1">USER · TURN 2</text>
+              <text x="492" y="92" font-family="JetBrains Mono, monospace" font-size="15" font-weight="500" fill="#faf7f0">Please continue.</text>
+              <text x="492" y="118" font-family="Source Serif 4, serif" font-size="12" font-style="italic" fill="rgba(250,247,240,0.6)">no review cue</text>
+            </g>
+
+            <!-- arrow -->
+            <line x1="656" y1="90" x2="692" y2="90" stroke="#15140f" stroke-width="1.2" marker-end="url(#arr)"/>
+
+            <!-- node 4: model continues -->
+            <g>
+              <rect x="698" y="40" width="170" height="100" fill="#faf7f0" stroke="#15140f" stroke-width="1.2"/>
+              <text x="710" y="62" font-family="JetBrains Mono, monospace" font-size="10" fill="#7a1f23" letter-spacing="1">ASSISTANT · TURN 2</text>
+              <text x="710" y="86" font-family="Source Serif 4, serif" font-size="15" font-style="italic" fill="#15140f">Continuation</text>
+              <text x="710" y="108" font-family="Source Serif 4, serif" font-size="13" fill="#59574d">Step k+1 … Final</text>
+              <text x="710" y="124" font-family="Source Serif 4, serif" font-size="13" fill="#59574d">Output: <tspan font-family="JetBrains Mono, monospace" font-size="14">?</tspan></text>
+            </g>
+
+            <!-- score row -->
+            <line x1="14" y1="180" x2="868" y2="180" stroke="#d6d1c2" stroke-width="1"/>
+            <text x="14" y="202" font-family="JetBrains Mono, monospace" font-size="10" fill="#7a1f23" letter-spacing="1">SCORE</text>
+            <text x="64" y="202" font-family="Source Serif 4, serif" font-size="13" font-style="italic" fill="#59574d">extracted Final Output  =  ground truth ?  &nbsp;&rarr;&nbsp;  1 correct &middot; else 0</text>
+          </svg>
         </figure>
       </div>
     </section>
 
-    <section class="section" id="method">
+    <!-- ═════════════════════════ EXPERIMENTAL SETUP ═════════════════════════ -->
+    <section class="section" id="setup">
       <div class="wrap">
-        <div class="section-head">
-          <div>
-            <p class="section-kicker">Method</p>
-            <h2>The shortest useful test is a continuation.</h2>
-          </div>
-          <p class="body-copy">Emoji-Bench keeps the task coherent while removing the usual review cue. The no-hint prompt answers the headline question; the prompted double-check condition only estimates how much a review cue helps.</p>
+        <div class="section-marker"><span class="sect-num">§ 02</span><span>Experimental setup</span></div>
+        <div class="grid-2col">
+          <h2>What was held constant.</h2>
+          <p class="body-copy">All reported runs share the same dataset, prompt, delivery shape, and scoring rubric. The only intentional axis of variation is the model. Per-model differences in token budget or reasoning preset reflect each provider's own maximum-capability defaults.</p>
         </div>
 
-        <div class="method-path" aria-label="Benchmark method">
-          <article class="method-step">
-            <div class="step-index">1</div>
-            <h3>Define rules</h3>
-            <p>The user gives a procedurally generated emoji formal system, an expression, and a strict step format.</p>
-          </article>
-          <article class="method-step">
-            <div class="step-index">2</div>
-            <h3>Prefill a bad step</h3>
-            <p>The assistant transcript ends on a deliberately injected error. The model is not told anything is wrong.</p>
-          </article>
-          <article class="method-step">
-            <div class="step-index">3</div>
-            <h3>Ask to continue</h3>
-            <p>The reported no-hint setting uses exactly <code>Please continue.</code> with no review instruction.</p>
-          </article>
-          <article class="method-step">
-            <div class="step-index">4</div>
-            <h3>Score the terminal</h3>
-            <p>The extracted <code>Final Output:</code> must match the stored ground-truth final symbol, not the blind wrong branch.</p>
-          </article>
+        <div class="setup">
+          <div class="row"><div class="k">Dataset</div><div class="v"><span class="mono">emoji-bench-dataset-100</span> &middot; 100 rows, stratified <span class="mono">25 / 25 / 25 / 25</span> across easy, medium, hard, expert.</div></div>
+          <div class="row"><div class="k">Generator commit</div><div class="v"><code>033b20f56e9786d29b688e552063f306fee73c31</code></div></div>
+          <div class="row"><div class="k">Error type</div><div class="v">E-CONTINUE &mdash; one assistant step is deliberately wrong; the wrong-branch terminal is held distinct from ground truth by construction.</div></div>
+          <div class="row"><div class="k">Delivery</div><div class="v">Native prefill (the assistant transcript ending on the planted error is sent on the same turn as the user message).</div></div>
+          <div class="row"><div class="k">Prompt level</div><div class="v"><span class="mono">L0</span> &mdash; turn-2 user message is exactly <code>Please continue.</code> (no review instruction).</div></div>
+          <div class="row"><div class="k">Token budget</div><div class="v">Each model uses its provider's maximum configured output. Reasoning / thinking presets are <span class="mono">high</span>, <span class="mono">max</span>, or <span class="mono">xhigh</span> as recorded in artifact directory names.</div></div>
+          <div class="row"><div class="k">Scorer</div><div class="v">Deterministic regex extraction of <code>Final Output:</code>. Match against the stored ground-truth terminal (<em>not</em> the cascade terminal). No LLM judge in the headline metric.</div></div>
+          <div class="row"><div class="k">Reproduce</div><div class="v"><code>./run.sh</code> for the full matrix &middot; <code>./run_opus-46.sh</code> for a single cell.</div></div>
         </div>
       </div>
     </section>
 
+    <!-- ═════════════════════════ RESULTS ═════════════════════════ -->
     <section class="section result-band" id="results">
       <div class="wrap">
-        <div class="section-head">
-          <div>
-            <p class="section-kicker">Results</p>
-            <h2>Final-answer correctness without a hint.</h2>
-          </div>
+        <div class="section-marker"><span class="sect-num">§ 03</span><span>Results</span></div>
+        <div class="grid-2col">
+          <h2>Final-answer correctness, no hint.</h2>
+          <p class="body-copy">Final-answer-only scoring on native-prefill, no-hint artifacts. Higher is better. Toggle <span class="mono">overall</span> ↔ <span class="mono">per-difficulty</span>; hover or focus a row to inspect a model in detail.</p>
         </div>
 
         <div class="result-layout">
           <div>
-            <div class="chart-shell" aria-label="Interactive no-hint final-answer correctness chart">
-              <div class="chart-toolbar">
-                <div class="chart-title">Final answer correct, percent</div>
-                <div class="filters" aria-label="Filter by company">
-                  <button class="filter-button" type="button" data-provider="all" aria-pressed="true">All</button>
-                  <button class="filter-button" type="button" data-provider="OpenAI" aria-pressed="false">OpenAI</button>
-                  <button class="filter-button" type="button" data-provider="Anthropic" aria-pressed="false">Anthropic</button>
-                  <button class="filter-button" type="button" data-provider="Google" aria-pressed="false">Google</button>
-                  <button class="filter-button" type="button" data-provider="Mistral" aria-pressed="false">Mistral</button>
+            <div class="table-frame">
+              <div class="table-caption">
+                <div class="left">
+                  <span class="tnum">Table 01</span>
+                  <span class="ttitle">No-hint final-answer accuracy across nine reported runs (<span class="mono">n = 100</span> each).</span>
+                </div>
+                <div class="table-tools">
+                  <div class="filters" aria-label="Filter by company">
+                    <button class="filter-button" type="button" data-provider="all" aria-pressed="true">All</button>
+                    <button class="filter-button" type="button" data-provider="OpenAI" aria-pressed="false">OpenAI</button>
+                    <button class="filter-button" type="button" data-provider="Anthropic" aria-pressed="false">Anthropic</button>
+                    <button class="filter-button" type="button" data-provider="Google" aria-pressed="false">Google</button>
+                    <button class="filter-button" type="button" data-provider="Mistral" aria-pressed="false">Mistral</button>
+                  </div>
+                  <div class="view-toggle" role="group" aria-label="View">
+                    <button type="button" data-view="overall" aria-pressed="true">Overall</button>
+                    <button type="button" data-view="diff" aria-pressed="false">Per-difficulty</button>
+                  </div>
                 </div>
               </div>
+
               <div class="chart-bars" id="result-chart"></div>
               <div class="empty-chart" id="empty-chart">No results for this filter.</div>
+
+              <div class="table-footnote">
+                <span><sup>&dagger;</sup>All runs use native prefill, the <code>Please continue.</code> prompt, and final-answer-only scoring. Per-difficulty rows reflect 25 examples per bucket.</span>
+                <span><sup>&Dagger;</sup>Gemini results were produced via OpenRouter, not Google's official Gemini API.</span>
+                <span><sup>&sect;</sup>At <span class="mono">n=100</span>, the 95% binomial CI for any single percentage is roughly <span class="mono">±8</span> points; for the gap between two models it is roughly <span class="mono">±12</span>.</span>
+              </div>
             </div>
-            <p class="caption">Hover, focus, or click a row for run details. Higher is better.</p>
           </div>
 
-          <aside class="score-panel" aria-label="Result summary">
+          <aside class="score-panel" aria-label="Result detail">
             <div class="score-callout">
               <div class="detail-heading">
                 <span class="detail-logo"><img id="detail-logo" src="public/openai.svg" alt=""></span>
@@ -970,280 +1463,437 @@
               <div class="mini-row"><span>Max output</span><strong id="detail-max-output">128k tokens</strong></div>
               <div class="mini-row"><span>Reasoning</span><strong id="detail-reasoning">xhigh</strong></div>
               <div class="mini-row"><span>Route</span><strong id="detail-route">OpenAI API</strong></div>
+              <div class="mini-row"><span>Easy</span><strong id="detail-easy">100%</strong></div>
+              <div class="mini-row"><span>Medium</span><strong id="detail-medium">92%</strong></div>
+              <div class="mini-row"><span>Hard</span><strong id="detail-hard">96%</strong></div>
+              <div class="mini-row"><span>Expert</span><strong id="detail-expert">96%</strong></div>
             </div>
           </aside>
         </div>
-
-        <div class="note">Shared setup: native prefill, the no-hint <code>Please continue.</code> prompt, 100 rows, and final-answer-only scoring. Gemini results were produced via OpenRouter, not the official Gemini API key.</div>
       </div>
     </section>
 
-    <section class="section">
+    <!-- ═════════════════════════ OBSERVATIONS ═════════════════════════ -->
+    <section class="section" id="observations">
       <div class="wrap">
-        <div class="section-head">
-          <div>
-            <p class="section-kicker">Interpretation</p>
-            <h2>What this page claims, and what it does not.</h2>
-          </div>
-          <p class="body-copy">The report is intentionally narrow: it tests whether the continuation lands on the correct final symbol in the no-hint setting.</p>
+        <div class="section-marker"><span class="sect-num">§ 04</span><span>Observations</span></div>
+        <div class="grid-2col">
+          <h2>Four behaviors behind the numbers.</h2>
+          <p class="body-copy">The leaderboard scores the extracted terminal symbol. Behind that single bit, models differ qualitatively in how they handle the planted error. Quotes below are verbatim from <code>predictions.jsonl</code>.</p>
+        </div>
+
+        <div class="obs">
+          <article class="obs-item">
+            <div class="obs-tag">Behavior &middot; Self-detection</div>
+            <h3>The model flags the prefilled error before fixing it.</h3>
+            <p>Claude Opus 4.6 (reasoning max) frequently opens its continuation by naming the bad step and rolling the derivation back. This is the most legible failure mode &mdash; you can read it in the transcript.</p>
+            <blockquote class="obs-quote">
+              &ldquo;I notice I made an error in Step 2. Let me correct and continue&hellip;&rdquo;
+              <span class="att">claude-opus-4-6 &middot; row easy-0006 &middot; recovered &check;</span>
+            </blockquote>
+          </article>
+
+          <article class="obs-item">
+            <div class="obs-tag">Behavior &middot; Silent recovery</div>
+            <h3>The model corrects without saying so.</h3>
+            <p>GPT-5.4 (reasoning xhigh) often continues straight from the wrong step but quietly substitutes the correct value, reaching ground truth without verbal acknowledgement. The headline metric counts this as a win; a self-detection metric would not.</p>
+            <blockquote class="obs-quote">
+              &ldquo;Step 2: ((&hellip;)) = (&hellip;)  [by &oplus; table]&rdquo; &mdash; <em>terminal lands on the correct symbol; no flag, no apology.</em>
+              <span class="att">gpt-5.4 &middot; representative row &middot; recovered &check;</span>
+            </blockquote>
+          </article>
+
+          <article class="obs-item">
+            <div class="obs-tag">Behavior &middot; Cascade</div>
+            <h3>The model accepts the error and propagates.</h3>
+            <p>Claude Opus 4.7 (reasoning max) frequently continues the wrong branch step-by-step, terminating on the planted-wrong final symbol. By construction, the cascade terminal is always distinct from ground truth, so this is a clean miss.</p>
+            <blockquote class="obs-quote">
+              &ldquo;Step 4: (🧊 &oplus; &hellip;) = 🧊 &nbsp;…&nbsp; Final Output: 🧊&rdquo;
+              <span class="att">claude-opus-4-7 &middot; row easy-0005 &middot; cascaded &times;</span>
+            </blockquote>
+          </article>
+
+          <article class="obs-item">
+            <div class="obs-tag">Behavior &middot; Extraction failure</div>
+            <h3>The model produces no parseable terminal.</h3>
+            <p>Gemini 3 Flash (thinking high) generates partial work, malformed steps, or truncated output on most rows. The deterministic <code>Final Output:</code> regex fails to extract a symbol &mdash; counted as incorrect. A loose-judge metric would still likely rank it last, but this is the dominant cause of its <span class="num">10%</span>.</p>
+            <blockquote class="obs-quote">
+              &ldquo;Step 3: (🥟 &oplus; (🪵 &oplus; 🪈)) = (🥟 &oplus; 🪈)&rdquo; &mdash; <em>derivation truncates without a final terminal.</em>
+              <span class="att">gemini-3-flash-preview &middot; representative row &middot; extraction &empty;</span>
+            </blockquote>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═════════════════════════ INTERPRETATION ═════════════════════════ -->
+    <section class="section" id="interpretation">
+      <div class="wrap">
+        <div class="section-marker"><span class="sect-num">§ 05</span><span>Interpretation</span></div>
+        <div class="grid-2col">
+          <h2>What this report claims, and what it does not.</h2>
+          <p class="body-copy">The scope is intentionally narrow: whether the continuation lands on the correct final symbol in the no-hint setting. Several things deliberately stay out of the headline.</p>
         </div>
 
         <div class="takeaways">
           <article class="takeaway">
-            <h3>Final answers separate sharply</h3>
-            <p>The current no-hint runs range from 10% to 96%, and the max-config Opus 4.6 run lands above Opus 4.7 in this setting.</p>
+            <div class="ti">Finding 01</div>
+            <h3>Final answers separate sharply.</h3>
+            <p>No-hint accuracy spans <span class="num">10%</span> to <span class="num">96%</span> on the same minimal continuation request. Per-model 95% CI at <span class="num">n=100</span> is roughly <span class="num">±8</span> points; the leader-to-floor gap is well outside noise.</p>
           </article>
           <article class="takeaway">
-            <h3>No recovery judge headline</h3>
-            <p>The chart does not score verbal self-detection or proof quality. It scores the extracted terminal symbol.</p>
+            <div class="ti">Finding 02</div>
+            <h3>Recovery is not headlined.</h3>
+            <p>The leaderboard scores the extracted terminal symbol, not whether a model verbally flagged the prefilled mistake. As § 04 shows, those two metrics dissociate &mdash; especially for top scorers.</p>
           </article>
           <article class="takeaway">
-            <h3>Broader matrix remains available</h3>
-            <p>The code still supports alternate delivery shapes and a prompted-review condition, while the checked-in result set keeps native-prefill, no-hint runs.</p>
+            <div class="ti">Finding 03</div>
+            <h3>A wider matrix exists.</h3>
+            <p>The code supports alternate delivery shapes and a prompted-review condition (<span class="mono">L1</span>). The published page reports native-prefill, no-hint runs only.</p>
           </article>
         </div>
       </div>
     </section>
 
+    <!-- ═════════════════════════ CHANGELOG ═════════════════════════ -->
+    <section class="section" id="changelog">
+      <div class="wrap">
+        <div class="section-marker"><span class="sect-num">§ 06</span><span>Changelog</span></div>
+        <div class="grid-2col">
+          <h2>Working notes.</h2>
+          <p class="body-copy">Dated, append-only. Entries here change the published numbers; configuration and dataset commits are referenced inline.</p>
+        </div>
+
+        <div class="changelog">
+          <div class="clog-row">
+            <div class="clog-date">2026-05-03</div>
+            <div class="clog-body">
+              <p>Re-ran Claude Opus 4.6 with <span class="mono">reasoning max</span> (previous run used <span class="mono">reasoning high</span>). Final-answer rate moved from <span class="num">32%</span> to <span class="num">78%</span>. Same prompt, prefill, dataset; only the per-call thinking budget differs. Verified registry config matches Opus 4.7 byte-for-byte.</p>
+              <p>Verification: an independent second run of Opus 4.7 (same config, fresh predictions, separate output dir) returned <span class="num">43%</span> &mdash; within <span class="num">2</span> points of the original <span class="num">45%</span>. Combined <span class="num">n=200</span> places Opus 4.7 at <span class="num">44%</span> (95% CI <span class="num">[37, 51]</span>), roughly <span class="num">7&sigma;</span> below Opus 4.6 at <span class="num">78%</span>. The regression is not noise.</p>
+            </div>
+          </div>
+          <div class="clog-row">
+            <div class="clog-date">2026-04-22</div>
+            <div class="clog-body">
+              <p>Added Gemini 3.1 Pro and Gemini 3 Flash via OpenRouter. Google's official Gemini API was not used; OpenRouter routing is documented in the methodology footnotes.</p>
+            </div>
+          </div>
+          <div class="clog-row">
+            <div class="clog-date">2026-04-10</div>
+            <div class="clog-body">
+              <p>Initial 9-model matrix at <span class="mono">L0</span>: GPT-5.4 / mini, Claude Opus 4.7 / 4.6 / Sonnet 4.6, Gemini 3.1 Pro / 3 Flash, Magistral Medium, Mistral Large.</p>
+            </div>
+          </div>
+          <div class="clog-row">
+            <div class="clog-date">2026-04-01</div>
+            <div class="clog-body">
+              <p>Dataset frozen at <span class="num">100</span> rows. Generator commit <code>033b20f</code>. Stratified <span class="mono">25 / 25 / 25 / 25</span> across easy, medium, hard, expert difficulty buckets.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═════════════════════════ ARTIFACTS ═════════════════════════ -->
     <section class="section" id="artifacts">
       <div class="wrap">
-        <div class="section-head">
-          <div>
-            <p class="section-kicker">Artifacts</p>
-            <h2>Data, summaries, and reproduction paths.</h2>
+        <div class="section-marker"><span class="sect-num">§ 07</span><span>Artifacts</span></div>
+        <div class="grid-2col">
+          <h2>Data, summaries, reproduction.</h2>
+          <p class="body-copy">Rows are byte-reproducible from stored seeds. Evaluation applies the turn-2 prompt at run time. Run <code>python scripts/plot_b_final_answer.py</code> after adding or removing native-prefill, no-hint summaries.</p>
+        </div>
+
+        <div class="artifact-list">
+          <article class="artifact">
+            <div>
+              <h3>Dataset</h3>
+              <a href="artifacts/emoji-bench-dataset-100/test.jsonl">test.jsonl</a>
+              <p>100 rows stratified across easy, medium, hard, and expert.</p>
+            </div>
+          </article>
+          <article class="artifact">
+            <div>
+              <h3>Manifest</h3>
+              <a href="artifacts/emoji-bench-dataset-100/manifest.json">manifest.json</a>
+              <p>Master seed, difficulty snapshot, rejection counts, generator commit.</p>
+            </div>
+          </article>
+          <article class="artifact">
+            <div>
+              <h3>Eval summaries</h3>
+              <a href="artifacts/evals/">artifacts/evals/</a>
+              <p>Checked-in no-hint prediction, score, and summary directories.</p>
+            </div>
+          </article>
+          <article class="artifact">
+            <div>
+              <h3>Reproduce</h3>
+              <a href="README.md">README.md</a>
+              <p>Install, regenerate the dataset, run cells, rescore, rebuild plot.</p>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═════════════════════════ CITE ═════════════════════════ -->
+    <section class="section cite-band" id="cite">
+      <div class="wrap">
+        <div class="section-marker"><span class="sect-num">§ 08</span><span>How to cite</span></div>
+        <div class="grid-2col">
+          <h2>Use this work.</h2>
+          <p class="body-copy">If Emoji-Bench informs a write-up, eval, or follow-up, please cite the working draft. Numbers may shift as the matrix expands; the BibTeX entry is versioned.</p>
+        </div>
+
+        <div class="bibtex-shell">
+          <div class="bibtex-bar">
+            <span>BibTeX &middot; v1.0</span>
+            <button class="copy-btn" type="button" id="copy-cite">Copy</button>
           </div>
-          <p class="body-copy">Rows are byte-reproducible from stored seeds. Evaluation applies the turn-2 prompt at run time.</p>
+          <pre class="bibtex" id="cite-text">@misc{<span class="k">dang2026emojibench</span>,
+  title  = {Emoji-Bench: LLMs Don't Look Back},
+  author = {Dang, Huy},
+  year   = {2026},
+  note   = {Working draft},
+  url    = {https://github.com/huyxdang/emoji-bench}
+}</pre>
         </div>
-
-        <div class="artifact-grid" aria-label="Artifact links">
-          <article class="artifact">
-            <h3>Dataset</h3>
-            <a href="artifacts/emoji-bench-dataset-100/test.jsonl">test.jsonl</a>
-            <p>100 rows stratified across easy, medium, hard, and expert.</p>
-          </article>
-          <article class="artifact">
-            <h3>Manifest</h3>
-            <a href="artifacts/emoji-bench-dataset-100/manifest.json">manifest.json</a>
-            <p>Master seed, difficulty snapshot, rejection counts, and generator commit.</p>
-          </article>
-          <article class="artifact">
-            <h3>Summaries</h3>
-            <a href="artifacts/evals/">artifacts/evals/</a>
-            <p>Checked-in no-hint prediction, score, and summary directories.</p>
-          </article>
-          <article class="artifact">
-            <h3>Reproduce</h3>
-            <a href="README.md">README.md</a>
-            <p>Install, regenerate the dataset, run cells, rescore, and rebuild the plot.</p>
-          </article>
-        </div>
-
-        <div class="note">Run <code>python scripts/plot_b_final_answer.py</code> after adding or removing native-prefill, no-hint evaluation summaries.</div>
       </div>
     </section>
   </main>
 
   <footer class="footer">
     <div class="wrap">
-      <p>Emoji-Bench by <a href="https://www.huyxdang.com/">Huy Dang</a>. Static research summary generated from local artifacts.</p>
+      <p>Emoji-Bench &mdash; a working draft by <a href="https://www.huyxdang.com/">Huy Dang</a>.</p>
+      <p class="stamp">v1.0 &middot; Updated May 2026</p>
     </div>
   </footer>
 
   <script>
+    // ─── data ──────────────────────────────────────────────────────────
+    // Source: artifacts/evals/{model}-B-L0/score_summary.json (headline.by_difficulty)
     const resultData = [
       {
-        model: "GPT-5.4",
-        provider: "OpenAI",
-        logo: "public/openai.svg",
-        score: 96,
-        rows: 100,
-        apiModel: "gpt-5.4",
-        maxOutput: "128k tokens",
-        reasoning: "OpenAI reasoning xhigh",
-        route: "OpenAI API",
-        summary: "Native prefill, no-hint prompt, final-answer-only.",
-        accent: "#111318"
+        model: "GPT-5.4", provider: "OpenAI", logo: "public/openai.svg",
+        score: 96, rows: 100, apiModel: "gpt-5.4", maxOutput: "128k tokens",
+        reasoning: "xhigh", route: "OpenAI API", config: "reasoning xhigh",
+        byDifficulty: { easy: 100, medium: 92, hard: 96, expert: 96 }
       },
       {
-        model: "GPT-5.4 mini",
-        provider: "OpenAI",
-        logo: "public/openai.svg",
-        score: 80,
-        rows: 100,
-        apiModel: "gpt-5.4-mini",
-        maxOutput: "128k tokens",
-        reasoning: "OpenAI reasoning xhigh",
-        route: "OpenAI API",
-        summary: "Native prefill, no-hint prompt, final-answer-only.",
-        accent: "#111318"
+        model: "GPT-5.4 mini", provider: "OpenAI", logo: "public/openai.svg",
+        score: 80, rows: 100, apiModel: "gpt-5.4-mini", maxOutput: "128k tokens",
+        reasoning: "xhigh", route: "OpenAI API", config: "reasoning xhigh",
+        byDifficulty: { easy: 76, medium: 84, hard: 76, expert: 84 }
       },
       {
-        model: "Claude Opus 4.6",
-        provider: "Anthropic",
-        logo: "public/claude.svg",
-        score: 78,
-        rows: 100,
-        apiModel: "claude-opus-4-6",
-        maxOutput: "128k tokens",
-        reasoning: "adaptive thinking; effort max",
-        route: "Anthropic Messages API",
-        summary: "Native prefill, no-hint prompt, final-answer-only.",
-        accent: "#d97757"
+        model: "Claude Opus 4.6", provider: "Anthropic", logo: "public/claude.svg",
+        score: 78, rows: 100, apiModel: "claude-opus-4-6", maxOutput: "128k tokens",
+        reasoning: "adaptive · max", route: "Anthropic Messages API", config: "reasoning max",
+        byDifficulty: { easy: 88, medium: 72, hard: 80, expert: 72 }
       },
       {
-        model: "Claude Sonnet 4.6",
-        provider: "Anthropic",
-        logo: "public/claude.svg",
-        score: 66,
-        rows: 100,
-        apiModel: "claude-sonnet-4-6",
-        maxOutput: "64k tokens",
-        reasoning: "adaptive thinking; effort max",
-        route: "Anthropic Messages API",
-        summary: "Native prefill, no-hint prompt, final-answer-only.",
-        accent: "#d97757"
+        model: "Claude Sonnet 4.6", provider: "Anthropic", logo: "public/claude.svg",
+        score: 66, rows: 100, apiModel: "claude-sonnet-4-6", maxOutput: "64k tokens",
+        reasoning: "adaptive · max", route: "Anthropic Messages API", config: "reasoning max",
+        byDifficulty: { easy: 56, medium: 60, hard: 72, expert: 76 }
       },
       {
-        model: "Claude Opus 4.7",
-        provider: "Anthropic",
-        logo: "public/claude.svg",
-        score: 45,
-        rows: 100,
-        apiModel: "claude-opus-4-7",
-        maxOutput: "128k tokens",
-        reasoning: "adaptive thinking; effort max",
-        route: "Anthropic Messages API",
-        summary: "Native prefill, no-hint prompt, final-answer-only.",
-        accent: "#d97757"
+        model: "Claude Opus 4.7", provider: "Anthropic", logo: "public/claude.svg",
+        score: 45, rows: 100, apiModel: "claude-opus-4-7", maxOutput: "128k tokens",
+        reasoning: "adaptive · max", route: "Anthropic Messages API", config: "reasoning max",
+        byDifficulty: { easy: 68, medium: 48, hard: 28, expert: 36 }
       },
       {
-        model: "Gemini 3.1 Pro",
-        provider: "Google",
-        logo: "public/gemini.png",
-        score: 19,
-        rows: 100,
-        apiModel: "gemini-3.1-pro-preview",
-        maxOutput: "64k tokens",
-        reasoning: "Gemini thinking high",
-        route: "OpenRouter",
-        summary: "Run via OpenRouter, not the official Gemini API key.",
-        accent: "#4285f4"
+        model: "Gemini 3.1 Pro", provider: "Google", logo: "public/gemini.png",
+        score: 19, rows: 100, apiModel: "gemini-3.1-pro-preview", maxOutput: "64k tokens",
+        reasoning: "thinking high", route: "OpenRouter", config: "thinking high",
+        byDifficulty: { easy: 16, medium: 36, hard: 16, expert: 8 }
       },
       {
-        model: "Magistral Medium",
-        provider: "Mistral",
-        logo: "public/mistral.png",
-        score: 18,
-        rows: 100,
-        apiModel: "magistral-medium-2509",
-        maxOutput: "40k tokens",
-        reasoning: "reasoning model; default settings",
-        route: "Mistral Chat Completions",
-        summary: "Native prefill, no-hint prompt, final-answer-only.",
-        accent: "#f59e0b"
+        model: "Magistral Medium", provider: "Mistral", logo: "public/mistral.png",
+        score: 18, rows: 100, apiModel: "magistral-medium-2509", maxOutput: "32k tokens",
+        reasoning: "default", route: "Mistral API", config: "default",
+        byDifficulty: { easy: 28, medium: 32, hard: 4, expert: 8 }
       },
       {
-        model: "Gemini 3 Flash",
-        provider: "Google",
-        logo: "public/gemini.png",
-        score: 10,
-        rows: 100,
-        apiModel: "gemini-3-flash-preview",
-        maxOutput: "64k tokens",
-        reasoning: "Gemini thinking high",
-        route: "OpenRouter",
-        summary: "Run via OpenRouter, not the official Gemini API key.",
-        accent: "#4285f4"
+        model: "Gemini 3 Flash", provider: "Google", logo: "public/gemini.png",
+        score: 10, rows: 100, apiModel: "gemini-3-flash-preview", maxOutput: "64k tokens",
+        reasoning: "thinking high", route: "OpenRouter", config: "thinking high",
+        byDifficulty: { easy: 28, medium: 12, hard: 0, expert: 0 }
       },
       {
-        model: "Mistral Large",
-        provider: "Mistral",
-        logo: "public/mistral.png",
-        score: 10,
-        rows: 100,
-        apiModel: "mistral-large-2512",
-        maxOutput: "40k tokens",
-        reasoning: "no explicit reasoning setting",
-        route: "Mistral Chat Completions",
-        summary: "Native prefill, no-hint prompt, final-answer-only.",
-        accent: "#f59e0b"
+        model: "Mistral Large", provider: "Mistral", logo: "public/mistral.png",
+        score: 10, rows: 100, apiModel: "mistral-large-2512", maxOutput: "32k tokens",
+        reasoning: "default", route: "Mistral API", config: "default",
+        byDifficulty: { easy: 20, medium: 12, hard: 4, expert: 4 }
       }
     ];
 
-    const chart = document.querySelector("#result-chart");
-    const emptyChart = document.querySelector("#empty-chart");
-    const filterButtons = Array.from(document.querySelectorAll(".filter-button"));
-    const detailScore = document.querySelector("#detail-score");
-    const detailModel = document.querySelector("#detail-model");
-    const detailLogo = document.querySelector("#detail-logo");
-    const detailCorrect = document.querySelector("#detail-correct");
-    const detailApiModel = document.querySelector("#detail-api-model");
-    const detailMaxOutput = document.querySelector("#detail-max-output");
-    const detailReasoning = document.querySelector("#detail-reasoning");
-    const detailRoute = document.querySelector("#detail-route");
-    let activeModel = resultData[0].model;
+    // ─── refs ──────────────────────────────────────────────────────────
+    const chart        = document.querySelector("#result-chart");
+    const emptyChart   = document.querySelector("#empty-chart");
+    const filterBtns   = Array.from(document.querySelectorAll(".filter-button"));
+    const viewBtns     = Array.from(document.querySelectorAll(".view-toggle button"));
+    const detailScore  = document.querySelector("#detail-score");
+    const detailModel  = document.querySelector("#detail-model");
+    const detailLogo   = document.querySelector("#detail-logo");
+    const detailCorrect= document.querySelector("#detail-correct");
+    const detailApi    = document.querySelector("#detail-api-model");
+    const detailMax    = document.querySelector("#detail-max-output");
+    const detailReas   = document.querySelector("#detail-reasoning");
+    const detailRoute  = document.querySelector("#detail-route");
+    const detailEasy   = document.querySelector("#detail-easy");
+    const detailMed    = document.querySelector("#detail-medium");
+    const detailHard   = document.querySelector("#detail-hard");
+    const detailExp    = document.querySelector("#detail-expert");
+
     let activeProvider = "all";
+    let activeView     = "overall";
+    let activeModel    = resultData[0].model;
 
     function selectedResults() {
       return resultData
-        .filter((item) => activeProvider === "all" || item.provider === activeProvider)
+        .filter(r => activeProvider === "all" || r.provider === activeProvider)
         .sort((a, b) => b.score - a.score);
     }
 
+    function pad(n) { return String(n).padStart(2, "0"); }
+
     function setActive(item) {
       activeModel = item.model;
-      detailScore.textContent = `${item.score}%`;
-      detailCorrect.textContent = `${Math.round(item.score / 100 * item.rows)} / ${item.rows}`;
-      detailModel.textContent = item.model;
-      detailLogo.src = item.logo;
-      detailLogo.alt = `${item.provider} logo`;
-      detailApiModel.textContent = item.apiModel;
-      detailMaxOutput.textContent = item.maxOutput;
-      detailReasoning.textContent = item.reasoning;
-      detailRoute.textContent = item.route;
+      detailScore.textContent  = `${item.score}%`;
+      detailModel.textContent  = item.model;
+      detailLogo.src           = item.logo;
+      detailLogo.alt           = `${item.provider} logo`;
+      detailCorrect.textContent= `${Math.round(item.score / 100 * item.rows)} / ${item.rows}`;
+      detailApi.textContent    = item.apiModel;
+      detailMax.textContent    = item.maxOutput;
+      detailReas.textContent   = item.reasoning;
+      detailRoute.textContent  = item.route;
+      detailEasy.textContent   = `${item.byDifficulty.easy}%`;
+      detailMed.textContent    = `${item.byDifficulty.medium}%`;
+      detailHard.textContent   = `${item.byDifficulty.hard}%`;
+      detailExp.textContent    = `${item.byDifficulty.expert}%`;
 
-      chart.querySelectorAll(".bar-row").forEach((row) => {
-        row.classList.toggle("is-active", row.dataset.model === activeModel);
+      chart.querySelectorAll(".bar-row").forEach(r => {
+        r.classList.toggle("is-active", r.dataset.model === activeModel);
       });
     }
+
+    function renderHead() {
+      const wrapper = document.createElement("div");
+      wrapper.className = "table-head";
+      if (activeView === "diff") {
+        wrapper.innerHTML = `
+          <span>Rank</span>
+          <span></span>
+          <span>Model</span>
+          <span class="th-c">Easy</span>
+          <span class="th-c">Med</span>
+          <span class="th-c">Hard</span>
+          <span class="th-c">Expert</span>
+          <span>Overall</span>
+        `;
+      } else {
+        wrapper.innerHTML = `
+          <span>Rank</span>
+          <span></span>
+          <span>Model</span>
+          <span>Distribution</span>
+          <span>n / N</span>
+          <span>Score</span>
+        `;
+      }
+      return wrapper;
+    }
+
+    function renderRow(item, idx) {
+      const row = document.createElement("button");
+      row.type = "button";
+      row.className = "bar-row" + (idx === 0 ? " is-leader" : "");
+      row.dataset.model = item.model;
+      row.style.setProperty("--score", item.score);
+      row.setAttribute("aria-label", `${item.model}, ${item.provider}, ${item.score}% correct`);
+
+      if (activeView === "diff") {
+        const cell = (key, pos) =>
+          `<span class="diff-cell ${pos}" style="--d:${item.byDifficulty[key]}">${item.byDifficulty[key]}</span>`;
+        row.innerHTML = `
+          <span class="rank">${pad(idx + 1)}</span>
+          <span class="logo-box"><img src="${item.logo}" alt="${item.provider} logo"></span>
+          <span class="model-cell">
+            <span class="model-name">${item.model}</span>
+            <span class="model-cfg">${item.provider} &middot; ${item.config}</span>
+          </span>
+          ${cell("easy", "first")}${cell("medium", "")}${cell("hard", "")}${cell("expert", "last")}
+          <span class="score-value">${item.score}%</span>
+        `;
+      } else {
+        row.innerHTML = `
+          <span class="rank">${pad(idx + 1)}</span>
+          <span class="logo-box"><img src="${item.logo}" alt="${item.provider} logo"></span>
+          <span class="model-cell">
+            <span class="model-name">${item.model}</span>
+            <span class="model-cfg">${item.provider} &middot; ${item.config}</span>
+          </span>
+          <span class="bar-track" aria-hidden="true"><span class="bar-fill"></span></span>
+          <span class="ratio">${item.score}/${item.rows}</span>
+          <span class="score-value">${item.score}%</span>
+        `;
+      }
+
+      row.addEventListener("mouseenter", () => setActive(item));
+      row.addEventListener("focus",      () => setActive(item));
+      row.addEventListener("click",      () => setActive(item));
+      return row;
+    }
+
+    const resultLayout = document.querySelector(".result-layout");
 
     function renderChart() {
       const rows = selectedResults();
       chart.innerHTML = "";
+      chart.classList.toggle("is-detail", activeView === "diff");
+      resultLayout.classList.toggle("full", activeView === "diff");
       emptyChart.style.display = rows.length ? "none" : "block";
-
-      rows.forEach((item) => {
-        const row = document.createElement("button");
-        row.type = "button";
-        row.className = "bar-row";
-        row.dataset.model = item.model;
-        row.style.setProperty("--score", item.score);
-        row.style.setProperty("--accent", item.accent);
-        row.setAttribute("aria-label", `${item.model}, ${item.provider}, ${item.score}% correct`);
-        row.innerHTML = `
-          <span class="logo-box"><img src="${item.logo}" alt="${item.provider} logo"></span>
-          <span class="model-label">${item.model}</span>
-          <span class="bar-track" aria-hidden="true"><span class="bar-fill"></span></span>
-          <span class="score-value">${item.score}%</span>
-        `;
-        row.addEventListener("mouseenter", () => setActive(item));
-        row.addEventListener("focus", () => setActive(item));
-        row.addEventListener("click", () => setActive(item));
-        chart.appendChild(row);
-      });
-
-      const activeInFilter = rows.find((item) => item.model === activeModel);
-      setActive(activeInFilter || rows[0] || resultData[0]);
+      if (!rows.length) return;
+      chart.appendChild(renderHead());
+      rows.forEach((item, idx) => chart.appendChild(renderRow(item, idx)));
+      const stillVisible = rows.find(r => r.model === activeModel);
+      setActive(stillVisible || rows[0]);
     }
 
-    filterButtons.forEach((button) => {
-      button.addEventListener("click", () => {
-        activeProvider = button.dataset.provider;
-        filterButtons.forEach((item) => {
-          item.setAttribute("aria-pressed", String(item === button));
-        });
+    filterBtns.forEach(btn => {
+      btn.addEventListener("click", () => {
+        activeProvider = btn.dataset.provider;
+        filterBtns.forEach(b => b.setAttribute("aria-pressed", String(b === btn)));
         renderChart();
       });
+    });
+
+    viewBtns.forEach(btn => {
+      btn.addEventListener("click", () => {
+        activeView = btn.dataset.view;
+        viewBtns.forEach(b => b.setAttribute("aria-pressed", String(b === btn)));
+        renderChart();
+      });
+    });
+
+    // ─── cite copy ─────────────────────────────────────────────────────
+    const copyBtn = document.querySelector("#copy-cite");
+    const citeText = document.querySelector("#cite-text");
+    copyBtn.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(citeText.innerText.trim());
+        copyBtn.textContent = "Copied";
+        copyBtn.classList.add("ok");
+        setTimeout(() => {
+          copyBtn.textContent = "Copy";
+          copyBtn.classList.remove("ok");
+        }, 1600);
+      } catch (e) {
+        copyBtn.textContent = "Select & ⌘C";
+      }
     });
 
     renderChart();
