@@ -388,13 +388,6 @@
     }
 
     /* ─── method ─── */
-    .grid-2col {
-      display: grid;
-      grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
-      gap: 56px;
-      align-items: start;
-    }
-
     .method-list {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -910,55 +903,52 @@
     .cite-band h2 { color: var(--paper); }
     .cite-band .body-copy { color: rgba(250,247,240,0.78); }
 
-    .bibtex-shell {
-      margin-top: 32px;
-      border: 1px solid rgba(250,247,240,0.18);
-      background: rgba(250,247,240,0.04);
+    .contact-list {
+      margin-top: 36px;
+      border-top: 1px solid rgba(250,247,240,0.22);
     }
-    .bibtex-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 10px 16px;
-      border-bottom: 1px solid rgba(250,247,240,0.18);
-      font-family: var(--mono);
-      font-size: 10.5px;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: rgba(250,247,240,0.6);
-    }
-    .copy-btn {
-      background: transparent;
-      border: 1px solid rgba(250,247,240,0.4);
-      color: rgba(250,247,240,0.85);
-      font-family: var(--mono);
-      font-size: 10.5px;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      padding: 5px 10px;
-      cursor: pointer;
-      transition: background 120ms, color 120ms;
-    }
-    .copy-btn:hover {
-      background: var(--paper);
-      color: var(--ink);
-    }
-    .copy-btn.ok {
-      background: var(--accent-2);
+    .contact-row {
+      display: grid;
+      grid-template-columns: 120px minmax(0, 1fr) 24px;
+      gap: 24px;
+      align-items: baseline;
+      padding: 22px 4px;
+      border-bottom: 1px solid rgba(250,247,240,0.16);
       color: var(--paper);
-      border-color: var(--accent-2);
+      transition: background 140ms ease, padding 140ms ease;
     }
-    .bibtex {
-      margin: 0;
-      padding: 22px 24px;
+    .contact-row:hover {
+      background: rgba(250,247,240,0.05);
+      padding-left: 14px;
+      padding-right: 14px;
+    }
+    .contact-row .ck {
+      font-family: var(--sans);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgba(250,247,240,0.55);
+    }
+    .contact-row .cv {
       font-family: var(--mono);
-      font-size: 13px;
-      line-height: 1.65;
-      color: rgba(250,247,240,0.92);
-      overflow-x: auto;
-      white-space: pre;
+      font-size: 18px;
+      font-weight: 500;
+      letter-spacing: -0.005em;
+      color: var(--paper);
     }
-    .bibtex .k { color: var(--accent-2); }
+    .contact-row:hover .cv { color: var(--accent-2); }
+    .contact-row .ca {
+      font-family: var(--serif);
+      font-size: 18px;
+      color: rgba(250,247,240,0.55);
+      text-align: right;
+      transition: transform 160ms ease, color 160ms ease;
+    }
+    .contact-row:hover .ca {
+      color: var(--accent-2);
+      transform: translateX(4px);
+    }
 
     /* ─── artifacts ─── */
     .artifact-list {
@@ -1065,7 +1055,6 @@
 
     /* ─── responsive ─── */
     @media (max-width: 980px) {
-      .grid-2col { grid-template-columns: 1fr; gap: 28px; }
       .stat-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .stat:nth-child(2) { border-right: 0; }
       .stat:nth-child(1), .stat:nth-child(2) { border-bottom: 1px solid var(--hair); }
@@ -1107,7 +1096,7 @@
       <a class="brand" href="#top">Emoji&#8209;Bench</a>
       <div class="links">
         <a href="#leaderboard">Leaderboard</a>
-        <a href="#method">Method</a>
+        <a href="#method">Methodology</a>
         <a href="#setup">Setup</a>
         <a href="#observations">Observations</a>
         <a href="#interpretation">Interpretation</a>
@@ -1131,7 +1120,7 @@
 
         <p class="lede reveal d2">A continuation test for whether language models notice and repair their own mistakes &mdash; without being asked to check.</p>
 
-        <p class="abstract reveal d3">Emoji-Bench gives a model a procedurally-generated formal system, an expression to derive, and an assistant transcript whose final step is deliberately wrong. The model is then asked, with no review cue, to <em>please continue</em>. We score whether the extracted final symbol matches ground truth. Across nine reported runs at <span class="num">n=100</span>, no-hint final-answer accuracy spans <span class="num">10%</span> to <span class="num">96%</span>.</p>
+        <p class="abstract reveal d3">Emoji-Bench gives a model a procedurally-generated formal system, an expression to derive, and an assistant transcript whose final step is deliberately wrong. The model is then asked, with no review cue, to <em>please continue</em>. We score whether the extracted final symbol matches ground truth. Across eleven reported runs at <span class="num">n=100</span>, no-hint final-answer accuracy spans <span class="num">10%</span> to <span class="num">96%</span>.</p>
 
         <div class="prompt-aside reveal d4" aria-label="No-hint continuation prompt">
           <span class="ptag">Prompt L0</span>
@@ -1140,7 +1129,7 @@
 
         <div class="actions reveal d5">
           <a class="button primary" href="#leaderboard">View leaderboard <span class="arrow">&rarr;</span></a>
-          <a class="button" href="#cite">Cite</a>
+          <a class="button" href="#contact">Contact</a>
           <a class="button" href="https://github.com/huyxdang/emoji-bench" target="_blank" rel="noopener noreferrer">GitHub</a>
           <a class="button" href="README.md">README</a>
         </div>
@@ -1169,11 +1158,9 @@
     <!-- ═════════════════════════ LEADERBOARD ═════════════════════════ -->
     <section class="section result-band" id="leaderboard">
       <div class="wrap">
-        <div class="section-marker"><span class="sect-num">§ 01</span><span>Leaderboard</span></div>
-        <div class="grid-2col">
-          <h2>Final-answer correctness, no hint.</h2>
-          <p class="body-copy">Final-answer-only scoring on native-prefill, no-hint artifacts. Higher is better. Toggle between <span class="mono">overall</span> and <span class="mono">per-difficulty</span> views.</p>
-        </div>
+        <div class="section-marker"><span class="sect-num">§ 01</span></div>
+        <h2>Leaderboard</h2>
+        <p class="body-copy">Final-answer-only scoring on native-prefill, no-hint artifacts. Higher is better. Toggle between <span class="mono">overall</span> and <span class="mono">per-difficulty</span> views.</p>
 
         <div class="result-layout">
           <div class="leaderboard-only">
@@ -1181,7 +1168,7 @@
               <div class="table-caption">
                 <div class="left">
                   <span class="tnum">Table 01</span>
-                  <span class="ttitle">No-hint final-answer accuracy across nine reported runs (<span class="mono">n = 100</span> each).</span>
+                  <span class="ttitle">No-hint final-answer accuracy across eleven reported runs (<span class="mono">n = 100</span> each).</span>
                 </div>
                 <div class="table-tools">
                   <div class="filters" aria-label="Filter by company">
@@ -1216,11 +1203,9 @@
     <!-- ═════════════════════════ METHOD ═════════════════════════ -->
     <section class="section" id="method">
       <div class="wrap">
-        <div class="section-marker"><span class="sect-num">§ 02</span><span>Method</span></div>
-        <div class="grid-2col">
-          <h2>The shortest useful test is a continuation.</h2>
-          <p class="body-copy">Emoji-Bench keeps the task coherent while removing the usual review cue. The reported no-hint condition answers the headline question; an optional prompted-review condition (<code>L1</code>) is available for measuring how much an explicit cue helps.</p>
-        </div>
+        <div class="section-marker"><span class="sect-num">§ 02</span></div>
+        <h2>Methodology</h2>
+        <p class="body-copy">Emoji-Bench keeps the task coherent while removing the usual review cue. The reported no-hint condition answers the headline question; an optional prompted-review condition (<code>L1</code>) is available for measuring how much an explicit cue helps.</p>
 
         <div class="method-list">
           <article class="method-step">
@@ -1313,11 +1298,9 @@
     <!-- ═════════════════════════ EXPERIMENTAL SETUP ═════════════════════════ -->
     <section class="section" id="setup">
       <div class="wrap">
-        <div class="section-marker"><span class="sect-num">§ 03</span><span>Experimental setup</span></div>
-        <div class="grid-2col">
-          <h2>What was held constant.</h2>
-          <p class="body-copy">All reported runs share the same dataset, prompt, delivery shape, and scoring rubric. The only intentional axis of variation is the model. Per-model differences in token budget or reasoning preset reflect each provider's own maximum-capability defaults.</p>
-        </div>
+        <div class="section-marker"><span class="sect-num">§ 03</span></div>
+        <h2>Experimental setup</h2>
+        <p class="body-copy">All reported runs share the same dataset, prompt, delivery shape, and scoring rubric. The only intentional axis of variation is the model. Per-model differences in token budget or reasoning preset reflect each provider's own maximum-capability defaults.</p>
 
         <div class="setup">
           <div class="row"><div class="k">Dataset</div><div class="v"><span class="mono">emoji-bench-dataset-100</span> &middot; 100 rows, stratified <span class="mono">25 / 25 / 25 / 25</span> across easy, medium, hard, expert.</div></div>
@@ -1335,11 +1318,9 @@
     <!-- ═════════════════════════ OBSERVATIONS ═════════════════════════ -->
     <section class="section" id="observations">
       <div class="wrap">
-        <div class="section-marker"><span class="sect-num">§ 04</span><span>Observations</span></div>
-        <div class="grid-2col">
-          <h2>Four behaviors behind the numbers.</h2>
-          <p class="body-copy">The leaderboard scores the extracted terminal symbol. Behind that single bit, models differ qualitatively in how they handle the planted error. Quotes below are verbatim from <code>predictions.jsonl</code>.</p>
-        </div>
+        <div class="section-marker"><span class="sect-num">§ 04</span></div>
+        <h2>Observations</h2>
+        <p class="body-copy">The leaderboard scores the extracted terminal symbol. Behind that single bit, models differ qualitatively in how they handle the planted error. Quotes below are verbatim from <code>predictions.jsonl</code>.</p>
 
         <div class="obs">
           <article class="obs-item">
@@ -1388,11 +1369,9 @@
     <!-- ═════════════════════════ INTERPRETATION ═════════════════════════ -->
     <section class="section" id="interpretation">
       <div class="wrap">
-        <div class="section-marker"><span class="sect-num">§ 05</span><span>Interpretation</span></div>
-        <div class="grid-2col">
-          <h2>What this report claims, and what it does not.</h2>
-          <p class="body-copy">The scope is intentionally narrow: whether the continuation lands on the correct final symbol in the no-hint setting. Several things deliberately stay out of the headline.</p>
-        </div>
+        <div class="section-marker"><span class="sect-num">§ 05</span></div>
+        <h2>Interpretation</h2>
+        <p class="body-copy">The scope is intentionally narrow: whether the continuation lands on the correct final symbol in the no-hint setting. Several things deliberately stay out of the headline.</p>
 
         <div class="takeaways">
           <article class="takeaway">
@@ -1417,11 +1396,9 @@
     <!-- ═════════════════════════ CHANGELOG ═════════════════════════ -->
     <section class="section" id="changelog">
       <div class="wrap">
-        <div class="section-marker"><span class="sect-num">§ 06</span><span>Changelog</span></div>
-        <div class="grid-2col">
-          <h2>Working notes.</h2>
-          <p class="body-copy">Dated, append-only. Entries here change the published numbers; configuration and dataset commits are referenced inline.</p>
-        </div>
+        <div class="section-marker"><span class="sect-num">§ 06</span></div>
+        <h2>Changelog</h2>
+        <p class="body-copy">Dated, append-only. Entries here change the published numbers; configuration and dataset commits are referenced inline.</p>
 
         <div class="changelog">
           <div class="clog-row">
@@ -1456,11 +1433,9 @@
     <!-- ═════════════════════════ ARTIFACTS ═════════════════════════ -->
     <section class="section" id="artifacts">
       <div class="wrap">
-        <div class="section-marker"><span class="sect-num">§ 07</span><span>Artifacts</span></div>
-        <div class="grid-2col">
-          <h2>Data, summaries, reproduction.</h2>
-          <p class="body-copy">Rows are byte-reproducible from stored seeds. Evaluation applies the turn-2 prompt at run time. Run <code>python scripts/plot_b_final_answer.py</code> after adding or removing native-prefill, no-hint summaries.</p>
-        </div>
+        <div class="section-marker"><span class="sect-num">§ 07</span></div>
+        <h2>Artifacts</h2>
+        <p class="body-copy">Rows are byte-reproducible from stored seeds. Evaluation applies the turn-2 prompt at run time. Run <code>python scripts/plot_b_final_answer.py</code> after adding or removing native-prefill, no-hint summaries.</p>
 
         <div class="artifact-list">
           <article class="artifact">
@@ -1495,38 +1470,33 @@
       </div>
     </section>
 
-    <!-- ═════════════════════════ CITE ═════════════════════════ -->
-    <section class="section cite-band" id="cite">
+    <!-- ═════════════════════════ CONTACT ═════════════════════════ -->
+    <section class="section cite-band" id="contact">
       <div class="wrap">
-        <div class="section-marker"><span class="sect-num">§ 08</span><span>How to cite</span></div>
-        <div class="grid-2col">
-          <h2>Use this work.</h2>
-          <p class="body-copy">If Emoji-Bench informs a write-up, eval, or follow-up, please cite the working draft. Numbers may shift as the matrix expands; the BibTeX entry is versioned.</p>
-        </div>
+        <div class="section-marker"><span class="sect-num">§ 08</span></div>
+        <h2>Contact</h2>
+        <p class="body-copy">Down to collaborate on a follow-up, have feedback on the methodology, or have model credits to spare for the next round of evals? Reach out &mdash; I'd love to hear from you.</p>
 
-        <div class="bibtex-shell">
-          <div class="bibtex-bar">
-            <span>BibTeX &middot; v1.0</span>
-            <button class="copy-btn" type="button" id="copy-cite">Copy</button>
-          </div>
-          <pre class="bibtex" id="cite-text">@misc{<span class="k">dang2026emojibench</span>,
-  title  = {Emoji-Bench: LLMs Don't Look Back},
-  author = {Dang, Huy},
-  year   = {2026},
-  note   = {Working draft},
-  url    = {https://github.com/huyxdang/emoji-bench}
-}</pre>
+        <div class="contact-list">
+          <a class="contact-row" href="mailto:xhuydng@gmail.com">
+            <span class="ck">Email</span>
+            <span class="cv">xhuydng@gmail.com</span>
+            <span class="ca" aria-hidden="true">&rarr;</span>
+          </a>
+          <a class="contact-row" href="https://x.com/xhuydang" target="_blank" rel="noopener noreferrer">
+            <span class="ck">X</span>
+            <span class="cv">@xhuydang</span>
+            <span class="ca" aria-hidden="true">&nearr;</span>
+          </a>
+          <a class="contact-row" href="https://github.com/huyxdang/emoji-bench" target="_blank" rel="noopener noreferrer">
+            <span class="ck">GitHub</span>
+            <span class="cv">huyxdang/emoji-bench</span>
+            <span class="ca" aria-hidden="true">&nearr;</span>
+          </a>
         </div>
       </div>
     </section>
   </main>
-
-  <footer class="footer">
-    <div class="wrap">
-      <p>Emoji-Bench &mdash; a working draft by <a href="https://www.huyxdang.com/">Huy Dang</a>.</p>
-      <p class="stamp">v1.0 &middot; Updated May 2026</p>
-    </div>
-  </footer>
 
   <script>
     // ─── data ──────────────────────────────────────────────────────────
@@ -1545,6 +1515,12 @@
         byDifficulty: { easy: 76, medium: 84, hard: 76, expert: 84 }
       },
       {
+        model: "GPT-5.4 nano", provider: "OpenAI", logo: "public/openai.svg",
+        score: 80, rows: 100, apiModel: "gpt-5.4-nano", maxOutput: "128k tokens",
+        reasoning: "xhigh", route: "OpenAI API", config: "reasoning xhigh",
+        byDifficulty: { easy: 80, medium: 92, hard: 68, expert: 80 }
+      },
+      {
         model: "Claude Opus 4.6", provider: "Anthropic", logo: "public/claude.svg",
         score: 78, rows: 100, apiModel: "claude-opus-4-6", maxOutput: "128k tokens",
         reasoning: "adaptive · max", route: "Anthropic Messages API", config: "reasoning max",
@@ -1555,6 +1531,12 @@
         score: 66, rows: 100, apiModel: "claude-sonnet-4-6", maxOutput: "64k tokens",
         reasoning: "adaptive · max", route: "Anthropic Messages API", config: "reasoning max",
         byDifficulty: { easy: 56, medium: 60, hard: 72, expert: 76 }
+      },
+      {
+        model: "GPT-5.2", provider: "OpenAI", logo: "public/openai.svg",
+        score: 58, rows: 100, apiModel: "gpt-5.2", maxOutput: "128k tokens",
+        reasoning: "xhigh", route: "OpenAI API", config: "reasoning xhigh",
+        byDifficulty: { easy: 64, medium: 64, hard: 48, expert: 56 }
       },
       {
         model: "Claude Opus 4.7", provider: "Anthropic", logo: "public/claude.svg",
@@ -1663,23 +1645,6 @@
         viewBtns.forEach(b => b.setAttribute("aria-pressed", String(b === btn)));
         renderChart();
       });
-    });
-
-    // ─── cite copy ─────────────────────────────────────────────────────
-    const copyBtn = document.querySelector("#copy-cite");
-    const citeText = document.querySelector("#cite-text");
-    copyBtn.addEventListener("click", async () => {
-      try {
-        await navigator.clipboard.writeText(citeText.innerText.trim());
-        copyBtn.textContent = "Copied";
-        copyBtn.classList.add("ok");
-        setTimeout(() => {
-          copyBtn.textContent = "Copy";
-          copyBtn.classList.remove("ok");
-        }, 1600);
-      } catch (e) {
-        copyBtn.textContent = "Select & ⌘C";
-      }
     });
 
     renderChart();
