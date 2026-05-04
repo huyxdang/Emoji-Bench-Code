@@ -283,33 +283,6 @@
       letter-spacing: 0.025em;
     }
 
-    .prompt-aside {
-      display: inline-flex;
-      align-items: stretch;
-      gap: 0;
-      margin: 4px 0 8px;
-      background: var(--surface);
-      border: 1px solid var(--ink);
-    }
-    .prompt-aside .ptag {
-      padding: 12px 14px;
-      font-family: var(--mono);
-      font-size: 10.5px;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--paper);
-      background: var(--ink);
-      align-self: stretch;
-      display: flex;
-      align-items: center;
-    }
-    .prompt-aside .ptext {
-      padding: 12px 18px;
-      font-family: var(--mono);
-      font-size: 15px;
-      font-weight: 500;
-      color: var(--ink);
-    }
 
     .actions {
       display: flex;
@@ -909,18 +882,12 @@
     }
     .contact-row {
       display: grid;
-      grid-template-columns: 120px minmax(0, 1fr) 24px;
+      grid-template-columns: 140px minmax(0, 1fr) auto;
       gap: 24px;
-      align-items: baseline;
+      align-items: center;
       padding: 22px 4px;
       border-bottom: 1px solid rgba(250,247,240,0.16);
       color: var(--paper);
-      transition: background 140ms ease, padding 140ms ease;
-    }
-    .contact-row:hover {
-      background: rgba(250,247,240,0.05);
-      padding-left: 14px;
-      padding-right: 14px;
     }
     .contact-row .ck {
       font-family: var(--sans);
@@ -936,19 +903,32 @@
       font-weight: 500;
       letter-spacing: -0.005em;
       color: var(--paper);
+      overflow-wrap: anywhere;
     }
-    .contact-row:hover .cv { color: var(--accent-2); }
-    .contact-row .ca {
-      font-family: var(--serif);
-      font-size: 18px;
+    .copy-icon {
+      width: 36px;
+      height: 36px;
+      display: grid;
+      place-items: center;
+      padding: 0;
+      background: transparent;
       color: rgba(250,247,240,0.55);
-      text-align: right;
-      transition: transform 160ms ease, color 160ms ease;
+      border: 0;
+      cursor: pointer;
+      transition: color 140ms ease;
+      position: relative;
     }
-    .contact-row:hover .ca {
-      color: var(--accent-2);
-      transform: translateX(4px);
+    .copy-icon:hover { color: var(--paper); }
+    .copy-icon.ok    { color: var(--accent-2); }
+    .copy-icon svg {
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      transition: opacity 140ms ease;
     }
+    .copy-icon .ic-check { opacity: 0; }
+    .copy-icon.ok .ic-copy  { opacity: 0; }
+    .copy-icon.ok .ic-check { opacity: 1; }
 
     /* ─── artifacts ─── */
     .artifact-list {
@@ -1111,7 +1091,7 @@
     <section class="hero section" id="hero">
       <div class="wrap">
         <div class="meta-row reveal">
-          <span class="item">Author<strong><a href="https://www.huyxdang.com/">Huy Dang</a></strong></span>
+          <span class="item">Authors<strong><a href="https://www.huyxdang.com/">Huy Dang</a>, <a href="https://www.linkedin.com/in/lehaivin03/" target="_blank" rel="noopener noreferrer">Hai Le</a></strong></span>
           <span class="item">Released<strong>May 2026</strong></span>
           <span class="item">Status<strong>Ongoing Draft</strong></span>
         </div>
@@ -1122,36 +1102,10 @@
 
         <p class="abstract reveal d3">Emoji-Bench gives a model a procedurally-generated formal system, an expression to derive, and an assistant transcript whose final step is deliberately wrong. The model is then asked, with no review cue, to <em>please continue</em>. We score whether the extracted final symbol matches ground truth. Across eleven reported runs at <span class="num">n=100</span>, no-hint final-answer accuracy spans <span class="num">10%</span> to <span class="num">96%</span>.</p>
 
-        <div class="prompt-aside reveal d4" aria-label="No-hint continuation prompt">
-          <span class="ptag">Prompt L0</span>
-          <span class="ptext">Please continue.</span>
-        </div>
-
         <div class="actions reveal d5">
           <a class="button primary" href="#leaderboard">View leaderboard <span class="arrow">&rarr;</span></a>
-          <a class="button" href="#contact">Contact</a>
-          <a class="button" href="https://github.com/huyxdang/emoji-bench" target="_blank" rel="noopener noreferrer">GitHub</a>
-          <a class="button" href="README.md">README</a>
         </div>
 
-        <div class="stat-strip reveal d6" aria-label="Benchmark at a glance">
-          <div class="stat">
-            <div class="stat-num num">100</div>
-            <div class="stat-label">Seeded rows</div>
-          </div>
-          <div class="stat">
-            <div class="stat-num num">09</div>
-            <div class="stat-label">Reported runs</div>
-          </div>
-          <div class="stat">
-            <div class="stat-num num">96<span class="sm">%</span></div>
-            <div class="stat-label">Best score</div>
-          </div>
-          <div class="stat">
-            <div class="stat-num num">45<span class="sm">%</span></div>
-            <div class="stat-label">Median run</div>
-          </div>
-        </div>
       </div>
     </section>
 
@@ -1475,24 +1429,25 @@
       <div class="wrap">
         <div class="section-marker"><span class="sect-num">§ 08</span></div>
         <h2>Contact</h2>
-        <p class="body-copy">Down to collaborate on a follow-up, have feedback on the methodology, or have model credits to spare for the next round of evals? Reach out &mdash; I'd love to hear from you.</p>
+        <p class="body-copy">If you have feedback, questions, or would like to collaborate, feel free to reach out!</p>
 
         <div class="contact-list">
-          <a class="contact-row" href="mailto:xhuydng@gmail.com">
-            <span class="ck">Email</span>
+          <div class="contact-row">
+            <span class="ck">Huy Dang</span>
             <span class="cv">xhuydng@gmail.com</span>
-            <span class="ca" aria-hidden="true">&rarr;</span>
-          </a>
-          <a class="contact-row" href="https://x.com/xhuydang" target="_blank" rel="noopener noreferrer">
-            <span class="ck">X</span>
-            <span class="cv">@xhuydang</span>
-            <span class="ca" aria-hidden="true">&nearr;</span>
-          </a>
-          <a class="contact-row" href="https://github.com/huyxdang/emoji-bench" target="_blank" rel="noopener noreferrer">
-            <span class="ck">GitHub</span>
-            <span class="cv">huyxdang/emoji-bench</span>
-            <span class="ca" aria-hidden="true">&nearr;</span>
-          </a>
+            <button class="copy-icon" type="button" data-copy="xhuydng@gmail.com" aria-label="Copy email for Huy Dang">
+              <svg class="ic-copy" viewBox="0 0 20 20" aria-hidden="true"><rect x="6.5" y="6.5" width="10" height="11" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M3.5 13.5V3.5h10" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
+              <svg class="ic-check" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10.5l4 4 8-9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+          <div class="contact-row">
+            <span class="ck">Hai Le</span>
+            <span class="cv">hai_le@mymail.sutd.edu.sg</span>
+            <button class="copy-icon" type="button" data-copy="hai_le@mymail.sutd.edu.sg" aria-label="Copy email for Hai Le">
+              <svg class="ic-copy" viewBox="0 0 20 20" aria-hidden="true"><rect x="6.5" y="6.5" width="10" height="11" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M3.5 13.5V3.5h10" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
+              <svg class="ic-check" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10.5l4 4 8-9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
         </div>
       </div>
     </section>
@@ -1648,6 +1603,16 @@
     });
 
     renderChart();
+
+    document.querySelectorAll(".copy-icon").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(btn.dataset.copy || "");
+          btn.classList.add("ok");
+          setTimeout(() => btn.classList.remove("ok"), 1400);
+        } catch (e) { /* clipboard blocked */ }
+      });
+    });
   </script>
 </body>
 </html>
