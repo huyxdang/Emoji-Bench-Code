@@ -474,14 +474,12 @@
     .filters {
       display: flex;
       flex-wrap: wrap;
-      gap: 0;
-      border: 1px solid var(--hair);
+      gap: 7px;
     }
     .filter-button {
       min-height: 28px;
       padding: 0 11px;
-      border: 0;
-      border-right: 1px solid var(--hair);
+      border: 1px solid var(--hair);
       background: var(--surface);
       color: var(--muted);
       font-family: var(--sans);
@@ -490,25 +488,42 @@
       letter-spacing: 0.06em;
       text-transform: uppercase;
       cursor: pointer;
-      transition: background 120ms, color 120ms;
+      transition: background 120ms, border-color 120ms, color 120ms;
     }
-    .filter-button:last-child { border-right: 0; }
-    .filter-button:hover { color: var(--ink); }
+    .filter-button:hover {
+      border-color: var(--ink);
+      color: var(--ink);
+    }
     .filter-button[aria-pressed="true"] {
-      background: var(--ink);
-      color: var(--paper);
+      border-color: var(--ink);
+      background: var(--paper-2);
+      color: var(--ink);
+    }
+    .view-control {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-left: auto;
+    }
+    .view-label {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
     }
     .view-toggle {
       display: inline-flex;
-      border: 1px solid var(--hair);
+      border: 1px solid var(--ink);
     }
     .view-toggle button {
       min-height: 28px;
-      padding: 0 11px;
+      min-width: 78px;
+      padding: 0 12px;
       border: 0;
-      border-right: 1px solid var(--hair);
+      border-right: 1px solid var(--ink);
       background: var(--surface);
-      color: var(--muted);
+      color: var(--ink);
       font-family: var(--sans);
       font-size: 10.5px;
       font-weight: 500;
@@ -518,7 +533,7 @@
       transition: background 120ms, color 120ms;
     }
     .view-toggle button:last-child { border-right: 0; }
-    .view-toggle button:hover { color: var(--ink); }
+    .view-toggle button:hover { background: var(--paper-2); }
     .view-toggle button[aria-pressed="true"] {
       background: var(--ink);
       color: var(--paper);
@@ -528,7 +543,7 @@
 
     .bar-row {
       display: grid;
-      grid-template-columns: 50px 36px minmax(240px, 1fr) minmax(240px, 1.1fr) 90px;
+      grid-template-columns: 44px minmax(220px, 1.6fr) repeat(4, minmax(74px, 1fr)) 96px;
       gap: 14px;
       align-items: center;
       padding: 14px 22px;
@@ -552,25 +567,26 @@
       color: var(--quiet);
       letter-spacing: 0.04em;
     }
-    .logo-box {
-      width: 26px;
-      height: 26px;
-      display: grid;
-      place-items: center;
-      border: 1px solid var(--hair);
-      background: var(--surface);
-    }
-    .logo-box img {
-      max-width: 16px;
-      max-height: 16px;
-      object-fit: contain;
-      filter: grayscale(0.15);
-    }
     .model-cell {
       min-width: 0;
       display: flex;
-      flex-direction: column;
-      gap: 2px;
+      flex-direction: row;
+      align-items: baseline;
+      gap: 10px;
+    }
+    .logo-box {
+      flex: 0 0 auto;
+      align-self: center;
+      display: grid;
+      place-items: center;
+      width: 22px;
+      height: 22px;
+    }
+    .logo-box img {
+      max-width: 20px;
+      max-height: 20px;
+      object-fit: contain;
+      opacity: 0.92;
     }
     .model-name {
       font-family: var(--serif);
@@ -583,26 +599,32 @@
       text-overflow: ellipsis;
     }
     .model-cfg {
+      flex: 0 0 auto;
       font-family: var(--mono);
       font-size: 10.5px;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
       color: var(--quiet);
     }
 
     .bar-track {
+      grid-column: span 4;
       position: relative;
-      height: 12px;
+      height: 28px;
       background: transparent;
-      border-bottom: 1px solid var(--hair);
+      border-left: 1px solid transparent;
+      border-right: 1px solid transparent;
     }
     .bar-fill {
       display: block;
       position: absolute;
       left: 0;
-      bottom: 0;
+      top: 50%;
+      transform: translateY(-50%);
       width: calc(var(--score) * 1%);
       min-width: 2px;
-      height: 100%;
+      height: 12px;
+      border-bottom: 1px solid var(--hair);
       background:
         repeating-linear-gradient(135deg, var(--ink) 0, var(--ink) 1px, transparent 1px, transparent 4px),
         var(--ink);
@@ -626,7 +648,7 @@
 
     /* per-difficulty layout (toggled) */
     .chart-bars.is-detail .bar-row {
-      grid-template-columns: 44px 32px minmax(220px, 1.6fr) repeat(4, minmax(74px, 1fr)) 96px;
+      grid-template-columns: 44px minmax(220px, 1.6fr) repeat(4, minmax(74px, 1fr)) 96px;
       gap: 14px;
     }
     .chart-bars.is-detail .bar-row .bar-track { display: none; }
@@ -634,7 +656,8 @@
       align-self: stretch;
       display: grid;
       place-items: center;
-      padding: 6px 4px;
+      min-height: 28px;
+      padding: 0 4px;
       font-family: var(--mono);
       font-size: 14px;
       font-weight: 500;
@@ -649,6 +672,46 @@
       background: rgba(122, 31, 35, calc(var(--d) * 0.0055));
       color: var(--accent);
     }
+    .chart-head {
+      padding-top: 10px;
+      padding-bottom: 9px;
+      background: var(--paper);
+      color: var(--muted);
+    }
+    .chart-head .rank,
+    .chart-head .score-value,
+    .model-head,
+    .perf-head,
+    .level-label {
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .chart-head .score-value {
+      font-size: 10px;
+      letter-spacing: 0.08em;
+    }
+    .model-head {
+      align-self: center;
+    }
+    .perf-head {
+      grid-column: span 4;
+      align-self: center;
+      text-align: left;
+    }
+    .level-label {
+      display: grid;
+      place-items: center;
+      align-self: stretch;
+      padding: 0 4px;
+      text-align: center;
+      border-left: 1px solid var(--hair);
+    }
+    .level-label.first { border-left: 1px solid var(--ink); }
+    .level-label.last { border-right: 1px solid var(--ink); }
 
     .empty-chart {
       display: none;
@@ -902,7 +965,7 @@
       .takeaway { border-right: 0; border-bottom: 1px solid var(--hair); }
       .takeaway:last-child { border-bottom: 0; }
       .bar-row {
-        grid-template-columns: 30px 26px minmax(0, 1fr) 70px;
+        grid-template-columns: 30px minmax(0, 1fr) 70px;
         gap: 10px;
       }
       .bar-row .bar-track { display: none; }
@@ -910,6 +973,7 @@
         grid-template-columns: 30px minmax(120px, 1fr) repeat(4, minmax(40px, 1fr)) 70px;
       }
       .chart-bars.is-detail .bar-row .logo-box { display: none; }
+      .chart-head .perf-head { display: none; }
     }
     @media (max-width: 700px) {
       .links a:not(.ext) { display: none; }
@@ -918,6 +982,7 @@
       .hero .wrap { padding-top: 56px; padding-bottom: 56px; }
       .meta-row { gap: 18px; padding-bottom: 14px; margin-bottom: 36px; }
       .table-toolbar { flex-direction: column; align-items: stretch; gap: 14px; }
+      .view-control { justify-content: space-between; margin-left: 0; }
     }
   </style>
 </head>
@@ -978,9 +1043,12 @@
                   <button class="filter-button" type="button" data-provider="Google" aria-pressed="false">Google</button>
                   <button class="filter-button" type="button" data-provider="Mistral" aria-pressed="false">Mistral</button>
                 </div>
-                <div class="view-toggle" role="group" aria-label="View">
-                  <button type="button" data-view="overall" aria-pressed="true">Overall</button>
-                  <button type="button" data-view="diff" aria-pressed="false">Per-difficulty</button>
+                <div class="view-control">
+                  <span class="view-label">View:</span>
+                  <div class="view-toggle" role="group" aria-label="View">
+                    <button type="button" data-view="overall" aria-pressed="true">Overall</button>
+                    <button type="button" data-view="diff" aria-pressed="false">By level</button>
+                  </div>
                 </div>
               </div>
 
@@ -1287,7 +1355,32 @@
         .sort((a, b) => b.score - a.score);
     }
 
-    function pad(n) { return String(n).padStart(2, "0"); }
+    function pad(n) { return `#${n}`; }
+
+    function renderHeader() {
+      const row = document.createElement("div");
+      row.className = "bar-row chart-head";
+      row.setAttribute("aria-hidden", "true");
+      if (activeView === "diff") {
+        row.innerHTML = `
+          <span class="rank">#</span>
+          <span class="model-head">Model</span>
+          <span class="level-label first">Easy</span>
+          <span class="level-label">Medium</span>
+          <span class="level-label">Hard</span>
+          <span class="level-label last">Expert</span>
+          <span class="score-value">Overall</span>
+        `;
+      } else {
+        row.innerHTML = `
+          <span class="rank">#</span>
+          <span class="model-head">Model</span>
+          <span class="perf-head">Performance</span>
+          <span class="score-value">Accuracy</span>
+        `;
+      }
+      return row;
+    }
 
     function renderRow(item, idx) {
       const row = document.createElement("div");
@@ -1301,10 +1394,10 @@
           `<span class="diff-cell ${pos}" style="--d:${item.byDifficulty[key]}">${item.byDifficulty[key]}</span>`;
         row.innerHTML = `
           <span class="rank">${pad(idx + 1)}</span>
-          <span class="logo-box"><img src="${item.logo}" alt="${item.provider} logo"></span>
           <span class="model-cell">
+            <span class="logo-box"><img src="${item.logo}" alt="${item.provider} logo"></span>
             <span class="model-name">${item.model}</span>
-            <span class="model-cfg">${item.provider} &middot; ${item.config}</span>
+            <span class="model-cfg">${item.config.replace(/^(reasoning|thinking)\s+/, "")}</span>
           </span>
           ${cell("easy", "first")}${cell("medium", "")}${cell("hard", "")}${cell("expert", "last")}
           <span class="score-value">${item.score}%</span>
@@ -1312,10 +1405,10 @@
       } else {
         row.innerHTML = `
           <span class="rank">${pad(idx + 1)}</span>
-          <span class="logo-box"><img src="${item.logo}" alt="${item.provider} logo"></span>
           <span class="model-cell">
+            <span class="logo-box"><img src="${item.logo}" alt="${item.provider} logo"></span>
             <span class="model-name">${item.model}</span>
-            <span class="model-cfg">${item.provider} &middot; ${item.config}</span>
+            <span class="model-cfg">${item.config.replace(/^(reasoning|thinking)\s+/, "")}</span>
           </span>
           <span class="bar-track" aria-hidden="true"><span class="bar-fill"></span></span>
           <span class="score-value">${item.score}%</span>
@@ -1331,6 +1424,7 @@
       chart.classList.toggle("is-detail", activeView === "diff");
       emptyChart.style.display = rows.length ? "none" : "block";
       if (!rows.length) return;
+      chart.appendChild(renderHeader());
       rows.forEach((item, idx) => chart.appendChild(renderRow(item, idx)));
     }
 
