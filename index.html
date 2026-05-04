@@ -254,8 +254,9 @@
       color: var(--muted);
     }
     .meta-row .item strong {
-      display: block;
-      margin-top: 5px;
+      display: inline;
+      margin-top: 0;
+      margin-left: 8px;
       font-family: var(--serif);
       font-weight: 500;
       font-size: 15px;
@@ -264,8 +265,8 @@
       color: var(--ink);
     }
     .meta-row strong a {
-      border-bottom: 1px solid var(--accent);
-      padding-bottom: 1px;
+      border-bottom: 0;
+      padding-bottom: 0;
     }
 
     .abstract {
@@ -432,46 +433,6 @@
       display: block;
     }
 
-    /* ─── experimental setup ─── */
-    .setup {
-      display: grid;
-      grid-template-columns: 200px minmax(0, 1fr);
-      gap: 0;
-      margin-top: 48px;
-      border-top: 1px solid var(--ink);
-    }
-    .setup .row {
-      display: contents;
-    }
-    .setup .row > .k,
-    .setup .row > .v {
-      padding: 16px 24px 16px 0;
-      border-bottom: 1px solid var(--hair);
-    }
-    .setup .row > .k {
-      font-family: var(--sans);
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--muted);
-      padding-top: 18px;
-    }
-    .setup .row > .v {
-      font-family: var(--serif);
-      font-size: 16.5px;
-      color: var(--ink-2);
-      padding-top: 18px;
-    }
-    .setup .row > .v code,
-    .setup .row > .v .mono {
-      font-size: 14.5px;
-    }
-    .setup .row:last-child > .k,
-    .setup .row:last-child > .v {
-      border-bottom: 0;
-    }
-
     /* ─── results ─── */
     .result-band {
       background: var(--paper-2);
@@ -487,8 +448,6 @@
     .table-frame {
       border: 1px solid var(--ink);
       background: var(--surface);
-      max-width: 1040px;
-      margin: 0 auto;
     }
     .table-caption {
       display: flex;
@@ -831,36 +790,6 @@
       line-height: 1.55;
     }
 
-    /* ─── changelog ─── */
-    .changelog {
-      margin-top: 48px;
-      border-top: 1px solid var(--ink);
-    }
-    .clog-row {
-      display: grid;
-      grid-template-columns: 140px minmax(0, 1fr);
-      gap: 32px;
-      padding: 22px 0;
-      border-bottom: 1px solid var(--hair);
-    }
-    .clog-row:last-child { border-bottom: 0; }
-    .clog-date {
-      font-family: var(--mono);
-      font-size: 12px;
-      font-weight: 500;
-      letter-spacing: 0.04em;
-      color: var(--accent);
-      padding-top: 4px;
-    }
-    .clog-body p {
-      margin: 0;
-      font-family: var(--serif);
-      font-size: 16.5px;
-      line-height: 1.55;
-      color: var(--ink-2);
-    }
-    .clog-body p + p { margin-top: 6px; color: var(--muted); font-size: 15px; }
-
     /* ─── cite (dark band) ─── */
     .cite-band {
       background: var(--ink);
@@ -930,64 +859,6 @@
     .copy-icon.ok .ic-copy  { opacity: 0; }
     .copy-icon.ok .ic-check { opacity: 1; }
 
-    /* ─── artifacts ─── */
-    .artifact-list {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      column-gap: 64px;
-      row-gap: 0;
-      counter-reset: art;
-      margin-top: 48px;
-    }
-    .artifact {
-      counter-increment: art;
-      display: grid;
-      grid-template-columns: 48px minmax(0, 1fr);
-      gap: 0;
-      padding: 22px 0;
-      border-top: 1px solid var(--hair);
-    }
-    .artifact:first-child,
-    .artifact:nth-child(2) {
-      border-top: 1px solid var(--ink);
-    }
-    .artifact::before {
-      content: "[" counter(art, decimal-leading-zero) "]";
-      font-family: var(--mono);
-      font-size: 11.5px;
-      font-weight: 500;
-      color: var(--accent);
-      letter-spacing: 0.04em;
-      padding-top: 2px;
-    }
-    .artifact h3 {
-      font-family: var(--sans);
-      font-size: 10.5px;
-      font-weight: 600;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 6px;
-    }
-    .artifact a {
-      display: inline-block;
-      font-family: var(--mono);
-      font-size: 13.5px;
-      font-weight: 500;
-      color: var(--ink);
-      border-bottom: 1px solid var(--accent);
-      padding-bottom: 1px;
-      overflow-wrap: anywhere;
-      margin-bottom: 8px;
-    }
-    .artifact a:hover { color: var(--accent); }
-    .artifact p {
-      margin: 0;
-      color: var(--muted);
-      font-size: 14.5px;
-      line-height: 1.5;
-    }
-
     /* ─── footer ─── */
     .footer .wrap {
       padding-top: 36px;
@@ -1040,14 +911,12 @@
       .stat:nth-child(1), .stat:nth-child(2) { border-bottom: 1px solid var(--hair); }
       .method-list,
       .takeaways,
-      .artifact-list,
       .obs {
         grid-template-columns: 1fr;
       }
       .obs-item:nth-child(2n) { border-left: 0; padding-left: 0; padding-right: 0; }
       .takeaway { border-right: 0; border-bottom: 1px solid var(--hair); }
       .takeaway:last-child { border-bottom: 0; }
-      .artifact:nth-child(2) { border-top: 1px solid var(--hair); }
       .bar-row {
         grid-template-columns: 30px 26px minmax(0, 1fr) 70px;
         gap: 10px;
@@ -1057,7 +926,6 @@
         grid-template-columns: 30px minmax(120px, 1fr) repeat(4, minmax(40px, 1fr)) 70px;
       }
       .chart-bars.is-detail .bar-row .logo-box { display: none; }
-      .setup { grid-template-columns: 130px minmax(0, 1fr); }
     }
     @media (max-width: 700px) {
       .links a:not(.ext) { display: none; }
@@ -1066,7 +934,6 @@
       .hero .wrap { padding-top: 56px; padding-bottom: 56px; }
       .meta-row { gap: 18px; padding-bottom: 14px; margin-bottom: 36px; }
       .table-caption { flex-direction: column; align-items: stretch; gap: 14px; }
-      .clog-row { grid-template-columns: 1fr; gap: 8px; }
     }
   </style>
 </head>
@@ -1077,10 +944,8 @@
       <div class="links">
         <a href="#leaderboard">Leaderboard</a>
         <a href="#method">Methodology</a>
-        <a href="#setup">Setup</a>
         <a href="#observations">Observations</a>
         <a href="#interpretation">Interpretation</a>
-        <a href="#changelog">Changelog</a>
         <a class="ext" href="https://github.com/huyxdang/emoji-bench" target="_blank" rel="noopener noreferrer">GitHub &nearr;</a>
       </div>
     </nav>
@@ -1091,9 +956,7 @@
     <section class="hero section" id="hero">
       <div class="wrap">
         <div class="meta-row reveal">
-          <span class="item">Authors<strong><a href="https://www.huyxdang.com/">Huy Dang</a>, <a href="https://www.linkedin.com/in/lehaivin03/" target="_blank" rel="noopener noreferrer">Hai Le</a></strong></span>
-          <span class="item">Released<strong>May 2026</strong></span>
-          <span class="item">Status<strong>Ongoing Draft</strong></span>
+          <span class="item">By:<strong><a href="https://www.huyxdang.com/">Huy Dang</a>, <a href="https://www.linkedin.com/in/lehaivin03/" target="_blank" rel="noopener noreferrer">Hai Le</a></strong></span>
         </div>
 
         <h1 class="reveal d1">LLMs <em>don't</em><br>look back.</h1>
@@ -1249,30 +1112,10 @@
       </div>
     </section>
 
-    <!-- ═════════════════════════ EXPERIMENTAL SETUP ═════════════════════════ -->
-    <section class="section" id="setup">
-      <div class="wrap">
-        <div class="section-marker"><span class="sect-num">§ 03</span></div>
-        <h2>Experimental setup</h2>
-        <p class="body-copy">All reported runs share the same dataset, prompt, delivery shape, and scoring rubric. The only intentional axis of variation is the model. Per-model differences in token budget or reasoning preset reflect each provider's own maximum-capability defaults.</p>
-
-        <div class="setup">
-          <div class="row"><div class="k">Dataset</div><div class="v"><span class="mono">emoji-bench-dataset-100</span> &middot; 100 rows, stratified <span class="mono">25 / 25 / 25 / 25</span> across easy, medium, hard, expert.</div></div>
-          <div class="row"><div class="k">Generator commit</div><div class="v"><code>033b20f56e9786d29b688e552063f306fee73c31</code></div></div>
-          <div class="row"><div class="k">Error type</div><div class="v">E-CONTINUE &mdash; one assistant step is deliberately wrong; the wrong-branch terminal is held distinct from ground truth by construction.</div></div>
-          <div class="row"><div class="k">Delivery</div><div class="v">Native prefill (the assistant transcript ending on the planted error is sent on the same turn as the user message).</div></div>
-          <div class="row"><div class="k">Prompt level</div><div class="v"><span class="mono">L0</span> &mdash; turn-2 user message is exactly <code>Please continue.</code> (no review instruction).</div></div>
-          <div class="row"><div class="k">Token budget</div><div class="v">Each model uses its provider's maximum configured output. Reasoning / thinking presets are <span class="mono">high</span>, <span class="mono">max</span>, or <span class="mono">xhigh</span> as recorded in artifact directory names.</div></div>
-          <div class="row"><div class="k">Scorer</div><div class="v">Deterministic regex extraction of <code>Final Output:</code>. Match against the stored ground-truth terminal (<em>not</em> the cascade terminal). No LLM judge in the headline metric.</div></div>
-          <div class="row"><div class="k">Reproduce</div><div class="v"><code>./run.sh</code> for the full matrix &middot; <code>./run_opus-46.sh</code> for a single cell.</div></div>
-        </div>
-      </div>
-    </section>
-
     <!-- ═════════════════════════ OBSERVATIONS ═════════════════════════ -->
     <section class="section" id="observations">
       <div class="wrap">
-        <div class="section-marker"><span class="sect-num">§ 04</span></div>
+        <div class="section-marker"><span class="sect-num">§ 03</span></div>
         <h2>Observations</h2>
         <p class="body-copy">The leaderboard scores the extracted terminal symbol. Behind that single bit, models differ qualitatively in how they handle the planted error. Quotes below are verbatim from <code>predictions.jsonl</code>.</p>
 
@@ -1323,7 +1166,7 @@
     <!-- ═════════════════════════ INTERPRETATION ═════════════════════════ -->
     <section class="section" id="interpretation">
       <div class="wrap">
-        <div class="section-marker"><span class="sect-num">§ 05</span></div>
+        <div class="section-marker"><span class="sect-num">§ 04</span></div>
         <h2>Interpretation</h2>
         <p class="body-copy">The scope is intentionally narrow: whether the continuation lands on the correct final symbol in the no-hint setting. Several things deliberately stay out of the headline.</p>
 
@@ -1347,87 +1190,10 @@
       </div>
     </section>
 
-    <!-- ═════════════════════════ CHANGELOG ═════════════════════════ -->
-    <section class="section" id="changelog">
-      <div class="wrap">
-        <div class="section-marker"><span class="sect-num">§ 06</span></div>
-        <h2>Changelog</h2>
-        <p class="body-copy">Dated, append-only. Entries here change the published numbers; configuration and dataset commits are referenced inline.</p>
-
-        <div class="changelog">
-          <div class="clog-row">
-            <div class="clog-date">2026-05-03</div>
-            <div class="clog-body">
-              <p>Re-ran Claude Opus 4.6 with <span class="mono">reasoning max</span> (previous run used <span class="mono">reasoning high</span>). Final-answer rate moved from <span class="num">32%</span> to <span class="num">78%</span>. Same prompt, prefill, dataset; only the per-call thinking budget differs. Verified registry config matches Opus 4.7 byte-for-byte.</p>
-              <p>Verification: an independent second run of Opus 4.7 (same config, fresh predictions, separate output dir) returned <span class="num">43%</span> &mdash; within <span class="num">2</span> points of the original <span class="num">45%</span>. Combined <span class="num">n=200</span> places Opus 4.7 at <span class="num">44%</span> (95% CI <span class="num">[37, 51]</span>), roughly <span class="num">7&sigma;</span> below Opus 4.6 at <span class="num">78%</span>. The regression is not noise.</p>
-            </div>
-          </div>
-          <div class="clog-row">
-            <div class="clog-date">2026-04-22</div>
-            <div class="clog-body">
-              <p>Added Gemini 3.1 Pro and Gemini 3 Flash via OpenRouter. Google's official Gemini API was not used; OpenRouter routing is documented in the methodology footnotes.</p>
-            </div>
-          </div>
-          <div class="clog-row">
-            <div class="clog-date">2026-04-10</div>
-            <div class="clog-body">
-              <p>Initial 9-model matrix at <span class="mono">L0</span>: GPT-5.4 / mini, Claude Opus 4.7 / 4.6 / Sonnet 4.6, Gemini 3.1 Pro / 3 Flash, Magistral Medium, Mistral Large.</p>
-            </div>
-          </div>
-          <div class="clog-row">
-            <div class="clog-date">2026-04-01</div>
-            <div class="clog-body">
-              <p>Dataset frozen at <span class="num">100</span> rows. Generator commit <code>033b20f</code>. Stratified <span class="mono">25 / 25 / 25 / 25</span> across easy, medium, hard, expert difficulty buckets.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ═════════════════════════ ARTIFACTS ═════════════════════════ -->
-    <section class="section" id="artifacts">
-      <div class="wrap">
-        <div class="section-marker"><span class="sect-num">§ 07</span></div>
-        <h2>Artifacts</h2>
-        <p class="body-copy">Rows are byte-reproducible from stored seeds. Evaluation applies the turn-2 prompt at run time. Run <code>python scripts/plot_b_final_answer.py</code> after adding or removing native-prefill, no-hint summaries.</p>
-
-        <div class="artifact-list">
-          <article class="artifact">
-            <div>
-              <h3>Dataset</h3>
-              <a href="artifacts/emoji-bench-dataset-100/test.jsonl">test.jsonl</a>
-              <p>100 rows stratified across easy, medium, hard, and expert.</p>
-            </div>
-          </article>
-          <article class="artifact">
-            <div>
-              <h3>Manifest</h3>
-              <a href="artifacts/emoji-bench-dataset-100/manifest.json">manifest.json</a>
-              <p>Master seed, difficulty snapshot, rejection counts, generator commit.</p>
-            </div>
-          </article>
-          <article class="artifact">
-            <div>
-              <h3>Eval summaries</h3>
-              <a href="artifacts/evals/">artifacts/evals/</a>
-              <p>Checked-in no-hint prediction, score, and summary directories.</p>
-            </div>
-          </article>
-          <article class="artifact">
-            <div>
-              <h3>Reproduce</h3>
-              <a href="README.md">README.md</a>
-              <p>Install, regenerate the dataset, run cells, rescore, rebuild plot.</p>
-            </div>
-          </article>
-        </div>
-      </div>
-    </section>
-
     <!-- ═════════════════════════ CONTACT ═════════════════════════ -->
     <section class="section cite-band" id="contact">
       <div class="wrap">
-        <div class="section-marker"><span class="sect-num">§ 08</span></div>
+        <div class="section-marker"><span class="sect-num">§ 05</span></div>
         <h2>Contact</h2>
         <p class="body-copy">For feedback, questions, collaboration, or anything in between.</p>
 
