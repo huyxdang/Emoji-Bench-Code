@@ -669,8 +669,8 @@
     }
     .filter-button[aria-pressed="true"] {
       border-color: var(--ink);
-      background: var(--paper-2);
-      color: var(--ink);
+      background: var(--ink);
+      color: var(--paper);
     }
     .view-control {
       display: inline-flex;
@@ -1226,10 +1226,10 @@
           <div class="leaderboard-only">
             <div class="table-frame">
               <div class="table-toolbar">
-                <div class="filters" role="group" aria-label="Filter by provider">
+                <div class="filters" role="group" aria-label="Choose model families to show">
                   <button class="filter-button" type="button" data-provider="all" aria-pressed="true">All</button>
                   <button class="filter-button" type="button" data-provider="OpenAI" aria-pressed="false">OpenAI</button>
-                  <button class="filter-button" type="button" data-provider="Anthropic" aria-pressed="false">Anthropic</button>
+                  <button class="filter-button" type="button" data-provider="Anthropic" aria-pressed="false">Claude</button>
                   <button class="filter-button" type="button" data-provider="Google" aria-pressed="false">Google</button>
                   <button class="filter-button" type="button" data-provider="Mistral" aria-pressed="false">Mistral</button>
                 </div>
@@ -1517,13 +1517,22 @@
     const filterBtns = Array.from(document.querySelectorAll(".filter-button"));
     const viewBtns   = Array.from(document.querySelectorAll(".view-toggle button"));
 
-    let activeProvider = "all";
+    let activeProviders = new Set();
     let activeView     = "overall";
 
     function selectedResults() {
       return resultData
-        .filter(r => activeProvider === "all" || r.provider === activeProvider)
+        .filter(r => !activeProviders.size || activeProviders.has(r.provider))
         .sort((a, b) => b.score - a.score);
+    }
+
+    function updateProviderFilters() {
+      const showingAll = activeProviders.size === 0;
+      filterBtns.forEach(btn => {
+        const provider = btn.dataset.provider;
+        const isPressed = provider === "all" ? showingAll : activeProviders.has(provider);
+        btn.setAttribute("aria-pressed", String(isPressed));
+      });
     }
 
     function pad(n) { return `#${n}`; }
@@ -1602,8 +1611,15 @@
 
     filterBtns.forEach(btn => {
       btn.addEventListener("click", () => {
-        activeProvider = btn.dataset.provider;
-        filterBtns.forEach(b => b.setAttribute("aria-pressed", String(b === btn)));
+        const provider = btn.dataset.provider;
+        if (provider === "all") {
+          activeProviders.clear();
+        } else if (activeProviders.has(provider)) {
+          activeProviders.delete(provider);
+        } else {
+          activeProviders.add(provider);
+        }
+        updateProviderFilters();
         renderChart();
       });
     });
