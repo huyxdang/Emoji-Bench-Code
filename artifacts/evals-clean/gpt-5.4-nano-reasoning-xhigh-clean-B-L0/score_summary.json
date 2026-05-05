@@ -1,9 +1,9 @@
 {
-  "predictions_path": "/Users/tung.vole1/Desktop/Emoji-Bench/artifacts/evals-clean/gpt-5.4-nano-reasoning-xhigh-clean-B-L0/predictions.jsonl",
-  "scores_path": "/Users/tung.vole1/Desktop/Emoji-Bench/artifacts/evals-clean/gpt-5.4-nano-reasoning-xhigh-clean-B-L0/scores.jsonl",
+  "predictions_path": "/Users/huydang/Desktop/Emoji-Bench/artifacts/evals-clean/gpt-5.4-nano-reasoning-xhigh-clean-B-L0/predictions.jsonl",
+  "scores_path": "/Users/huydang/Desktop/Emoji-Bench/artifacts/evals-clean/gpt-5.4-nano-reasoning-xhigh-clean-B-L0/scores.jsonl",
   "headline": {
-    "total": 98,
-    "final_answer_correct_rate": 0.9796,
+    "total": 100,
+    "final_answer_correct_rate": 0.98,
     "by_difficulty": {
       "easy": {
         "total": 25,
@@ -18,17 +18,17 @@
         "final_answer_correct_rate": 0.96
       },
       "expert": {
-        "total": 23,
-        "final_answer_correct_rate": 0.9565
+        "total": 25,
+        "final_answer_correct_rate": 0.96
       }
     }
   },
   "headline_kind": "final_output_only",
   "regex_baseline": {
-    "total": 98,
+    "total": 100,
     "outcome_buckets": {
       "detect_recover": 0,
-      "silent_recovery": 96,
+      "silent_recovery": 98,
       "detect_only": 0,
       "blind_wrong_branch": 1,
       "off_rails": 1,
@@ -37,8 +37,8 @@
     "rates": {
       "self_detection_loose": 0.0,
       "self_detection_strict": 0.0,
-      "final_answer_recovery": 0.9796,
-      "blind_cascade": 0.0102,
+      "final_answer_recovery": 0.98,
+      "blind_cascade": 0.01,
       "extraction_ok": 1.0
     },
     "by_difficulty": {
@@ -71,12 +71,12 @@
       },
       "expert": {
         "detect_recover": 0,
-        "silent_recovery": 22,
+        "silent_recovery": 24,
         "detect_only": 0,
         "blind_wrong_branch": 1,
         "off_rails": 0,
         "extraction_failed": 0,
-        "_total": 23
+        "_total": 25
       }
     }
   },
