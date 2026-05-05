@@ -159,34 +159,6 @@
       position: relative;
     }
 
-    .section-marker {
-      display: inline-flex;
-      align-items: center;
-      gap: 14px;
-      margin-bottom: 28px;
-      font-family: var(--sans);
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      color: var(--muted);
-    }
-    .section-marker .sect-num {
-      font-family: var(--mono);
-      font-weight: 500;
-      color: var(--accent);
-      font-size: 12px;
-      letter-spacing: 0.04em;
-      text-transform: none;
-    }
-    .section-marker::after {
-      content: "";
-      flex: 1;
-      max-width: 90px;
-      height: 1px;
-      background: var(--ink);
-      opacity: 0.4;
-    }
 
     h1, h2, h3, h4, p { margin-top: 0; }
 
@@ -388,7 +360,7 @@
       border-top: 1px solid var(--ink);
     }
     .method-step::before {
-      content: "§ 02." counter(step, decimal-leading-zero);
+      content: "§ 03." counter(step, decimal-leading-zero);
       display: block;
       margin-bottom: 14px;
       font-family: var(--mono);
@@ -445,6 +417,181 @@
       display: block;
     }
 
+    .transcript {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      column-gap: 32px;
+      align-items: start;
+    }
+    .transcript-col {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+    }
+    .transcript-col + .transcript-col::before {
+      content: "";
+      position: absolute;
+      left: -16px;
+      top: 0;
+      bottom: 0;
+      width: 1px;
+      background: var(--hair);
+    }
+    .turn p {
+      margin: 0 0 8px;
+      font-family: var(--serif);
+      font-size: 15.5px;
+      line-height: 1.55;
+      color: var(--ink-2);
+    }
+    .turn p:last-child { margin-bottom: 0; }
+    .role-tag {
+      display: inline-block;
+      margin-bottom: 10px;
+      padding: 2px 8px;
+      font-family: var(--mono);
+      font-size: 10.5px;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--ink);
+      background: rgba(122, 31, 35, 0.10);
+    }
+    .role-tag.user      { background: rgba(212, 200, 50, 0.22); }
+    .role-tag.assistant { background: rgba(70, 180, 200, 0.18); }
+    .role-tag.prefill em {
+      margin-left: 2px;
+      padding: 1px 6px;
+      font-style: normal;
+      font-family: var(--mono);
+      background: rgba(80, 200, 110, 0.30);
+      color: var(--ink);
+    }
+    .op-table {
+      margin: 0 0 14px;
+      padding: 12px 14px;
+      background: var(--paper);
+      border: 1px solid var(--hair);
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.7;
+      color: var(--ink);
+      white-space: pre;
+      overflow-x: auto;
+    }
+    .expr {
+      font-family: var(--mono);
+      font-size: 14px;
+      color: var(--ink);
+    }
+    .step {
+      font-family: var(--mono);
+      font-size: 14px;
+      color: var(--ink) !important;
+    }
+    .err-flag {
+      margin-left: 6px;
+      font-family: var(--sans);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--accent);
+    }
+    .quote { font-style: italic; }
+    .placeholder {
+      font-family: var(--mono);
+      font-size: 14px;
+      color: var(--quiet);
+    }
+
+    .example-demo {
+      margin: 56px 0 0;
+      padding: 28px 24px;
+      border: 1px solid var(--ink);
+      background: var(--surface);
+    }
+    .example-toggle {
+      display: inline-flex;
+      margin-bottom: 22px;
+      border: 1px solid var(--ink);
+    }
+    .example-toggle button {
+      min-height: 30px;
+      padding: 0 14px;
+      border: 0;
+      border-right: 1px solid var(--ink);
+      background: var(--surface);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 120ms, color 120ms;
+    }
+    .example-toggle button:last-child { border-right: 0; }
+    .example-toggle button:hover { background: var(--paper-2); }
+    .example-toggle button[aria-pressed="true"] {
+      background: var(--ink);
+      color: var(--paper);
+    }
+    .example-body {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      column-gap: 32px;
+      align-items: start;
+    }
+    .example-col {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .example-col + .example-col::before {
+      content: "";
+      position: absolute;
+      left: -16px;
+      top: 0;
+      bottom: 0;
+      width: 1px;
+      background: var(--hair);
+    }
+    .example-label {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+    .example-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 18px 24px;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .example-meta strong {
+      display: block;
+      margin-top: 2px;
+      font-family: var(--serif);
+      font-weight: 500;
+      font-size: 16px;
+      color: var(--ink);
+      letter-spacing: -0.005em;
+    }
+    .example-answer {
+      padding: 10px 14px;
+      background: rgba(122, 31, 35, 0.06);
+      border: 1px solid var(--hair);
+      font-family: var(--mono);
+      font-size: 14px;
+      color: var(--accent);
+      letter-spacing: 0.04em;
+    }
+
     /* ─── results ─── */
     .result-band {
       background: var(--paper-2);
@@ -456,7 +603,17 @@
     .result-layout {
       margin-top: 44px;
     }
-
+    .leaderboard-stamp {
+      margin: 0 0 8px;
+      font-family: var(--mono);
+      font-size: 11.5px;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--ink);
+    }
+    .leaderboard-stamp .k { color: var(--muted); }
+    .leaderboard-stamp time { font-variant-numeric: tabular-nums; }
     .table-frame {
       border: 1px solid var(--ink);
       background: var(--surface);
@@ -846,10 +1003,7 @@
         radial-gradient(rgba(250,247,240,0.025) 1px, transparent 1px);
       background-size: 5px 5px;
     }
-    .cite-band .section-marker { color: rgba(250,247,240,0.65); }
-    .cite-band .section-marker .sect-num { color: var(--accent-2); }
-    .cite-band .section-marker::after { background: var(--paper); opacity: 0.3; }
-    .cite-band h2 { color: var(--paper); }
+.cite-band h2 { color: var(--paper); }
     .cite-band .body-copy { color: rgba(250,247,240,0.78); }
 
     .contact-list {
@@ -964,6 +1118,16 @@
       .obs-item:nth-child(2n) { border-left: 0; padding-left: 0; padding-right: 0; }
       .takeaway { border-right: 0; border-bottom: 1px solid var(--hair); }
       .takeaway:last-child { border-bottom: 0; }
+      .transcript { grid-template-columns: 1fr; row-gap: 28px; }
+      .transcript-col + .transcript-col::before {
+        left: 0; right: 0; top: -14px; bottom: auto;
+        width: auto; height: 1px;
+      }
+      .example-body { grid-template-columns: 1fr; row-gap: 24px; }
+      .example-col + .example-col::before {
+        left: 0; right: 0; top: -12px; bottom: auto;
+        width: auto; height: 1px;
+      }
       .bar-row {
         grid-template-columns: 30px minmax(0, 1fr) 70px;
         gap: 10px;
@@ -992,9 +1156,9 @@
       <a class="brand" href="#top">Emoji&#8209;Bench</a>
       <div class="links">
         <a href="#leaderboard">Leaderboard</a>
+        <a href="#dataset">Dataset</a>
         <a href="#method">Methodology</a>
-        <a href="#observations">Observations</a>
-        <a href="#interpretation">Interpretation</a>
+        <a href="#analysis">Analysis</a>
         <a class="ext icon-link" href="https://github.com/huyxdang/emoji-bench" target="_blank" rel="noopener noreferrer" aria-label="GitHub" title="GitHub">
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
             <path d="M12 .5C5.65.5.5 5.65.5 12c0 5.1 3.29 9.42 7.86 10.95.58.11.79-.25.79-.56v-2.16c-3.2.7-3.87-1.36-3.87-1.36-.52-1.33-1.27-1.69-1.27-1.69-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.19 1.76 1.19 1.02 1.75 2.68 1.24 3.34.95.1-.74.4-1.24.73-1.53-2.55-.29-5.23-1.28-5.23-5.68 0-1.25.45-2.28 1.18-3.08-.12-.29-.51-1.46.11-3.04 0 0 .96-.31 3.15 1.18.91-.25 1.89-.38 2.86-.38.97 0 1.95.13 2.86.38 2.19-1.49 3.15-1.18 3.15-1.18.62 1.58.23 2.75.11 3.04.73.8 1.18 1.83 1.18 3.08 0 4.42-2.69 5.39-5.25 5.67.41.36.78 1.07.78 2.16v3.2c0 .31.21.68.8.56A11.51 11.51 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z"/>
@@ -1014,7 +1178,7 @@
 
         <h1 class="reveal d1">LLMs <em>don't</em><br>look back.</h1>
 
-        <p class="lede reveal d2">A continuation test for whether language models notice and repair their own mistakes &mdash; without being asked to check.</p>
+        <p class="lede reveal d2">Measuring a model's ability to detect and correct its own errors</p>
 
         <p class="abstract reveal d3">Emoji-Bench gives a model a procedurally-generated formal system, an expression to derive, and an assistant transcript whose final step is deliberately wrong. The model is then asked, with no review cue, to <em>please continue</em>. We score whether the extracted final symbol matches ground truth. Across eleven reported runs at <span class="num">n=100</span>, no-hint final-answer accuracy spans <span class="num">10%</span> to <span class="num">96%</span>.</p>
 
@@ -1028,9 +1192,8 @@
     <!-- ═════════════════════════ LEADERBOARD ═════════════════════════ -->
     <section class="section result-band" id="leaderboard">
       <div class="wrap">
-        <div class="section-marker"><span class="sect-num">§ 01</span></div>
         <h2>Leaderboard</h2>
-        <p class="body-copy">Final-answer-only scoring on native-prefill, no-hint artifacts. Higher is better. </p>
+        <p class="leaderboard-stamp"><span class="k">Last updated</span> &mdash; <time datetime="2026-05-05">May 5, 2026</time></p>
 
         <div class="result-layout">
           <div class="leaderboard-only">
@@ -1056,9 +1219,9 @@
               <div class="empty-chart" id="empty-chart">No results for this filter.</div>
 
               <div class="table-footnote">
-                <span><sup>&dagger;</sup>All runs use native prefill, the <code>Please continue.</code> prompt, and final-answer-only scoring. Per-difficulty rows reflect 25 examples per bucket.</span>
-                <span><sup>&Dagger;</sup>Gemini results were produced via OpenRouter, not Google's official Gemini API.</span>
-                <span><sup>&sect;</sup>At <span class="mono">n=100</span>, the 95% binomial CI for any single percentage is roughly <span class="mono">±8</span> points; for the gap between two models it is roughly <span class="mono">±12</span>.</span>
+                <span><sup>&dagger;</sup>Sample: <span class="mono">n = 100</span>, balanced as <span class="mono">25 &times;</span> easy / medium / hard / expert.</span>
+                <span><sup>&Dagger;</sup>All models run at their max output tokens, efforts, and reasoning if available.</span>
+                <span><sup>&sect;</sup>Gemini results were produced via OpenRouter, not Google's official Gemini API.</span>
               </div>
             </div>
           </div>
@@ -1067,12 +1230,48 @@
       </div>
     </section>
 
+    <!-- ═════════════════════════ DATASET ═════════════════════════ -->
+    <section class="section" id="dataset">
+      <div class="wrap">
+        <h2>Dataset</h2>
+        <p class="body-copy">Every problem is freshly synthesized at run time &mdash; no instance has appeared in any pre-training corpus, and the entire bench can be regenerated on demand. Two design choices make the resulting numbers worth trusting.</p>
+
+        <div class="obs">
+          <article class="obs-item">
+            <div class="obs-tag">Choice &middot; Symbols</div>
+            <h3>Why emojis?</h3>
+            <p>Emojis act as <em>neutral, out-of-distribution operands</em>. They tokenize as single units in modern tokenizers, carry no semantic prior that could leak the answer, and make every step trivial to verify by eye. A model can&rsquo;t shortcut the derivation through memorized algebra or lexical priors when the alphabet is 🥟, 🪈, 🧊.</p>
+          </article>
+
+          <article class="obs-item">
+            <div class="obs-tag">Method &middot; Procedural</div>
+            <h3>Procedurally generated, never seen.</h3>
+            <p>Each formal system, operator table, and target expression is sampled at run time from a controllable difficulty grammar. No fixed problem appears twice, and nothing exists upstream to memorize. Difficulty scales by rule count, expression depth, and derivation length &mdash; producing the four buckets of <span class="num">25</span> rows each (<span class="mono">easy / medium / hard / expert</span>).</p>
+          </article>
+        </div>
+
+        <figure class="example-demo" aria-label="Sample problem at the selected difficulty">
+          <div class="pipeline-cap">
+            <span class="label">Sample 01</span>
+          </div>
+
+          <div class="example-toggle" role="group" aria-label="Difficulty">
+            <button type="button" data-diff="easy"   aria-pressed="true">Easy</button>
+            <button type="button" data-diff="medium" aria-pressed="false">Medium</button>
+            <button type="button" data-diff="hard"   aria-pressed="false">Hard</button>
+            <button type="button" data-diff="expert" aria-pressed="false">Expert</button>
+          </div>
+
+          <div class="example-body" id="example-body"></div>
+        </figure>
+      </div>
+    </section>
+
     <!-- ═════════════════════════ METHOD ═════════════════════════ -->
     <section class="section" id="method">
       <div class="wrap">
-        <div class="section-marker"><span class="sect-num">§ 02</span></div>
         <h2>Methodology</h2>
-        <p class="body-copy">Emoji-Bench keeps the task coherent while removing the usual review cue. The reported no-hint condition answers the headline question; an optional prompted-review condition (<code>L1</code>) is available for measuring how much an explicit cue helps.</p>
+        <p class="body-copy">Emoji-Bench keeps the task coherent while removing the usual review cue. The model is handed an assistant transcript whose final step is wrong, asked only to <code>Please continue.</code>, and scored on whether the continuation lands on the correct terminal symbol.</p>
 
         <div class="method-list">
           <article class="method-step">
@@ -1093,80 +1292,53 @@
           </article>
         </div>
 
-        <figure class="pipeline" aria-label="Emoji-Bench evaluation pipeline diagram">
+        <figure class="pipeline" aria-label="Pre-filled multi-turn evaluation example">
           <div class="pipeline-cap">
             <span class="label">Figure 01</span>
-            <span class="title">Three-turn continuation pipeline.</span>
           </div>
-          <svg viewBox="0 0 880 220" role="img" aria-hidden="true">
-            <defs>
-              <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
-                <path d="M0,0 L10,5 L0,10 Z" fill="#15140f"/>
-              </marker>
-              <pattern id="hatch" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
-                <line x1="0" y1="0" x2="0" y2="6" stroke="#7a1f23" stroke-width="1.4"/>
-              </pattern>
-            </defs>
 
-            <!-- node 1: rules -->
-            <g>
-              <rect x="14" y="40" width="170" height="100" fill="#faf7f0" stroke="#15140f" stroke-width="1.2"/>
-              <text x="26" y="62" font-family="JetBrains Mono, monospace" font-size="10" fill="#7a1f23" letter-spacing="1">USER · TURN 1</text>
-              <text x="26" y="86" font-family="Source Serif 4, serif" font-size="15" font-style="italic" fill="#15140f">Rules + expression</text>
-              <text x="26" y="108" font-family="Source Serif 4, serif" font-size="13" fill="#59574d">Procedural emoji</text>
-              <text x="26" y="124" font-family="Source Serif 4, serif" font-size="13" fill="#59574d">formal system</text>
-            </g>
+          <div class="transcript">
+            <div class="transcript-col">
+              <div class="turn">
+                <span class="role-tag user">Turn 1 &middot; User</span>
+                <p>You are given a formal system with the following operation table:</p>
+                <pre class="op-table">⊕  |  🌸  |  🎭  |  🌊
+─────────────────────
+🌸 |  🎭  |  🌊  |  🌸
+🎭 |  🌊  |  🌸  |  🎭
+🌊 |  🌸  |  🎭  |  🌊</pre>
+                <p>Simplify the following expression:</p>
+                <p class="expr">(🌸 ⊕ 🎭) ⊕ (🌊 ⊕ 🌸)</p>
+              </div>
+            </div>
 
-            <!-- arrow -->
-            <line x1="190" y1="90" x2="226" y2="90" stroke="#15140f" stroke-width="1.2" marker-end="url(#arr)"/>
+            <div class="transcript-col">
+              <div class="turn">
+                <span class="role-tag assistant prefill">Turn 1 &middot; Assistant <em>&mdash; pre-filled</em></span>
+                <p>I&rsquo;ll simplify step by step.</p>
+                <p class="step">Step 1: Evaluate 🌸 ⊕ 🎭 = 🌊</p>
+                <p class="step has-error">Step 2: Evaluate 🌊 ⊕ 🌸 = 🎭 <span class="err-flag">&larr; ERROR: should be 🌸</span></p>
+              </div>
 
-            <!-- node 2: assistant prefill (with hatched error region) -->
-            <g>
-              <rect x="232" y="40" width="200" height="100" fill="#faf7f0" stroke="#15140f" stroke-width="1.2"/>
-              <text x="244" y="62" font-family="JetBrains Mono, monospace" font-size="10" fill="#7a1f23" letter-spacing="1">ASSISTANT · TURN 1</text>
-              <text x="244" y="86" font-family="Source Serif 4, serif" font-size="15" font-style="italic" fill="#15140f">Prefilled steps</text>
-              <text x="244" y="108" font-family="Source Serif 4, serif" font-size="13" fill="#59574d">Step 1, Step 2,</text>
-              <text x="244" y="124" font-family="Source Serif 4, serif" font-size="13" fill="#59574d">Step k <tspan fill="#7a1f23">← planted error</tspan></text>
-              <rect x="232" y="40" width="200" height="100" fill="url(#hatch)" opacity="0.18"/>
-            </g>
+              <div class="turn">
+                <span class="role-tag user">Turn 2 &middot; User</span>
+                <p class="quote">&ldquo;Please continue.&rdquo;</p>
+              </div>
 
-            <!-- arrow -->
-            <line x1="438" y1="90" x2="474" y2="90" stroke="#15140f" stroke-width="1.2" marker-end="url(#arr)"/>
-
-            <!-- node 3: please continue -->
-            <g>
-              <rect x="480" y="40" width="170" height="100" fill="#15140f" stroke="#15140f" stroke-width="1.2"/>
-              <text x="492" y="62" font-family="JetBrains Mono, monospace" font-size="10" fill="#b8443a" letter-spacing="1">USER · TURN 2</text>
-              <text x="492" y="92" font-family="JetBrains Mono, monospace" font-size="15" font-weight="500" fill="#faf7f0">Please continue.</text>
-              <text x="492" y="118" font-family="Source Serif 4, serif" font-size="12" font-style="italic" fill="rgba(250,247,240,0.6)">no review cue</text>
-            </g>
-
-            <!-- arrow -->
-            <line x1="656" y1="90" x2="692" y2="90" stroke="#15140f" stroke-width="1.2" marker-end="url(#arr)"/>
-
-            <!-- node 4: model continues -->
-            <g>
-              <rect x="698" y="40" width="170" height="100" fill="#faf7f0" stroke="#15140f" stroke-width="1.2"/>
-              <text x="710" y="62" font-family="JetBrains Mono, monospace" font-size="10" fill="#7a1f23" letter-spacing="1">ASSISTANT · TURN 2</text>
-              <text x="710" y="86" font-family="Source Serif 4, serif" font-size="15" font-style="italic" fill="#15140f">Continuation</text>
-              <text x="710" y="108" font-family="Source Serif 4, serif" font-size="13" fill="#59574d">Step k+1 … Final</text>
-              <text x="710" y="124" font-family="Source Serif 4, serif" font-size="13" fill="#59574d">Output: <tspan font-family="JetBrains Mono, monospace" font-size="14">?</tspan></text>
-            </g>
-
-            <!-- score row -->
-            <line x1="14" y1="180" x2="868" y2="180" stroke="#d6d1c2" stroke-width="1"/>
-            <text x="14" y="202" font-family="JetBrains Mono, monospace" font-size="10" fill="#7a1f23" letter-spacing="1">SCORE</text>
-            <text x="64" y="202" font-family="Source Serif 4, serif" font-size="13" font-style="italic" fill="#59574d">extracted Final Output  =  ground truth ?  &nbsp;&rarr;&nbsp;  1 correct &middot; else 0</text>
-          </svg>
+              <div class="turn">
+                <span class="role-tag assistant">Turn 2 &middot; Assistant</span>
+                <p class="placeholder">{Model_Response}</p>
+              </div>
+            </div>
+          </div>
         </figure>
       </div>
     </section>
 
-    <!-- ═════════════════════════ OBSERVATIONS ═════════════════════════ -->
-    <section class="section" id="observations">
+    <!-- ═════════════════════════ ANALYSIS ═════════════════════════ -->
+    <section class="section" id="analysis">
       <div class="wrap">
-        <div class="section-marker"><span class="sect-num">§ 03</span></div>
-        <h2>Observations</h2>
+        <h2>Analysis</h2>
         <p class="body-copy">The leaderboard scores the extracted terminal symbol. Behind that single bit, models differ qualitatively in how they handle the planted error. Quotes below are verbatim from <code>predictions.jsonl</code>.</p>
 
         <div class="obs">
@@ -1213,37 +1385,9 @@
       </div>
     </section>
 
-    <!-- ═════════════════════════ INTERPRETATION ═════════════════════════ -->
-    <section class="section" id="interpretation">
-      <div class="wrap">
-        <div class="section-marker"><span class="sect-num">§ 04</span></div>
-        <h2>Interpretation</h2>
-        <p class="body-copy">The scope is intentionally narrow: whether the continuation lands on the correct final symbol in the no-hint setting. Several things deliberately stay out of the headline.</p>
-
-        <div class="takeaways">
-          <article class="takeaway">
-            <div class="ti">Finding 01</div>
-            <h3>Final answers separate sharply.</h3>
-            <p>No-hint accuracy spans <span class="num">10%</span> to <span class="num">96%</span> on the same minimal continuation request. Per-model 95% CI at <span class="num">n=100</span> is roughly <span class="num">±8</span> points; the leader-to-floor gap is well outside noise.</p>
-          </article>
-          <article class="takeaway">
-            <div class="ti">Finding 02</div>
-            <h3>Recovery is not headlined.</h3>
-            <p>The leaderboard scores the extracted terminal symbol, not whether a model verbally flagged the prefilled mistake. As § 04 shows, those two metrics dissociate &mdash; especially for top scorers.</p>
-          </article>
-          <article class="takeaway">
-            <div class="ti">Finding 03</div>
-            <h3>A wider matrix exists.</h3>
-            <p>The code supports alternate delivery shapes and a prompted-review condition (<span class="mono">L1</span>). The published page reports native-prefill, no-hint runs only.</p>
-          </article>
-        </div>
-      </div>
-    </section>
-
     <!-- ═════════════════════════ CONTACT ═════════════════════════ -->
     <section class="section cite-band" id="contact">
       <div class="wrap">
-        <div class="section-marker"><span class="sect-num">§ 05</span></div>
         <h2>Contact</h2>
         <p class="body-copy">For feedback, questions, collaboration, or anything in between.</p>
 
@@ -1445,6 +1589,101 @@
     });
 
     renderChart();
+
+    // ─── dataset example ───────────────────────────────────────────────
+    const examples = {
+      easy: {
+        operands: ["🌸", "🎭", "🌊"],
+        table: [
+          ["🎭", "🌊", "🌸"],
+          ["🌊", "🌸", "🎭"],
+          ["🌸", "🎭", "🌊"]
+        ],
+        expression: "(🌸 ⊕ 🎭) ⊕ 🌊",
+        derivation: "≈ 3 steps",
+        answer: "🌸"
+      },
+      medium: {
+        operands: ["🌸", "🎭", "🌊", "🥟"],
+        table: [
+          ["🎭", "🌊", "🥟", "🌸"],
+          ["🌊", "🥟", "🌸", "🎭"],
+          ["🥟", "🌸", "🎭", "🌊"],
+          ["🌸", "🎭", "🌊", "🥟"]
+        ],
+        expression: "((🌸 ⊕ 🎭) ⊕ 🥟) ⊕ (🌊 ⊕ 🌸)",
+        derivation: "≈ 5 steps",
+        answer: "🌊"
+      },
+      hard: {
+        operands: ["🌸", "🎭", "🌊", "🥟", "🪈"],
+        table: [
+          ["🎭", "🌊", "🥟", "🪈", "🌸"],
+          ["🌊", "🥟", "🪈", "🌸", "🎭"],
+          ["🥟", "🪈", "🌸", "🎭", "🌊"],
+          ["🪈", "🌸", "🎭", "🌊", "🥟"],
+          ["🌸", "🎭", "🌊", "🥟", "🪈"]
+        ],
+        expression: "(((🌸 ⊕ 🎭) ⊕ 🪈) ⊕ 🥟) ⊕ (🌊 ⊕ 🎭)",
+        derivation: "≈ 7 steps",
+        answer: "🪈"
+      },
+      expert: {
+        operands: ["🌸", "🎭", "🌊", "🥟", "🪈", "🧊"],
+        table: [
+          ["🎭", "🌊", "🥟", "🪈", "🧊", "🌸"],
+          ["🌊", "🥟", "🪈", "🧊", "🌸", "🎭"],
+          ["🥟", "🪈", "🧊", "🌸", "🎭", "🌊"],
+          ["🪈", "🧊", "🌸", "🎭", "🌊", "🥟"],
+          ["🧊", "🌸", "🎭", "🌊", "🥟", "🪈"],
+          ["🌸", "🎭", "🌊", "🥟", "🪈", "🧊"]
+        ],
+        expression: "((🌸 ⊕ 🎭) ⊕ ((🌊 ⊕ 🥟) ⊕ 🪈)) ⊕ (🧊 ⊕ ((🌸 ⊕ 🎭) ⊕ 🌊))",
+        derivation: "≈ 11 steps",
+        answer: "🧊"
+      }
+    };
+
+    const exampleBody  = document.querySelector("#example-body");
+    const exampleBtns  = Array.from(document.querySelectorAll(".example-toggle button"));
+
+    function renderTable(ex) {
+      const head = "⊕   |  " + ex.operands.join("  |  ");
+      const sep  = "─".repeat(head.length);
+      const rows = ex.table.map((row, i) =>
+        ex.operands[i] + "  |  " + row.join("  |  ")
+      );
+      return [head, sep, ...rows].join("\n");
+    }
+
+    function renderExample(diff) {
+      const ex = examples[diff];
+      exampleBody.innerHTML = `
+        <div class="example-col">
+          <span class="example-label">Operation table</span>
+          <pre class="op-table">${renderTable(ex)}</pre>
+          <span class="example-label">Expression</span>
+          <p class="expr">${ex.expression}</p>
+        </div>
+        <div class="example-col">
+          <div class="example-meta">
+            <span>Operands<strong>${ex.operands.length}</strong></span>
+            <span>Derivation<strong>${ex.derivation}</strong></span>
+            <span>Bucket<strong style="text-transform:capitalize">${diff}</strong></span>
+          </div>
+          <span class="example-label">Ground truth</span>
+          <p class="example-answer">Final Output: ${ex.answer}</p>
+        </div>
+      `;
+    }
+
+    exampleBtns.forEach(btn => {
+      btn.addEventListener("click", () => {
+        exampleBtns.forEach(b => b.setAttribute("aria-pressed", String(b === btn)));
+        renderExample(btn.dataset.diff);
+      });
+    });
+    renderExample("easy");
 
     document.querySelectorAll(".copy-icon").forEach(btn => {
       btn.addEventListener("click", async () => {
