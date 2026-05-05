@@ -17,6 +17,7 @@ from emoji_bench.dataset.rejection_reasons import (
     ContinuationGenerationError,
     R_NO_ELIGIBLE_IN_WINDOW,
 )
+from emoji_bench.continuation_formatter import format_clean_derivation
 from emoji_bench.domain.formatter import system_from_json
 from emoji_bench.domain.generator import generate_system
 
@@ -54,6 +55,12 @@ def test_continuation_records_have_full_schema_and_invariants():
         assert not prefill.endswith("\n")
         assert "Final Output:" not in prefill
         assert "Result:" not in prefill
+        clean_derivation = record["clean_derivation"]
+        assert clean_derivation.startswith("Start: ")
+        assert clean_derivation.count("Final Output:") == 1
+        assert clean_derivation.endswith(
+            f"Final Output: {record['ground_truth_final_output']}"
+        )
 
         # Scoring invariants.
         assert record["ground_truth_final_output"] != record["wrong_branch_final_output"]
@@ -118,6 +125,9 @@ def test_continuation_records_are_exactly_reproducible_from_stored_metadata():
         )
         assert instance.turn_1_user == record["turn_1_user"]
         assert instance.turn_1_assistant_prefill == record["turn_1_assistant_prefill"]
+        assert record["clean_derivation"] == format_clean_derivation(
+            instance.clean_chain, system_from_row
+        )
         assert instance.ground_truth_final_output.emoji == record["ground_truth_final_output"]
         assert instance.wrong_branch_final_output.emoji == record["wrong_branch_final_output"]
         assert instance.chain_length_x == record["chain_length_x"]
@@ -208,6 +218,7 @@ def test_generate_continuation_dataset_script_supports_exact_count(tmp_path):
     card_text = (output_dir / "README.md").read_text(encoding="utf-8")
     assert "turn_1_user" in card_text
     assert "turn_1_assistant_prefill" in card_text
+    assert "clean_derivation" in card_text
     assert "ground_truth_final_output" in card_text
     assert "master_seed" in card_text
 
@@ -216,4 +227,7 @@ def test_generate_continuation_dataset_script_supports_exact_count(tmp_path):
     for line in test_jsonl:
         row = json.loads(line)
         assert row["error_type"] == "E-CONTINUE"
+        assert row["clean_derivation"].endswith(
+            f"Final Output: {row['ground_truth_final_output']}"
+        )
         assert row["ground_truth_final_output"] != row["wrong_branch_final_output"]

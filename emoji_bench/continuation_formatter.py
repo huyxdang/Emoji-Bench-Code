@@ -50,6 +50,15 @@ def format_step(step: ChainStep, system: FormalSystem) -> str:
     return f"Step {step.step_number}: {before_str} = {after_str}    [by {step.rule_used}]"
 
 
+def format_clean_derivation(chain: DerivationChain, system: FormalSystem) -> str:
+    """Format the full clean derivation, including its terminal answer."""
+    start_str = expr_to_str_with_system(chain.starting_expression, system)
+    lines = [f"Start: {start_str}", ""]
+    lines.extend(format_step(step, system) for step in chain.steps)
+    lines.extend(["", f"Final Output: {chain.final_result.emoji}"])
+    return "\n".join(lines)
+
+
 def format_continuation_single_turn(
     *,
     turn_1_user: str,

@@ -3,6 +3,7 @@ from emoji_bench.dataset.continuation_benchmark import (
     continuation_record,
     generate_continuation_instance,
 )
+from emoji_bench.continuation_formatter import format_clean_derivation
 from emoji_bench.domain.generator import generate_system
 
 
@@ -99,9 +100,15 @@ def test_continuation_record_round_trip():
 
     assert record["error_type"] == "E-CONTINUE"
     assert record["ground_truth_final_output"] != record["wrong_branch_final_output"]
+    assert record["clean_derivation"] == format_clean_derivation(
+        instance.clean_chain, instance.system
+    )
+    assert record["clean_derivation"].endswith(
+        f"Final Output: {record['ground_truth_final_output']}"
+    )
     assert record["chain_length_x"] >= 2
     for key in (
-        "turn_1_user", "turn_1_assistant_prefill",
+        "turn_1_user", "turn_1_assistant_prefill", "clean_derivation",
         "system_seed", "chain_seed", "error_seed",
     ):
         assert key in record

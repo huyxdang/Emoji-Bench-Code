@@ -8,23 +8,29 @@ language:
 
 # emoji-bench-e-continue
 
-This dataset contains prompt-only benchmark instances for Emoji-Bench.
+This dataset contains continuation-benchmark rows for Emoji-Bench.
 
 ## Schema
 
 - `example_id`: unique row id
-- `base_id`: shared id across clean/error variants of the same underlying problem
-- `split`: train / validation / test
+- `base_id`: shared id for the underlying generated formal system
+- `split`: dataset split (`test` in the current release)
 - `difficulty`: easy / medium / hard / expert
-- `condition`: clean or error_injected
-- `error_type`: null or an injected error label such as E-RES, E-INV, E-CASC, or E-RECONV
-- `has_error`: whether the prompt contains an injected error
-- `prompt`: full benchmark prompt
-- `actual_step_count`: realized number of derivation steps
+- `error_type`: injected error label (`E-CONTINUE` in the current release)
+- `has_prefill_error`: whether the assistant prefill contains the injected error
+- `turn_1_user`: rules + expression + formatting instructions
+- `turn_1_assistant_prefill`: partial derivation ending on the injected error
+- `turn_2_user`: continuation prompt used for the stored condition
+- `clean_derivation`: full correct derivation through `Final Output:`
+- `ground_truth_final_output`: correct final symbol from the clean chain
+- `wrong_branch_final_output`: final symbol reached by blindly continuing from the bad state
+- `chain_length_x`: realized clean derivation length
+- `prefill_error_step`: step number of the injected error
+- `prefill_cutoff_step`: prefill cutoff step for this artifact
 - `target_step_count`: requested target length used during generation
-- `expected_error_step`: ground-truth step with the injected error, or null on clean rows
-- `system_json`: JSON serialization of the underlying formal system
+- `system_json`: JSON serialization of the formal system
 - `system_seed` / `chain_seed` / `error_seed`: generation metadata for reproducibility
+- `condition`: benchmark condition label (`error_injected` in the current release)
 
 ## Counts
 

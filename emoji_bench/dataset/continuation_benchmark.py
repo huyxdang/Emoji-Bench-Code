@@ -17,6 +17,7 @@ from emoji_bench.dataset.rejection_reasons import (
 from emoji_bench.domain.chain_generator import generate_chain
 from emoji_bench.domain.chain_types import DerivationChain
 from emoji_bench.continuation_formatter import (
+    format_clean_derivation,
     format_continuation_prefill,
     format_continuation_turn_1_user,
 )
@@ -190,6 +191,7 @@ def continuation_record(
         # Conversation.
         "turn_1_user": instance.turn_1_user,
         "turn_1_assistant_prefill": instance.turn_1_assistant_prefill,
+        "clean_derivation": format_clean_derivation(instance.clean_chain, instance.system),
 
         # Scoring.
         "ground_truth_final_output": instance.ground_truth_final_output.emoji,

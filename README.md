@@ -100,6 +100,7 @@ Each `test.jsonl` line is a JSON object with:
 | `example_id`, `base_id`, `split`, `difficulty`, `error_type` | identifiers + stratification |
 | `turn_1_user` | rules + expression + step-format instructions |
 | `turn_1_assistant_prefill` | partial derivation ending on the injected bad step |
+| `clean_derivation` | full correct derivation, including `Final Output:` |
 | `ground_truth_final_output` | correct terminal symbol (clean chain) |
 | `wrong_branch_final_output` | terminal reached by cascading from the bad step |
 | `chain_length_x`, `prefill_error_step`, `target_step_count` | chain shape |
@@ -133,6 +134,9 @@ instance = generate_continuation_instance(
 
 # `instance.*_final_output` are Symbol objects; the stored row has emoji strings.
 assert instance.turn_1_assistant_prefill        == row["turn_1_assistant_prefill"]
+assert row["clean_derivation"].endswith(
+    f'Final Output: {row["ground_truth_final_output"]}'
+)
 assert instance.ground_truth_final_output.emoji == row["ground_truth_final_output"]
 assert instance.wrong_branch_final_output.emoji == row["wrong_branch_final_output"]
 ```
