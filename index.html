@@ -71,7 +71,7 @@
       top: 0;
       z-index: 30;
       border-bottom: 1px solid var(--rule);
-      background: rgba(250, 247, 240, 0.93);
+      background: var(--paper);
       backdrop-filter: blur(10px) saturate(120%);
     }
     .nav {
@@ -179,12 +179,20 @@
     h2 {
       font-family: var(--serif);
       font-weight: 420;
-      font-size: clamp(32px, 4.4vw, 50px);
+      font-size: clamp(40px, 5.4vw, 64px);
       line-height: 1.04;
-      letter-spacing: -0.022em;
+      letter-spacing: -0.028em;
       margin-bottom: 24px;
       font-variation-settings: "opsz" 36, "wght" 420;
       max-width: 800px;
+      text-align: center;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .section h2 + .body-copy {
+      text-align: center;
+      margin-left: auto;
+      margin-right: auto;
     }
     h3 {
       font-family: var(--serif);
@@ -263,12 +271,6 @@
       line-height: 1.62;
       color: var(--ink-2);
     }
-    .abstract::first-line {
-      font-variant: small-caps;
-      letter-spacing: 0.025em;
-    }
-
-
     .actions {
       display: flex;
       flex-wrap: wrap;
@@ -1180,7 +1182,7 @@
 
         <p class="lede reveal d2">Measuring a model's ability to detect and correct its own errors</p>
 
-        <p class="abstract reveal d3">Emoji-Bench gives a model a procedurally-generated formal system, an expression to derive, and an assistant transcript whose final step is deliberately wrong. The model is then asked, with no review cue, to <em>please continue</em>. We score whether the extracted final symbol matches ground truth. Across eleven reported runs at <span class="num">n=100</span>, no-hint final-answer accuracy spans <span class="num">10%</span> to <span class="num">96%</span>.</p>
+        <p class="abstract reveal d3"><em>Emoji-Bench</em> evaluates metacognition: whether language models can naturally detect and correct their own errors. Each task presents a logical system in novel emoji-based notation with a target expression to derive. We inject an incorrect step into the prefilled model response and prompt the model to “Please continue.” Across eleven frontier models, the GPT-5.4 family performs strongest, naturally recovering from the error and arriving at the correct answer.</p>
 
         <div class="actions reveal d5">
           <a class="button primary" href="#leaderboard">View leaderboard <span class="arrow">&rarr;</span></a>
@@ -1193,7 +1195,6 @@
     <section class="section result-band" id="leaderboard">
       <div class="wrap">
         <h2>Leaderboard</h2>
-        <p class="leaderboard-stamp"><span class="k">Last updated</span> &mdash; <time datetime="2026-05-05">May 5, 2026</time></p>
 
         <div class="result-layout">
           <div class="leaderboard-only">
