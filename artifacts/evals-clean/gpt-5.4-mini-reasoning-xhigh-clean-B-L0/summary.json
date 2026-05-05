@@ -1,0 +1,23 @@
+{
+  "model": "gpt-5.4-mini-reasoning-xhigh",
+  "provider": "openai",
+  "api_model": "gpt-5.4-mini",
+  "mode": "prefill",
+  "matrix_variant": "B",
+  "matrix_cell": "B-L0",
+  "reasoning_effort_requested": null,
+  "openai_reasoning_effort": "xhigh",
+  "anthropic_thinking_enabled": null,
+  "anthropic_thinking_mode": null,
+  "anthropic_thinking_budget_tokens": null,
+  "anthropic_effort": null,
+  "gemini_thinking_level": null,
+  "max_output_tokens": 128000,
+  "turn_2_level": 0,
+  "turn_2_user_sent": "Please continue.",
+  "input_path": "/Users/tung.vole1/Desktop/Emoji-Bench/artifacts/emoji-bench-dataset-100-clean-control/test.jsonl",
+  "output_dir": "/Users/tung.vole1/Desktop/Emoji-Bench/artifacts/evals-clean/gpt-5.4-mini-reasoning-xhigh-clean-B-L0",
+  "predictions_path": "/Users/tung.vole1/Desktop/Emoji-Bench/artifacts/evals-clean/gpt-5.4-mini-reasoning-xhigh-clean-B-L0/predictions.jsonl",
+  "total_examples": 100,
+  "completed_examples": 100
+}

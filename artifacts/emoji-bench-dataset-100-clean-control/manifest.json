@@ -1,0 +1,7 @@
+{
+  "source_dataset": "artifacts/emoji-bench-dataset-100",
+  "split": "test",
+  "total_examples": 100,
+  "condition": "clean_control",
+  "note": "Parallel control to E-CONTINUE: clean prefill at the same cutoff step as the error-injected condition. No error is planted."
+}
