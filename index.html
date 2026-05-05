@@ -554,8 +554,7 @@
     }
     .example-body {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      column-gap: 32px;
+      grid-template-columns: 1fr;
       align-items: start;
     }
     .example-col {
@@ -563,6 +562,7 @@
       display: flex;
       flex-direction: column;
       gap: 12px;
+      min-width: 0;
     }
     .example-col + .example-col::before {
       content: "";
@@ -581,6 +581,37 @@
       text-transform: uppercase;
       color: var(--accent);
     }
+    .example-sublabel {
+      margin-left: 6px;
+      font-weight: 400;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+    }
+    .example-derivation { margin: 0; }
+    .example-derivation summary {
+      display: inline-block;
+      padding: 6px 12px;
+      border: 1px solid var(--ink);
+      background: var(--surface);
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--ink);
+      cursor: pointer;
+      list-style: none;
+      user-select: none;
+    }
+    .example-derivation summary::-webkit-details-marker { display: none; }
+    .example-derivation summary:hover { background: var(--paper-2); }
+    .example-derivation[open] summary {
+      background: var(--ink);
+      color: var(--paper);
+      margin-bottom: 10px;
+    }
+    .example-derivation[open] summary::after { content: " \2715"; }
+    .example-derivation:not([open]) summary::after { content: " +"; }
     .example-meta {
       display: flex;
       flex-wrap: wrap;
@@ -606,6 +637,41 @@
       font-size: 14px;
       color: var(--accent);
       letter-spacing: 0.04em;
+    }
+    .example-pre {
+      max-height: 320px;
+      white-space: pre;
+      overflow: auto;
+    }
+    .example-pre.rules { max-height: 380px; }
+    .example-pre.derivation { max-height: 280px; }
+    .example-expression {
+      margin: 0;
+      padding: 10px 14px;
+      border: 1px solid var(--hair);
+      background: var(--paper);
+      overflow-x: auto;
+    }
+    .example-targets {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .example-target {
+      padding: 10px 12px;
+      border: 1px solid var(--hair);
+      background: rgba(21,20,15,0.04);
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--ink);
+    }
+    .example-target span {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
     }
 
     /* ─── results ─── */
@@ -1261,7 +1327,7 @@
     <section class="section" id="dataset">
       <div class="wrap">
         <h2>Dataset</h2>
-        <p class="body-copy">Every problem is freshly synthesized at run time &mdash; no instance has appeared in any pre-training corpus, and the entire bench can be regenerated on demand. Two design choices make the resulting numbers worth trusting.</p>
+        <p class="body-copy">Every problem are emoji-based and procedurally generated. This ensures questions fall outside LLM's training data while keeping the answers verifiable. </p>
 
         <div class="obs">
           <article class="obs-item">
@@ -1279,7 +1345,7 @@
 
         <figure class="example-demo" aria-label="Sample problem at the selected difficulty">
           <div class="pipeline-cap">
-            <span class="label">Sample 01</span>
+            <span class="label" id="example-label">Sample 01/100</span>
           </div>
 
           <div class="example-toggle" role="group" aria-label="Difficulty">
@@ -1637,86 +1703,101 @@
     // ─── dataset example ───────────────────────────────────────────────
     const examples = {
       easy: {
-        operands: ["🌸", "🎭", "🌊"],
-        table: [
-          ["🎭", "🌊", "🌸"],
-          ["🌊", "🌸", "🎭"],
-          ["🌸", "🎭", "🌊"]
-        ],
-        expression: "(🌸 ⊕ 🎭) ⊕ 🌊",
-        derivation: "≈ 3 steps",
-        answer: "🌸"
+        exampleId: "emoji-bench-e-continue-000000",
+        systemName: "Sylk Structure",
+        rules: "Symbols: {🪈, 🪵, 🥟}\n\nOperation ⊕ (defined by table):\nIn the table below, the row is the left operand and the column is the right operand. For example, row a and column b means a ⊕ b.\n\n| ⊕ | 🪈 | 🪵 | 🥟 |\n|---|---|---|---|\n| **🪈** | 🥟 | 🪵 | 🥟 |\n| **🪵** | 🪈 | 🪵 | 🥟 |\n| **🥟** | 🪈 | 🪈 | 🪵 |",
+        expression: "((🪈 ⊕ 🥟) ⊕ (🪵 ⊕ (🥟 ⊕ 🪵)))",
+        prefill: "Start: ((🪈 ⊕ 🥟) ⊕ (🪵 ⊕ (🥟 ⊕ 🪵)))\n\nStep 1: ((🪈 ⊕ 🥟) ⊕ (🪵 ⊕ (🥟 ⊕ 🪵))) = (🥟 ⊕ (🪵 ⊕ (🥟 ⊕ 🪵)))    [by ⊕ table]\nStep 2: (🥟 ⊕ (🪵 ⊕ (🥟 ⊕ 🪵))) = (🥟 ⊕ (🪵 ⊕ 🥟))    [by ⊕ table]",
+        cleanDerivation: "Start: ((🪈 ⊕ 🥟) ⊕ (🪵 ⊕ (🥟 ⊕ 🪵)))\n\nStep 1: ((🪈 ⊕ 🥟) ⊕ (🪵 ⊕ (🥟 ⊕ 🪵))) = (🥟 ⊕ (🪵 ⊕ (🥟 ⊕ 🪵)))    [by ⊕ table]\nStep 2: (🥟 ⊕ (🪵 ⊕ (🥟 ⊕ 🪵))) = (🥟 ⊕ (🪵 ⊕ 🪈))    [by ⊕ table]\nStep 3: (🥟 ⊕ (🪵 ⊕ 🪈)) = (🥟 ⊕ 🪈)    [by ⊕ table]\nStep 4: (🥟 ⊕ 🪈) = 🪈    [by ⊕ table]\n\nFinal Output: 🪈",
+        groundTruth: "🪈",
+        wrongBranch: "🪵",
+        chainLength: 4,
+        prefillErrorStep: 2,
+        symbols: 3,
+        baseOps: 1,
+        derivedOps: 0,
+        transformations: 0
       },
       medium: {
-        operands: ["🌸", "🎭", "🌊", "🥟"],
-        table: [
-          ["🎭", "🌊", "🥟", "🌸"],
-          ["🌊", "🥟", "🌸", "🎭"],
-          ["🥟", "🌸", "🎭", "🌊"],
-          ["🌸", "🎭", "🌊", "🥟"]
-        ],
-        expression: "((🌸 ⊕ 🎭) ⊕ 🥟) ⊕ (🌊 ⊕ 🌸)",
-        derivation: "≈ 5 steps",
-        answer: "🌊"
+        exampleId: "emoji-bench-e-continue-000025",
+        systemName: "Thal Structure",
+        rules: "Symbols: {🪸, 🐙, 🧲, 🪆}\n\nOperation ⊕ (defined by table):\nIn the table below, the row is the left operand and the column is the right operand. For example, row a and column b means a ⊕ b.\n\n| ⊕ | 🪸 | 🐙 | 🧲 | 🪆 |\n|---|---|---|---|---|\n| **🪸** | 🧲 | 🪆 | 🪆 | 🪆 |\n| **🐙** | 🧲 | 🪸 | 🧲 | 🧲 |\n| **🧲** | 🐙 | 🐙 | 🪆 | 🐙 |\n| **🪆** | 🪸 | 🪸 | 🪸 | 🐙 |\n\nDerived operation ⊗:\nx ⊗ y = (x ⊕ x) ⊕ y\n\nTransformation \"inv\":\n  inv(🪸) = 🧲\n  inv(🐙) = 🪸\n  inv(🧲) = 🪆\n  inv(🪆) = 🐙\n  Distribution property: inv(x ⊕ y) = inv(x) ⊕ inv(y)",
+        expression: "(inv((🪆 ⊕ 🪆)) ⊗ inv((🧲 ⊕ 🪸)))",
+        prefill: "Start: (inv((🪆 ⊕ 🪆)) ⊗ inv((🧲 ⊕ 🪸)))\n\nStep 1: (inv((🪆 ⊕ 🪆)) ⊗ inv((🧲 ⊕ 🪸))) = (inv(🐙) ⊗ inv((🧲 ⊕ 🪸)))    [by ⊕ table]\nStep 2: (inv(🐙) ⊗ inv((🧲 ⊕ 🪸))) = (🪸 ⊗ inv((🧲 ⊕ 🪸)))    [by inv]\nStep 3: (🪸 ⊗ inv((🧲 ⊕ 🪸))) = (🪸 ⊗ inv(🪸))    [by ⊕ table]",
+        cleanDerivation: "Start: (inv((🪆 ⊕ 🪆)) ⊗ inv((🧲 ⊕ 🪸)))\n\nStep 1: (inv((🪆 ⊕ 🪆)) ⊗ inv((🧲 ⊕ 🪸))) = (inv(🐙) ⊗ inv((🧲 ⊕ 🪸)))    [by ⊕ table]\nStep 2: (inv(🐙) ⊗ inv((🧲 ⊕ 🪸))) = (🪸 ⊗ inv((🧲 ⊕ 🪸)))    [by inv]\nStep 3: (🪸 ⊗ inv((🧲 ⊕ 🪸))) = (🪸 ⊗ inv(🐙))    [by ⊕ table]\nStep 4: (🪸 ⊗ inv(🐙)) = (🪸 ⊗ 🪸)    [by inv]\nStep 5: (🪸 ⊗ 🪸) = ((🪸 ⊕ 🪸) ⊕ 🪸)    [by definition of ⊗]\nStep 6: ((🪸 ⊕ 🪸) ⊕ 🪸) = (🧲 ⊕ 🪸)    [by ⊕ table]\nStep 7: (🧲 ⊕ 🪸) = 🐙    [by ⊕ table]\n\nFinal Output: 🐙",
+        groundTruth: "🐙",
+        wrongBranch: "🪆",
+        chainLength: 7,
+        prefillErrorStep: 3,
+        symbols: 4,
+        baseOps: 1,
+        derivedOps: 1,
+        transformations: 1
       },
       hard: {
-        operands: ["🌸", "🎭", "🌊", "🥟", "🪈"],
-        table: [
-          ["🎭", "🌊", "🥟", "🪈", "🌸"],
-          ["🌊", "🥟", "🪈", "🌸", "🎭"],
-          ["🥟", "🪈", "🌸", "🎭", "🌊"],
-          ["🪈", "🌸", "🎭", "🌊", "🥟"],
-          ["🌸", "🎭", "🌊", "🥟", "🪈"]
-        ],
-        expression: "(((🌸 ⊕ 🎭) ⊕ 🪈) ⊕ 🥟) ⊕ (🌊 ⊕ 🎭)",
-        derivation: "≈ 7 steps",
-        answer: "🪈"
+        exampleId: "emoji-bench-e-continue-000050",
+        systemName: "Drenn Calculus",
+        rules: "Symbols: {🧊, 🧁, 🦩, 🪭, 🪨}\n\nOperation ⊕ (defined by table):\nIn the table below, the row is the left operand and the column is the right operand. For example, row a and column b means a ⊕ b.\n\n| ⊕ | 🧊 | 🧁 | 🦩 | 🪭 | 🪨 |\n|---|---|---|---|---|---|\n| **🧊** | 🧊 | 🧊 | 🦩 | 🦩 | 🧁 |\n| **🧁** | 🦩 | 🧁 | 🧁 | 🪭 | 🪭 |\n| **🦩** | 🪨 | 🪭 | 🦩 | 🦩 | 🪨 |\n| **🪭** | 🧊 | 🧊 | 🪨 | 🪭 | 🪭 |\n| **🪨** | 🪨 | 🧁 | 🧁 | 🧊 | 🪨 |\n\nOperation ⊗ (defined by table):\nIn the table below, the row is the left operand and the column is the right operand. For example, row a and column b means a ⊗ b.\n\n| ⊗ | 🧊 | 🧁 | 🦩 | 🪭 | 🪨 |\n|---|---|---|---|---|---|\n| **🧊** | 🪭 | 🪨 | 🪭 | 🪨 | 🪭 |\n| **🧁** | 🪨 | 🪨 | 🧊 | 🪨 | 🧊 |\n| **🦩** | 🧁 | 🧊 | 🧊 | 🧁 | 🧊 |\n| **🪭** | 🧁 | 🦩 | 🧁 | 🧁 | 🦩 |\n| **🪨** | 🪭 | 🦩 | 🪭 | 🦩 | 🦩 |\n\nDerived operation ⊛:\nx ⊛ y = inv(x ⊗ y)\n\nTransformation \"inv\":\n  inv(🧊) = 🪭\n  inv(🧁) = 🪨\n  inv(🦩) = 🧊\n  inv(🪭) = 🧁\n  inv(🪨) = 🦩\n  Distribution property: inv(x ⊕ y) = inv(x) ⊕ inv(y)\n  Distribution property: inv(x ⊗ y) = inv(x) ⊗ inv(y)",
+        expression: "((inv(🪨) ⊕ (🧊 ⊗ 🪨)) ⊛ ((🧁 ⊛ 🧊) ⊕ inv(🧁)))",
+        prefill: "Start: ((inv(🪨) ⊕ (🧊 ⊗ 🪨)) ⊛ ((🧁 ⊛ 🧊) ⊕ inv(🧁)))\n\nStep 1: ((inv(🪨) ⊕ (🧊 ⊗ 🪨)) ⊛ ((🧁 ⊛ 🧊) ⊕ inv(🧁))) = ((🦩 ⊕ (🧊 ⊗ 🪨)) ⊛ ((🧁 ⊛ 🧊) ⊕ inv(🧁)))    [by inv]\nStep 2: ((🦩 ⊕ (🧊 ⊗ 🪨)) ⊛ ((🧁 ⊛ 🧊) ⊕ inv(🧁))) = ((🦩 ⊕ 🪭) ⊛ ((🧁 ⊛ 🧊) ⊕ inv(🧁)))    [by ⊗ table]\nStep 3: ((🦩 ⊕ 🪭) ⊛ ((🧁 ⊛ 🧊) ⊕ inv(🧁))) = (🦩 ⊛ ((🧁 ⊛ 🧊) ⊕ inv(🧁)))    [by ⊕ table]\nStep 4: (🦩 ⊛ ((🧁 ⊛ 🧊) ⊕ inv(🧁))) = (🦩 ⊛ (inv((🧁 ⊗ 🧊)) ⊕ inv(🧁)))    [by definition of ⊛]\nStep 5: (🦩 ⊛ (inv((🧁 ⊗ 🧊)) ⊕ inv(🧁))) = (🦩 ⊛ (inv(🪭) ⊕ inv(🧁)))    [by ⊗ table]",
+        cleanDerivation: "Start: ((inv(🪨) ⊕ (🧊 ⊗ 🪨)) ⊛ ((🧁 ⊛ 🧊) ⊕ inv(🧁)))\n\nStep 1: ((inv(🪨) ⊕ (🧊 ⊗ 🪨)) ⊛ ((🧁 ⊛ 🧊) ⊕ inv(🧁))) = ((🦩 ⊕ (🧊 ⊗ 🪨)) ⊛ ((🧁 ⊛ 🧊) ⊕ inv(🧁)))    [by inv]\nStep 2: ((🦩 ⊕ (🧊 ⊗ 🪨)) ⊛ ((🧁 ⊛ 🧊) ⊕ inv(🧁))) = ((🦩 ⊕ 🪭) ⊛ ((🧁 ⊛ 🧊) ⊕ inv(🧁)))    [by ⊗ table]\nStep 3: ((🦩 ⊕ 🪭) ⊛ ((🧁 ⊛ 🧊) ⊕ inv(🧁))) = (🦩 ⊛ ((🧁 ⊛ 🧊) ⊕ inv(🧁)))    [by ⊕ table]\nStep 4: (🦩 ⊛ ((🧁 ⊛ 🧊) ⊕ inv(🧁))) = (🦩 ⊛ (inv((🧁 ⊗ 🧊)) ⊕ inv(🧁)))    [by definition of ⊛]\nStep 5: (🦩 ⊛ (inv((🧁 ⊗ 🧊)) ⊕ inv(🧁))) = (🦩 ⊛ (inv(🪨) ⊕ inv(🧁)))    [by ⊗ table]\nStep 6: (🦩 ⊛ (inv(🪨) ⊕ inv(🧁))) = (🦩 ⊛ (🦩 ⊕ inv(🧁)))    [by inv]\nStep 7: (🦩 ⊛ (🦩 ⊕ inv(🧁))) = (🦩 ⊛ (🦩 ⊕ 🪨))    [by inv]\nStep 8: (🦩 ⊛ (🦩 ⊕ 🪨)) = (🦩 ⊛ 🪨)    [by ⊕ table]\nStep 9: (🦩 ⊛ 🪨) = inv((🦩 ⊗ 🪨))    [by definition of ⊛]\nStep 10: inv((🦩 ⊗ 🪨)) = inv(🧊)    [by ⊗ table]\nStep 11: inv(🧊) = 🪭    [by inv]\n\nFinal Output: 🪭",
+        groundTruth: "🪭",
+        wrongBranch: "🪨",
+        chainLength: 11,
+        prefillErrorStep: 5,
+        symbols: 5,
+        baseOps: 2,
+        derivedOps: 1,
+        transformations: 1
       },
       expert: {
-        operands: ["🌸", "🎭", "🌊", "🥟", "🪈", "🧊"],
-        table: [
-          ["🎭", "🌊", "🥟", "🪈", "🧊", "🌸"],
-          ["🌊", "🥟", "🪈", "🧊", "🌸", "🎭"],
-          ["🥟", "🪈", "🧊", "🌸", "🎭", "🌊"],
-          ["🪈", "🧊", "🌸", "🎭", "🌊", "🥟"],
-          ["🧊", "🌸", "🎭", "🌊", "🥟", "🪈"],
-          ["🌸", "🎭", "🌊", "🥟", "🪈", "🧊"]
-        ],
-        expression: "((🌸 ⊕ 🎭) ⊕ ((🌊 ⊕ 🥟) ⊕ 🪈)) ⊕ (🧊 ⊕ ((🌸 ⊕ 🎭) ⊕ 🌊))",
-        derivation: "≈ 11 steps",
-        answer: "🧊"
+        exampleId: "emoji-bench-e-continue-000075",
+        systemName: "Wren Structure",
+        rules: "Symbols: {🫐, 🪩, 🧲, 🪵, 🪨, 🧶}\n\nOperation ⊕ (defined by table):\nIn the table below, the row is the left operand and the column is the right operand. For example, row a and column b means a ⊕ b.\n\n| ⊕ | 🫐 | 🪩 | 🧲 | 🪵 | 🪨 | 🧶 |\n|---|---|---|---|---|---|---|\n| **🫐** | 🧶 | 🪨 | 🪩 | 🪵 | 🪵 | 🫐 |\n| **🪩** | 🧲 | 🪵 | 🧶 | 🪩 | 🫐 | 🧶 |\n| **🧲** | 🧲 | 🪩 | 🫐 | 🪨 | 🧶 | 🪩 |\n| **🪵** | 🪨 | 🧶 | 🪵 | 🧲 | 🪨 | 🫐 |\n| **🪨** | 🫐 | 🪨 | 🪵 | 🫐 | 🪩 | 🧲 |\n| **🧶** | 🪵 | 🧲 | 🧲 | 🪩 | 🧶 | 🪨 |\n\nOperation ⊗ (defined by table):\nIn the table below, the row is the left operand and the column is the right operand. For example, row a and column b means a ⊗ b.\n\n| ⊗ | 🫐 | 🪩 | 🧲 | 🪵 | 🪨 | 🧶 |\n|---|---|---|---|---|---|---|\n| **🫐** | 🫐 | 🪨 | 🫐 | 🪨 | 🫐 | 🧶 |\n| **🪩** | 🧲 | 🪩 | 🪩 | 🪵 | 🪩 | 🧲 |\n| **🧲** | 🫐 | 🧶 | 🧲 | 🧲 | 🧶 | 🧲 |\n| **🪵** | 🪵 | 🪵 | 🧲 | 🪵 | 🫐 | 🫐 |\n| **🪨** | 🪵 | 🪩 | 🪵 | 🪨 | 🪨 | 🪨 |\n| **🧶** | 🧶 | 🧶 | 🪩 | 🪩 | 🪨 | 🧶 |\n\nDerived operation ⊛:\nx ⊛ y = (x ⊕ x) ⊕ y\n\nDerived operation ⊞:\nx ⊞ y = (x ⊗ y) ⊗ x\n\nTransformation \"inv\":\n  inv(🫐) = 🧶\n  inv(🪩) = 🪵\n  inv(🧲) = 🫐\n  inv(🪵) = 🧲\n  inv(🪨) = 🪩\n  inv(🧶) = 🪨\n  Distribution property: inv(x ⊕ y) = inv(x) ⊕ inv(y)\n  Distribution property: inv(x ⊗ y) = inv(x) ⊗ inv(y)\n\nTransformation \"rot\":\n  rot(🫐) = 🪨\n  rot(🪩) = 🧲\n  rot(🧲) = 🧶\n  rot(🪵) = 🫐\n  rot(🪨) = 🪵\n  rot(🧶) = 🪩\n  Distribution property: rot(x ⊕ y) = rot(x) ⊕ rot(y)\n  Distribution property: rot(x ⊗ y) = rot(x) ⊗ rot(y)",
+        expression: "(inv((🪵 ⊛ (🪨 ⊗ 🪩))) ⊗ (((🪨 ⊗ 🫐) ⊕ rot(🧶)) ⊞ ((🪨 ⊕ 🧲) ⊗ rot(🫐))))",
+        prefill: "Start: (inv((🪵 ⊛ (🪨 ⊗ 🪩))) ⊗ (((🪨 ⊗ 🫐) ⊕ rot(🧶)) ⊞ ((🪨 ⊕ 🧲) ⊗ rot(🫐))))\n\nStep 1: (inv((🪵 ⊛ (🪨 ⊗ 🪩))) ⊗ (((🪨 ⊗ 🫐) ⊕ rot(🧶)) ⊞ ((🪨 ⊕ 🧲) ⊗ rot(🫐)))) = (inv((🪵 ⊛ 🪩)) ⊗ (((🪨 ⊗ 🫐) ⊕ rot(🧶)) ⊞ ((🪨 ⊕ 🧲) ⊗ rot(🫐))))    [by ⊗ table]\nStep 2: (inv((🪵 ⊛ 🪩)) ⊗ (((🪨 ⊗ 🫐) ⊕ rot(🧶)) ⊞ ((🪨 ⊕ 🧲) ⊗ rot(🫐)))) = (inv(((🪵 ⊕ 🪵) ⊕ 🪩)) ⊗ (((🪨 ⊗ 🫐) ⊕ rot(🧶)) ⊞ ((🪨 ⊕ 🧲) ⊗ rot(🫐))))    [by definition of ⊛]\nStep 3: (inv(((🪵 ⊕ 🪵) ⊕ 🪩)) ⊗ (((🪨 ⊗ 🫐) ⊕ rot(🧶)) ⊞ ((🪨 ⊕ 🧲) ⊗ rot(🫐)))) = (inv((🧲 ⊕ 🪩)) ⊗ (((🪨 ⊗ 🫐) ⊕ rot(🧶)) ⊞ ((🪨 ⊕ 🧲) ⊗ rot(🫐))))    [by ⊕ table]\nStep 4: (inv((🧲 ⊕ 🪩)) ⊗ (((🪨 ⊗ 🫐) ⊕ rot(🧶)) ⊞ ((🪨 ⊕ 🧲) ⊗ rot(🫐)))) = (inv(🪩) ⊗ (((🪨 ⊗ 🫐) ⊕ rot(🧶)) ⊞ ((🪨 ⊕ 🧲) ⊗ rot(🫐))))    [by ⊕ table]\nStep 5: (inv(🪩) ⊗ (((🪨 ⊗ 🫐) ⊕ rot(🧶)) ⊞ ((🪨 ⊕ 🧲) ⊗ rot(🫐)))) = (🪵 ⊗ (((🪨 ⊗ 🫐) ⊕ rot(🧶)) ⊞ ((🪨 ⊕ 🧲) ⊗ rot(🫐))))    [by inv]\nStep 6: (🪵 ⊗ (((🪨 ⊗ 🫐) ⊕ rot(🧶)) ⊞ ((🪨 ⊕ 🧲) ⊗ rot(🫐)))) = (🪵 ⊗ ((🪵 ⊕ rot(🧶)) ⊞ ((🪨 ⊕ 🧲) ⊗ rot(🫐))))    [by ⊗ table]\nStep 7: (🪵 ⊗ ((🪵 ⊕ rot(🧶)) ⊞ ((🪨 ⊕ 🧲) ⊗ rot(🫐)))) = (🪵 ⊗ ((🪵 ⊕ 🪨) ⊞ ((🪨 ⊕ 🧲) ⊗ rot(🫐))))    [by rot]",
+        cleanDerivation: "Start: (inv((🪵 ⊛ (🪨 ⊗ 🪩))) ⊗ (((🪨 ⊗ 🫐) ⊕ rot(🧶)) ⊞ ((🪨 ⊕ 🧲) ⊗ rot(🫐))))\n\nStep 1: (inv((🪵 ⊛ (🪨 ⊗ 🪩))) ⊗ (((🪨 ⊗ 🫐) ⊕ rot(🧶)) ⊞ ((🪨 ⊕ 🧲) ⊗ rot(🫐)))) = (inv((🪵 ⊛ 🪩)) ⊗ (((🪨 ⊗ 🫐) ⊕ rot(🧶)) ⊞ ((🪨 ⊕ 🧲) ⊗ rot(🫐))))    [by ⊗ table]\nStep 2: (inv((🪵 ⊛ 🪩)) ⊗ (((🪨 ⊗ 🫐) ⊕ rot(🧶)) ⊞ ((🪨 ⊕ 🧲) ⊗ rot(🫐)))) = (inv(((🪵 ⊕ 🪵) ⊕ 🪩)) ⊗ (((🪨 ⊗ 🫐) ⊕ rot(🧶)) ⊞ ((🪨 ⊕ 🧲) ⊗ rot(🫐))))    [by definition of ⊛]\nStep 3: (inv(((🪵 ⊕ 🪵) ⊕ 🪩)) ⊗ (((🪨 ⊗ 🫐) ⊕ rot(🧶)) ⊞ ((🪨 ⊕ 🧲) ⊗ rot(🫐)))) = (inv((🧲 ⊕ 🪩)) ⊗ (((🪨 ⊗ 🫐) ⊕ rot(🧶)) ⊞ ((🪨 ⊕ 🧲) ⊗ rot(🫐))))    [by ⊕ table]\nStep 4: (inv((🧲 ⊕ 🪩)) ⊗ (((🪨 ⊗ 🫐) ⊕ rot(🧶)) ⊞ ((🪨 ⊕ 🧲) ⊗ rot(🫐)))) = (inv(🪩) ⊗ (((🪨 ⊗ 🫐) ⊕ rot(🧶)) ⊞ ((🪨 ⊕ 🧲) ⊗ rot(🫐))))    [by ⊕ table]\nStep 5: (inv(🪩) ⊗ (((🪨 ⊗ 🫐) ⊕ rot(🧶)) ⊞ ((🪨 ⊕ 🧲) ⊗ rot(🫐)))) = (🪵 ⊗ (((🪨 ⊗ 🫐) ⊕ rot(🧶)) ⊞ ((🪨 ⊕ 🧲) ⊗ rot(🫐))))    [by inv]\nStep 6: (🪵 ⊗ (((🪨 ⊗ 🫐) ⊕ rot(🧶)) ⊞ ((🪨 ⊕ 🧲) ⊗ rot(🫐)))) = (🪵 ⊗ ((🪵 ⊕ rot(🧶)) ⊞ ((🪨 ⊕ 🧲) ⊗ rot(🫐))))    [by ⊗ table]\nStep 7: (🪵 ⊗ ((🪵 ⊕ rot(🧶)) ⊞ ((🪨 ⊕ 🧲) ⊗ rot(🫐)))) = (🪵 ⊗ ((🪵 ⊕ 🪩) ⊞ ((🪨 ⊕ 🧲) ⊗ rot(🫐))))    [by rot]\nStep 8: (🪵 ⊗ ((🪵 ⊕ 🪩) ⊞ ((🪨 ⊕ 🧲) ⊗ rot(🫐)))) = (🪵 ⊗ (🧶 ⊞ ((🪨 ⊕ 🧲) ⊗ rot(🫐))))    [by ⊕ table]\nStep 9: (🪵 ⊗ (🧶 ⊞ ((🪨 ⊕ 🧲) ⊗ rot(🫐)))) = (🪵 ⊗ (🧶 ⊞ (🪵 ⊗ rot(🫐))))    [by ⊕ table]\nStep 10: (🪵 ⊗ (🧶 ⊞ (🪵 ⊗ rot(🫐)))) = (🪵 ⊗ (🧶 ⊞ (🪵 ⊗ 🪨)))    [by rot]\nStep 11: (🪵 ⊗ (🧶 ⊞ (🪵 ⊗ 🪨))) = (🪵 ⊗ (🧶 ⊞ 🫐))    [by ⊗ table]\nStep 12: (🪵 ⊗ (🧶 ⊞ 🫐)) = (🪵 ⊗ ((🧶 ⊗ 🫐) ⊗ 🧶))    [by definition of ⊞]\nStep 13: (🪵 ⊗ ((🧶 ⊗ 🫐) ⊗ 🧶)) = (🪵 ⊗ (🧶 ⊗ 🧶))    [by ⊗ table]\nStep 14: (🪵 ⊗ (🧶 ⊗ 🧶)) = (🪵 ⊗ 🧶)    [by ⊗ table]\nStep 15: (🪵 ⊗ 🧶) = 🫐    [by ⊗ table]\n\nFinal Output: 🫐",
+        groundTruth: "🫐",
+        wrongBranch: "🪵",
+        chainLength: 15,
+        prefillErrorStep: 7,
+        symbols: 6,
+        baseOps: 2,
+        derivedOps: 2,
+        transformations: 2
       }
     };
 
     const exampleBody  = document.querySelector("#example-body");
     const exampleBtns  = Array.from(document.querySelectorAll(".example-toggle button"));
 
-    function renderTable(ex) {
-      const head = "⊕   |  " + ex.operands.join("  |  ");
-      const sep  = "─".repeat(head.length);
-      const rows = ex.table.map((row, i) =>
-        ex.operands[i] + "  |  " + row.join("  |  ")
-      );
-      return [head, sep, ...rows].join("\n");
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        "\"": "&quot;",
+        "'": "&#39;"
+      })[char]);
     }
+
+    const exampleLabel = document.querySelector("#example-label");
 
     function renderExample(diff) {
       const ex = examples[diff];
+      const rowNum = parseInt(ex.exampleId.replace("emoji-bench-e-continue-", ""), 10) + 1;
+      exampleLabel.textContent = `Sample ${String(rowNum).padStart(2, "0")}/100`;
       exampleBody.innerHTML = `
         <div class="example-col">
-          <span class="example-label">Operation table</span>
-          <pre class="op-table">${renderTable(ex)}</pre>
-          <span class="example-label">Expression</span>
-          <p class="expr">${ex.expression}</p>
-        </div>
-        <div class="example-col">
-          <div class="example-meta">
-            <span>Operands<strong>${ex.operands.length}</strong></span>
-            <span>Derivation<strong>${ex.derivation}</strong></span>
-            <span>Bucket<strong style="text-transform:capitalize">${diff}</strong></span>
-          </div>
-          <span class="example-label">Ground truth</span>
-          <p class="example-answer">Final Output: ${ex.answer}</p>
+          <span class="example-label">Rules</span>
+          <pre class="op-table example-pre rules">${escapeHtml(ex.rules)}</pre>
+          <span class="example-label">Expression to evaluate</span>
+          <p class="expr example-expression">${escapeHtml(ex.expression)}</p>
+          <details class="example-derivation">
+            <summary>Show correct derivation</summary>
+            <pre class="op-table example-pre derivation">${escapeHtml(ex.cleanDerivation)}</pre>
+          </details>
+          <div class="example-target"><span>Ground truth</span>Final Output: ${escapeHtml(ex.groundTruth)}</div>
         </div>
       `;
     }
