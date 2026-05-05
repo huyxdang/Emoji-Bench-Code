@@ -1333,13 +1333,13 @@
           <article class="obs-item">
             <div class="obs-tag">Choice &middot; Symbols</div>
             <h3>Why emojis?</h3>
-            <p>Emojis act as <em>neutral, out-of-distribution operands</em>. They tokenize as single units in modern tokenizers, carry no semantic prior that could leak the answer, and make every step trivial to verify by eye. A model can&rsquo;t shortcut the derivation through memorized algebra or lexical priors when the alphabet is 🥟, 🪈, 🧊.</p>
+            <p>Emojis act as neutral, out-of-distribution variables with no formal logic priors. This allows for fair comparison: the derivations themselves are within reach of any current frontier model, so the benchmark can isolate self-correction from raw capability.</p>
           </article>
 
           <article class="obs-item">
             <div class="obs-tag">Method &middot; Procedural</div>
             <h3>Procedurally generated, never seen.</h3>
-            <p>Each formal system, operator table, and target expression is sampled at run time from a controllable difficulty grammar. No fixed problem appears twice, and nothing exists upstream to memorize. Difficulty scales by rule count, expression depth, and derivation length &mdash; producing the four buckets of <span class="num">25</span> rows each (<span class="mono">easy / medium / hard / expert</span>).</p>
+            <p>Each formal system, operator table, and target expression is sampled from a controllable difficulty knob, which scales on number of rules, number of emojis, expression depth, etc. Synthetic generation makes samples cheap at scale, and because the logic is fully specified, every answer is verifiable by construction.</p>
           </article>
         </div>
 
