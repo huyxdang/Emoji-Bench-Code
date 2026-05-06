@@ -3,9 +3,9 @@
 Parses a model's continuation into ``Step N: <before> = <after>    [by <rule>]``
 tuples and validates the derivation against the formal system. Reuses the
 existing interpreter so "valid" means "evaluates to the same symbol under the
-system's operation table." This closes the compensating-error loophole the
-judge-plus-regex-only pipeline can't close: a step that writes a wrong ``after``
-is caught here even if the final output happens to match ground truth.
+system's operation table." This catches compensating-error continuations: a
+step that writes a wrong ``after`` is caught here even if the final output
+happens to match ground truth.
 
 The validator does NOT consult the prefill. It checks only that the model's
 own steps are (a) individually correct reductions, (b) consecutively continuous,

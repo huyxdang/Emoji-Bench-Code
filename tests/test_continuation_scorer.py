@@ -1,4 +1,4 @@
-from emoji_bench.judge.continuation_scorer import (
+from emoji_bench.scoring.continuation_scorer import (
     classify_outcome,
     detects_loose,
     detects_strict,

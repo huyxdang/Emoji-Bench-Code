@@ -13,8 +13,8 @@ Examples:
 
 Notes:
   - Defaults to artifacts/emoji-bench-dataset-100
-  - Runs the full 36-run matrix:
-      9 models x 2 modes (prefill, single_turn) x 2 prompt levels (L0, L1)
+  - Runs only the B-L0 headline slice:
+      9 models x prefill delivery x L0 ("Please continue.")
   - Any args after -- are forwarded to every evaluate_continuation.py call
   - Scores final-answer-only after the eval phase finishes
   - Generates B-variant final-answer plots in artifacts/plots/
@@ -59,9 +59,9 @@ MODELS=(
   "magistral-medium-2509"
 )
 
-MODES=("prefill" "single_turn")
-LEVELS=("0" "1")
-TOTAL_RUNS=$(( ${#MODELS[@]} * ${#MODES[@]} * ${#LEVELS[@]} ))
+MODE="prefill"
+LEVEL="0"
+TOTAL_RUNS=${#MODELS[@]}
 RUN_INDEX=0
 SUCCESS_COUNT=0
 FAILED_RUNS=()
@@ -69,40 +69,27 @@ SUCCESSFUL_OUTPUT_DIRS=()
 SCORE_SUCCESS_COUNT=0
 SCORE_FAILED_RUNS=()
 
-matrix_variant() {
-  local mode="$1"
-  if [[ "$mode" == "prefill" ]]; then
-    echo "B"
-  else
-    echo "C"
-  fi
-}
-
 for model in "${MODELS[@]}"; do
-  for mode in "${MODES[@]}"; do
-    for level in "${LEVELS[@]}"; do
-      RUN_INDEX=$((RUN_INDEX + 1))
-      echo "[$RUN_INDEX/$TOTAL_RUNS] model=$model mode=$mode turn_2_level=$level"
-      EVAL_CMD=(
-        "$PYTHON_BIN"
-        scripts/evaluate_continuation.py
-        "$DATASET"
-        --model "$model"
-        --mode "$mode"
-        --turn-2-prompt-level "$level"
-      )
-      if (( ${#EXTRA_ARGS[@]} > 0 )); then
-        EVAL_CMD+=("${EXTRA_ARGS[@]}")
-      fi
-      if "${EVAL_CMD[@]}"; then
-        SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
-        SUCCESSFUL_OUTPUT_DIRS+=("artifacts/evals/${model}-$(matrix_variant "$mode")-L${level}")
-      else
-        FAILED_RUNS+=("model=$model mode=$mode turn_2_level=$level")
-        echo "FAILED: model=$model mode=$mode turn_2_level=$level" >&2
-      fi
-    done
-  done
+  RUN_INDEX=$((RUN_INDEX + 1))
+  echo "[$RUN_INDEX/$TOTAL_RUNS] model=$model mode=$MODE turn_2_level=$LEVEL"
+  EVAL_CMD=(
+    "$PYTHON_BIN"
+    scripts/evaluate_continuation.py
+    "$DATASET"
+    --model "$model"
+    --mode "$MODE"
+    --turn-2-prompt-level "$LEVEL"
+  )
+  if (( ${#EXTRA_ARGS[@]} > 0 )); then
+    EVAL_CMD+=("${EXTRA_ARGS[@]}")
+  fi
+  if "${EVAL_CMD[@]}"; then
+    SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
+    SUCCESSFUL_OUTPUT_DIRS+=("artifacts/evals/${model}-B-L${LEVEL}")
+  else
+    FAILED_RUNS+=("model=$model mode=$MODE turn_2_level=$LEVEL")
+    echo "FAILED: model=$model mode=$MODE turn_2_level=$LEVEL" >&2
+  fi
 done
 
 echo
@@ -110,7 +97,7 @@ echo "Eval phase completed: $SUCCESS_COUNT/$TOTAL_RUNS runs successful."
 
 for output_dir in "${SUCCESSFUL_OUTPUT_DIRS[@]}"; do
   echo "Scoring: $output_dir"
-  if "$PYTHON_BIN" scripts/score_continuation.py "$output_dir" --ignore-judge; then
+  if "$PYTHON_BIN" scripts/score_continuation.py "$output_dir"; then
     SCORE_SUCCESS_COUNT=$((SCORE_SUCCESS_COUNT + 1))
   else
     SCORE_FAILED_RUNS+=("$output_dir")

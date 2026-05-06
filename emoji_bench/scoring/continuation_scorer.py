@@ -1,4 +1,4 @@
-"""Phase 5: scoring for E-CONTINUE predictions.
+"""Deterministic scoring for E-CONTINUE predictions.
 
 Scoring is split from inference so saved predictions can be rescored as
 the scoring rules evolve without re-spending API calls. The pipeline:
@@ -153,8 +153,8 @@ def detects_strict(text: str, *, error_step: int | None = None) -> bool:
 
     If ``error_step`` is provided, require the referenced step to match it
     (within the co-occurrence window). Otherwise any numbered step counts.
-    A judge-fallback path can upgrade ambiguous cases later without
-    changing this regex.
+    This remains a regex-only diagnostic signal; the headline metric is
+    final-answer correctness.
     """
     for match in DETECT_LOOSE_REGEX.finditer(text):
         start = max(0, match.start() - _STRICT_WINDOW_CHARS)
@@ -311,124 +311,10 @@ def score_prediction(row: dict[str, Any]) -> ScoredContinuation:
     )
 
 
-# --- Nested judge-backed scoring ------------------------------------------
-#
-# New headline pipeline (Phase 5b). Two judge-backed metrics replace the
-# older DCF-style report:
-#
-#     error_recovered         = LLM judge says the continuation recovered from
-#                               the seeded prefill error, explicitly or
-#                               implicitly.
-#     final_answer_correct    = extracted ``Final Output`` matches the stored
-#                               ground-truth terminal symbol.
-#
-# The regex bucket system stays in place as an orthogonal diagnostic baseline.
-
-
-@dataclass(frozen=True)
-class NestedScoredContinuation:
-    example_id: str
-    difficulty: str
-    chain_length_x: int
-    prefill_error_step: int
-
-    error_recovered: bool
-    judge_reasoning: str
-    final_output: str | None
-    final_answer_correct: bool
-
-    model: str
-    provider: str
-    mode: str
-    turn_2_level: int | None
-
-    def to_dict(self) -> dict[str, Any]:
-        return {
-            "example_id": self.example_id,
-            "difficulty": self.difficulty,
-            "chain_length_x": self.chain_length_x,
-            "prefill_error_step": self.prefill_error_step,
-            "error_recovered": self.error_recovered,
-            "judge_reasoning": self.judge_reasoning,
-            "final_output": self.final_output,
-            "final_answer_correct": self.final_answer_correct,
-            "model": self.model,
-            "provider": self.provider,
-            "mode": self.mode,
-            "turn_2_level": self.turn_2_level,
-        }
-
-
-def score_prediction_nested(
-    *,
-    prediction_row: dict[str, Any],
-    judge_verdict: Any,  # emoji_bench.continuation_judge.JudgeVerdict
-    final_output: str | None,
-) -> NestedScoredContinuation:
-    """Combine judge + extracted final output into the two headline outcomes."""
-    final_answer_correct = final_output == prediction_row.get("ground_truth_final_output")
-
-    return NestedScoredContinuation(
-        example_id=prediction_row["example_id"],
-        difficulty=prediction_row["difficulty"],
-        chain_length_x=prediction_row["chain_length_x"],
-        prefill_error_step=prediction_row["prefill_error_step"],
-        error_recovered=bool(judge_verdict.error_recovered),
-        judge_reasoning=str(judge_verdict.reasoning),
-        final_output=final_output,
-        final_answer_correct=final_answer_correct,
-        model=prediction_row.get("model", ""),
-        provider=prediction_row.get("provider", ""),
-        mode=prediction_row.get("mode", ""),
-        turn_2_level=prediction_row.get("turn_2_level"),
-    )
-
-
-def summarize_nested(
-    scored: list[NestedScoredContinuation],
-) -> dict[str, Any]:
-    """Aggregate the two headline rates overall + per difficulty."""
-    total = len(scored)
-    if total == 0:
-        return {
-            "total": 0,
-            "error_recovery_rate": 0.0,
-            "final_answer_correct_rate": 0.0,
-            "by_difficulty": {},
-        }
-
-    n_recovered = sum(1 for s in scored if s.error_recovered)
-    n_final_correct = sum(1 for s in scored if s.final_answer_correct)
-
-    by_difficulty: dict[str, dict[str, Any]] = {}
-    diff_counts: dict[str, Counter] = {}
-    for s in scored:
-        d = s.difficulty
-        diff_counts.setdefault(d, Counter())
-        diff_counts[d]["_total"] += 1
-        diff_counts[d]["recovered"] += int(s.error_recovered)
-        diff_counts[d]["final_correct"] += int(s.final_answer_correct)
-
-    for d, c in diff_counts.items():
-        n = c["_total"]
-        by_difficulty[d] = {
-            "total": n,
-            "error_recovery_rate": round(c["recovered"] / n, 4) if n else 0.0,
-            "final_answer_correct_rate": round(c["final_correct"] / n, 4) if n else 0.0,
-        }
-
-    return {
-        "total": total,
-        "error_recovery_rate": round(n_recovered / total, 4),
-        "final_answer_correct_rate": round(n_final_correct / total, 4),
-        "by_difficulty": by_difficulty,
-    }
-
-
 def summarize_final_answer_only(
     scored: list[ScoredContinuation],
 ) -> dict[str, Any]:
-    """Aggregate final-answer correctness when judge output is unavailable."""
+    """Aggregate final-answer correctness overall and per difficulty."""
     total = len(scored)
     if total == 0:
         return {

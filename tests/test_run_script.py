@@ -32,12 +32,9 @@ with log_path.open("a", encoding="utf-8") as fh:
 
 joined = " ".join(args)
 fail_eval = os.environ.get("FAKE_FAIL_EVAL_SUBSTRING")
-fail_judge = os.environ.get("FAKE_FAIL_JUDGE_SUBSTRING")
 fail_score = os.environ.get("FAKE_FAIL_SCORE_SUBSTRING")
 
 if args and args[0] == "scripts/evaluate_continuation.py" and fail_eval and fail_eval in joined:
-    raise SystemExit(1)
-if args and args[0] == "scripts/judge_continuation.py" and fail_judge and fail_judge in joined:
     raise SystemExit(1)
 if args and args[0] == "scripts/score_continuation.py" and fail_score and fail_score in joined:
     raise SystemExit(1)
@@ -68,7 +65,7 @@ def _run_script(args: list[str], *, tmp_path: Path, extra_env: dict[str, str] | 
     return result, calls
 
 
-def test_run_sh_help_mentions_judge_defaults(tmp_path):
+def test_run_sh_help_mentions_final_answer_defaults(tmp_path):
     result = subprocess.run(
         ["./run.sh", "--help"],
         cwd=_repo_root(),
@@ -77,8 +74,9 @@ def test_run_sh_help_mentions_judge_defaults(tmp_path):
         check=True,
     )
 
-    assert "Runs judge+score after the eval phase finishes" in result.stdout
-    assert "gpt-5.4-mini-no-reasoning" in result.stdout
+    assert "Scores final-answer-only after the eval phase finishes" in result.stdout
+    assert "Runs only the B-L0 headline slice" in result.stdout
+    assert "Generates B-variant final-answer plots" in result.stdout
 
 
 def test_run_sh_rejects_forwarded_output_dir(tmp_path):
@@ -92,23 +90,23 @@ def test_run_sh_rejects_forwarded_output_dir(tmp_path):
     assert calls == []
 
 
-def test_run_sh_runs_eval_then_judge_then_score_for_successful_cells(tmp_path):
+def test_run_sh_runs_eval_then_score_for_successful_cells(tmp_path):
     result, calls = _run_script(
         ["artifacts/emoji-bench-dataset-100", "--", "--max-concurrent", "8"],
         tmp_path=tmp_path,
     )
 
     assert result.returncode == 0
-    assert "All eval, judge, and score runs completed successfully." in result.stdout
-    assert len(calls) == 108
+    assert "All eval, score, and plot steps completed successfully." in result.stdout
+    assert len(calls) == 19
 
     eval_calls = [call for call in calls if call[0] == "scripts/evaluate_continuation.py"]
-    judge_calls = [call for call in calls if call[0] == "scripts/judge_continuation.py"]
     score_calls = [call for call in calls if call[0] == "scripts/score_continuation.py"]
+    plot_calls = [call for call in calls if call[0] == "scripts/plot_b_final_answer.py"]
 
-    assert len(eval_calls) == 36
-    assert len(judge_calls) == 36
-    assert len(score_calls) == 36
+    assert len(eval_calls) == 9
+    assert len(score_calls) == 9
+    assert len(plot_calls) == 1
 
     first_eval = eval_calls[0]
     assert first_eval[:8] == [
@@ -121,60 +119,46 @@ def test_run_sh_runs_eval_then_judge_then_score_for_successful_cells(tmp_path):
         "--turn-2-prompt-level",
         "0",
     ]
-    assert judge_calls[0][:5] == [
-        "scripts/judge_continuation.py",
-        "artifacts/evals/claude-opus-4-7-reasoning-max-B-L0",
-        "--judge-model",
-        "gpt-5.4-mini-no-reasoning",
-        "--max-concurrent",
-    ]
     assert score_calls[0] == [
         "scripts/score_continuation.py",
         "artifacts/evals/claude-opus-4-7-reasoning-max-B-L0",
     ]
+    assert all(call[call.index("--mode") + 1] == "prefill" for call in eval_calls)
+    assert all(call[call.index("--turn-2-prompt-level") + 1] == "0" for call in eval_calls)
 
 
-def test_run_sh_continues_past_failed_eval_and_skips_judging_failed_cell(tmp_path):
+def test_run_sh_continues_past_failed_eval_and_skips_scoring_failed_cell(tmp_path):
     result, calls = _run_script(
         ["artifacts/emoji-bench-dataset-100"],
         tmp_path=tmp_path,
-        extra_env={"FAKE_FAIL_EVAL_SUBSTRING": "gpt-5.4-reasoning-xhigh --mode single_turn --turn-2-prompt-level 1"},
+        extra_env={"FAKE_FAIL_EVAL_SUBSTRING": "gpt-5.4-reasoning-xhigh --mode prefill --turn-2-prompt-level 0"},
     )
 
     assert result.returncode == 1
-    assert "FAILED: model=gpt-5.4-reasoning-xhigh mode=single_turn turn_2_level=1" in result.stderr
+    assert "FAILED: model=gpt-5.4-reasoning-xhigh mode=prefill turn_2_level=0" in result.stderr
     assert "Failed eval runs:" in result.stdout
 
     eval_calls = [call for call in calls if call[0] == "scripts/evaluate_continuation.py"]
-    judge_calls = [call for call in calls if call[0] == "scripts/judge_continuation.py"]
     score_calls = [call for call in calls if call[0] == "scripts/score_continuation.py"]
 
-    assert len(eval_calls) == 36
-    assert len(judge_calls) == 35
-    assert len(score_calls) == 35
+    assert len(eval_calls) == 9
+    assert len(score_calls) == 8
 
-    failed_output_dir = "artifacts/evals/gpt-5.4-reasoning-xhigh-C-L1"
-    assert all(call[1] != failed_output_dir for call in judge_calls)
+    failed_output_dir = "artifacts/evals/gpt-5.4-reasoning-xhigh-B-L0"
     assert all(call[1] != failed_output_dir for call in score_calls)
 
 
-def test_run_sh_skips_score_when_judge_fails(tmp_path):
+def test_run_sh_reports_failed_scores(tmp_path):
     result, calls = _run_script(
         ["artifacts/emoji-bench-dataset-100"],
         tmp_path=tmp_path,
-        extra_env={"FAKE_FAIL_JUDGE_SUBSTRING": "claude-opus-4-6-reasoning-max-B-L0"},
+        extra_env={"FAKE_FAIL_SCORE_SUBSTRING": "claude-opus-4-6-reasoning-max-B-L0"},
     )
 
     assert result.returncode == 1
-    assert "JUDGE FAILED: artifacts/evals/claude-opus-4-6-reasoning-max-B-L0" in result.stderr
-    assert "Failed judge runs:" in result.stdout
+    assert "SCORE FAILED: artifacts/evals/claude-opus-4-6-reasoning-max-B-L0" in result.stderr
+    assert "Failed score runs:" in result.stdout
 
-    judge_calls = [call for call in calls if call[0] == "scripts/judge_continuation.py"]
     score_calls = [call for call in calls if call[0] == "scripts/score_continuation.py"]
 
-    assert len(judge_calls) == 36
-    assert len(score_calls) == 35
-    assert all(
-        call[1] != "artifacts/evals/claude-opus-4-6-reasoning-max-B-L0"
-        for call in score_calls
-    )
+    assert len(score_calls) == 9

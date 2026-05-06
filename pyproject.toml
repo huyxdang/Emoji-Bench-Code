@@ -9,7 +9,7 @@ dependencies = []
 [project.optional-dependencies]
 dev = ["pytest"]
 hf = ["huggingface_hub>=0.23"]
-openai = ["openai>=1.0", "pydantic>=2"]
+openai = ["openai>=1.0"]
 anthropic = ["anthropic"]
 
 [build-system]

@@ -8,9 +8,7 @@ from pathlib import Path
 
 PREDICTIONS_FILENAME = "predictions.jsonl"
 SUMMARY_FILENAME = "summary.json"
-JUDGE_FILENAME = "judge.jsonl"
 SCORES_FILENAME = "scores.jsonl"
-NESTED_SCORES_FILENAME = "nested_scores.jsonl"
 SCORE_SUMMARY_FILENAME = "score_summary.json"
 
 
@@ -79,21 +77,11 @@ class EvalArtifactPaths:
 
 
 @dataclass(frozen=True)
-class JudgeArtifactPaths:
-    output_dir: Path
-    predictions_path: Path
-    summary_path: Path
-    judge_path: Path
-
-
-@dataclass(frozen=True)
 class ScoreArtifactPaths:
     output_dir: Path
     predictions_path: Path
     summary_path: Path
-    judge_path: Path
     scores_path: Path
-    nested_scores_path: Path
     score_summary_path: Path
 
 
@@ -103,17 +91,6 @@ def build_eval_artifact_paths(output_dir: str | Path) -> EvalArtifactPaths:
         output_dir=resolved_output_dir,
         predictions_path=resolved_output_dir / PREDICTIONS_FILENAME,
         summary_path=resolved_output_dir / SUMMARY_FILENAME,
-    )
-
-
-def build_judge_artifact_paths(predictions_path: str | Path) -> JudgeArtifactPaths:
-    resolved_predictions_path = Path(predictions_path)
-    output_dir = resolved_predictions_path.parent
-    return JudgeArtifactPaths(
-        output_dir=output_dir,
-        predictions_path=resolved_predictions_path,
-        summary_path=output_dir / SUMMARY_FILENAME,
-        judge_path=output_dir / JUDGE_FILENAME,
     )
 
 
@@ -130,8 +107,6 @@ def build_score_artifact_paths(
         output_dir=resolved_output_dir,
         predictions_path=resolved_predictions_path,
         summary_path=resolved_output_dir / SUMMARY_FILENAME,
-        judge_path=resolved_output_dir / JUDGE_FILENAME,
         scores_path=resolved_output_dir / SCORES_FILENAME,
-        nested_scores_path=resolved_output_dir / NESTED_SCORES_FILENAME,
         score_summary_path=resolved_output_dir / SCORE_SUMMARY_FILENAME,
     )

@@ -1,6 +1,6 @@
 {
-  "predictions_path": "/Users/huydang/Desktop/Emoji-Bench/artifacts/evals/gpt-5.4-reasoning-xhigh-B-L0/predictions.jsonl",
-  "scores_path": "/Users/huydang/Desktop/Emoji-Bench/artifacts/evals/gpt-5.4-reasoning-xhigh-B-L0/scores.jsonl",
+  "predictions_path": "artifacts/evals/gpt-5.4-reasoning-xhigh-B-L0/predictions.jsonl",
+  "scores_path": "artifacts/evals/gpt-5.4-reasoning-xhigh-B-L0/scores.jsonl",
   "headline": {
     "total": 100,
     "final_answer_correct_rate": 0.96,
@@ -79,6 +79,5 @@
         "_total": 25
       }
     }
-  },
-  "note": "judge.jsonl was ignored via --ignore-judge; final-output-only headline emitted."
+  }
 }

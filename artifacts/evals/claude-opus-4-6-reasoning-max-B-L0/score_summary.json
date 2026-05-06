@@ -1,6 +1,6 @@
 {
-  "predictions_path": "/Users/huydang/Desktop/Emoji-Bench/artifacts/evals/claude-opus-4-6-reasoning-max-B-L0/predictions.jsonl",
-  "scores_path": "/Users/huydang/Desktop/Emoji-Bench/artifacts/evals/claude-opus-4-6-reasoning-max-B-L0/scores.jsonl",
+  "predictions_path": "artifacts/evals/claude-opus-4-6-reasoning-max-B-L0/predictions.jsonl",
+  "scores_path": "artifacts/evals/claude-opus-4-6-reasoning-max-B-L0/scores.jsonl",
   "headline": {
     "total": 100,
     "final_answer_correct_rate": 0.78,
@@ -79,6 +79,5 @@
         "_total": 25
       }
     }
-  },
-  "note": "judge.jsonl not found alongside predictions; error_recovery_rate is unavailable. Run scripts/judge_continuation.py first to enable it."
+  }
 }

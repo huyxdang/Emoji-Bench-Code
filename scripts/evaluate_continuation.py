@@ -7,9 +7,9 @@ sends each row to the configured provider in either ``prefill`` or
 output plus the metadata needed for Phase 5 scoring.
 
 This script deliberately does not score the predictions — scoring is a
-separate Phase 5 concern (regex / judge / outcome bucket classification),
-and keeping inference and scoring decoupled means we can rescore a saved
-predictions file as the scoring rules evolve without re-spending API calls.
+separate deterministic pass, and keeping inference and scoring decoupled means
+we can rescore a saved predictions file as the scoring rules evolve without
+re-spending API calls.
 """
 from __future__ import annotations
 

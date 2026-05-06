@@ -9,7 +9,7 @@ Two request modes are supported:
                    used on channels that do not accept multi-message chats.
 
 Requests do not use a system prompt, do not request structured output, and
-return raw text only. Judge and validator logic run later against that raw
+return raw text only. Scoring and validation run later against that raw
 continuation.
 """
 from __future__ import annotations

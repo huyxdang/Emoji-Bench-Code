@@ -1,4 +1,4 @@
-"""Bar-chart visualizer for B-variant final-answer correctness, judge-free.
+"""Bar-chart visualizer for B-variant final-answer correctness.
 
 Produces two PNGs in artifacts/plots/:
   * b_final_answer_l0.png — Final answer correct rate (without hint)
