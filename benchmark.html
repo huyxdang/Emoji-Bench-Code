@@ -283,18 +283,19 @@
       flex-direction: row;
       align-items: baseline;
       gap: 10px;
+      padding-left: 10px;
     }
     .logo-box {
       flex: 0 0 auto;
       align-self: center;
       display: grid;
       place-items: center;
-      width: 29px;
-      height: 29px;
+      width: 35px;
+      height: 35px;
     }
     .logo-box img {
-      max-width: 26px;
-      max-height: 26px;
+      max-width: 31px;
+      max-height: 31px;
       object-fit: contain;
       opacity: 0.92;
     }
@@ -357,7 +358,7 @@
     }
     .score-value .l1-score { color: var(--muted); }
     .delta-value {
-      font-size: 14px;
+      font-size: 16px;
       font-weight: 700;
       color: var(--delta);
     }
@@ -434,7 +435,7 @@
     <section class="section" id="benchmark">
       <div class="wrap">
         <h1>L0/L1 <em>Benchmark</em></h1>
-        <p class="lede">A focused view of the selected Anthropic, OpenAI, Google, and Mistral runs. Each row compares the no-hint and hinted continuation scores as two separate bars.</p>
+        <p class="lede">A focused view of the selected Anthropic, OpenAI, Google, xAI, and Mistral runs. Each row compares the no-hint and hinted continuation scores as two separate bars.</p>
 
         <div class="meta-row">
           <span><strong>Variant</strong> B</span>
@@ -484,6 +485,10 @@
       {
         model: "Opus 4.6", provider: "Anthropic", logo: "public/claude.svg",
         l0: 78, l1: 99
+      },
+      {
+        model: "Grok 4.3", provider: "xAI", logo: "public/grok.webp",
+        l0: 33, l1: 84
       },
       {
         model: "Magistral Med.", provider: "Mistral", logo: "public/mistral.png",
