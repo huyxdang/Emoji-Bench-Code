@@ -1,0 +1,87 @@
+{
+  "dataset_name": "emoji-bench-e-continue",
+  "total_examples": 300,
+  "bases_per_difficulty": 75,
+  "master_seed": 20260527,
+  "target_lengths": {
+    "easy": 6,
+    "medium": 8,
+    "hard": 10,
+    "expert": 14
+  },
+  "difficulty_configs": {
+    "easy": {
+      "n_symbols": 3,
+      "n_base_ops": 1,
+      "n_derived_ops": 0,
+      "n_transformations": 0
+    },
+    "medium": {
+      "n_symbols": 4,
+      "n_base_ops": 1,
+      "n_derived_ops": 1,
+      "n_transformations": 1
+    },
+    "hard": {
+      "n_symbols": 5,
+      "n_base_ops": 2,
+      "n_derived_ops": 1,
+      "n_transformations": 1
+    },
+    "expert": {
+      "n_symbols": 6,
+      "n_base_ops": 2,
+      "n_derived_ops": 2,
+      "n_transformations": 2
+    }
+  },
+  "split_counts": {
+    "train": 0,
+    "validation": 0,
+    "test": 300
+  },
+  "difficulty_counts": {
+    "easy": 75,
+    "medium": 75,
+    "hard": 75,
+    "expert": 75
+  },
+  "error_type_counts": {
+    "E-CONTINUE": 300
+  },
+  "generator_commit": "02168e72d241b9cd805398244cb7edf2903e446e",
+  "rejection_counts": {
+    "easy": {
+      "chain_too_short": 0,
+      "insufficient_runway": 12,
+      "no_eligible_in_chain": 0,
+      "no_eligible_in_window": 0,
+      "cascade_convergent": 1,
+      "other_injector_error": 0
+    },
+    "medium": {
+      "chain_too_short": 0,
+      "insufficient_runway": 66,
+      "no_eligible_in_chain": 0,
+      "no_eligible_in_window": 0,
+      "cascade_convergent": 8,
+      "other_injector_error": 0
+    },
+    "hard": {
+      "chain_too_short": 0,
+      "insufficient_runway": 29,
+      "no_eligible_in_chain": 0,
+      "no_eligible_in_window": 0,
+      "cascade_convergent": 0,
+      "other_injector_error": 0
+    },
+    "expert": {
+      "chain_too_short": 0,
+      "insufficient_runway": 15,
+      "no_eligible_in_chain": 0,
+      "no_eligible_in_window": 0,
+      "cascade_convergent": 5,
+      "other_injector_error": 0
+    }
+  }
+}

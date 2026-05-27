@@ -1,0 +1,83 @@
+{
+  "predictions_path": "/home/long_2/hai/EmojiBench/Emoji-Bench-Code/scripts/Exp2_Local_Model/artifacts/evals/Qwen-Qwen3-8B-B-L1/predictions.jsonl",
+  "scores_path": "/home/long_2/hai/EmojiBench/Emoji-Bench-Code/scripts/Exp2_Local_Model/artifacts/evals/Qwen-Qwen3-8B-B-L1/scores.jsonl",
+  "headline": {
+    "total": 100,
+    "final_answer_correct_rate": 0.2,
+    "by_difficulty": {
+      "easy": {
+        "total": 25,
+        "final_answer_correct_rate": 0.12
+      },
+      "medium": {
+        "total": 25,
+        "final_answer_correct_rate": 0.24
+      },
+      "hard": {
+        "total": 25,
+        "final_answer_correct_rate": 0.24
+      },
+      "expert": {
+        "total": 25,
+        "final_answer_correct_rate": 0.2
+      }
+    }
+  },
+  "headline_kind": "final_output_only",
+  "regex_baseline": {
+    "total": 100,
+    "outcome_buckets": {
+      "detect_recover": 0,
+      "silent_recovery": 20,
+      "detect_only": 0,
+      "blind_wrong_branch": 28,
+      "off_rails": 40,
+      "extraction_failed": 12
+    },
+    "rates": {
+      "self_detection_loose": 0.0,
+      "self_detection_strict": 0.0,
+      "final_answer_recovery": 0.2,
+      "blind_cascade": 0.28,
+      "extraction_ok": 0.88
+    },
+    "by_difficulty": {
+      "easy": {
+        "detect_recover": 0,
+        "silent_recovery": 3,
+        "detect_only": 0,
+        "blind_wrong_branch": 14,
+        "off_rails": 8,
+        "extraction_failed": 0,
+        "_total": 25
+      },
+      "medium": {
+        "detect_recover": 0,
+        "silent_recovery": 6,
+        "detect_only": 0,
+        "blind_wrong_branch": 9,
+        "off_rails": 9,
+        "extraction_failed": 1,
+        "_total": 25
+      },
+      "hard": {
+        "detect_recover": 0,
+        "silent_recovery": 6,
+        "detect_only": 0,
+        "blind_wrong_branch": 2,
+        "off_rails": 13,
+        "extraction_failed": 4,
+        "_total": 25
+      },
+      "expert": {
+        "detect_recover": 0,
+        "silent_recovery": 5,
+        "detect_only": 0,
+        "blind_wrong_branch": 3,
+        "off_rails": 10,
+        "extraction_failed": 7,
+        "_total": 25
+      }
+    }
+  }
+}

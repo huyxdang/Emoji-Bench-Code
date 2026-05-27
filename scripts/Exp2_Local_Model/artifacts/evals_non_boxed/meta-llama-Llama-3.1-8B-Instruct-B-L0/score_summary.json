@@ -1,0 +1,83 @@
+{
+  "predictions_path": "/home/long_2/hai/EmojiBench/Emoji-Bench-Code/scripts/Exp2_Local_Model/artifacts/evals/meta-llama-Llama-3.1-8B-Instruct-B-L0/predictions.jsonl",
+  "scores_path": "/home/long_2/hai/EmojiBench/Emoji-Bench-Code/scripts/Exp2_Local_Model/artifacts/evals/meta-llama-Llama-3.1-8B-Instruct-B-L0/scores.jsonl",
+  "headline": {
+    "total": 100,
+    "final_answer_correct_rate": 0.12,
+    "by_difficulty": {
+      "easy": {
+        "total": 25,
+        "final_answer_correct_rate": 0.2
+      },
+      "medium": {
+        "total": 25,
+        "final_answer_correct_rate": 0.0
+      },
+      "hard": {
+        "total": 25,
+        "final_answer_correct_rate": 0.16
+      },
+      "expert": {
+        "total": 25,
+        "final_answer_correct_rate": 0.12
+      }
+    }
+  },
+  "headline_kind": "final_output_only",
+  "regex_baseline": {
+    "total": 100,
+    "outcome_buckets": {
+      "detect_recover": 0,
+      "silent_recovery": 12,
+      "detect_only": 0,
+      "blind_wrong_branch": 18,
+      "off_rails": 31,
+      "extraction_failed": 39
+    },
+    "rates": {
+      "self_detection_loose": 0.0,
+      "self_detection_strict": 0.0,
+      "final_answer_recovery": 0.12,
+      "blind_cascade": 0.18,
+      "extraction_ok": 0.61
+    },
+    "by_difficulty": {
+      "easy": {
+        "detect_recover": 0,
+        "silent_recovery": 5,
+        "detect_only": 0,
+        "blind_wrong_branch": 6,
+        "off_rails": 6,
+        "extraction_failed": 8,
+        "_total": 25
+      },
+      "medium": {
+        "detect_recover": 0,
+        "silent_recovery": 0,
+        "detect_only": 0,
+        "blind_wrong_branch": 3,
+        "off_rails": 6,
+        "extraction_failed": 16,
+        "_total": 25
+      },
+      "hard": {
+        "detect_recover": 0,
+        "silent_recovery": 4,
+        "detect_only": 0,
+        "blind_wrong_branch": 6,
+        "off_rails": 9,
+        "extraction_failed": 6,
+        "_total": 25
+      },
+      "expert": {
+        "detect_recover": 0,
+        "silent_recovery": 3,
+        "detect_only": 0,
+        "blind_wrong_branch": 3,
+        "off_rails": 10,
+        "extraction_failed": 9,
+        "_total": 25
+      }
+    }
+  }
+}

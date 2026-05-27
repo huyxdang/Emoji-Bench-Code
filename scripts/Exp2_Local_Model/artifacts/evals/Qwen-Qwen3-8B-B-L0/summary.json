@@ -1,0 +1,16 @@
+{
+  "model": "Qwen-Qwen3-8B",
+  "provider": "local",
+  "api_model": "Qwen/Qwen3-8B",
+  "mode": "prefill",
+  "matrix_variant": "B",
+  "matrix_cell": "B-L0",
+  "turn_2_level": 0,
+  "turn_2_user_sent": "Please continue.",
+  "max_output_tokens": 4096,
+  "input_path": "/data/long/hai/EmojiBench/Emoji-Bench-Code/artifacts/emoji-bench-dataset-100-boxed-ver/test.jsonl",
+  "output_dir": "/data/long/hai/EmojiBench/Emoji-Bench-Code/scripts/Exp2_Local_Model/artifacts/evals/Qwen-Qwen3-8B-B-L0",
+  "predictions_path": "/data/long/hai/EmojiBench/Emoji-Bench-Code/scripts/Exp2_Local_Model/artifacts/evals/Qwen-Qwen3-8B-B-L0/predictions.jsonl",
+  "total_examples": 100,
+  "completed_examples": 100
+}
