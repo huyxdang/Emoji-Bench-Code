@@ -15,6 +15,7 @@ from emoji_bench.model_registry import ModelConfig, ProviderName
 GEMINI_API_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models"
 MISTRAL_API_URL = "https://api.mistral.ai/v1/chat/completions"
 OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
+XAI_API_BASE_URL = "https://api.x.ai/v1"
 
 _MAX_RETRIES = 6
 _BASE_BACKOFF_SECONDS = 2.0
@@ -265,14 +266,16 @@ def resolve_api_key(
 
 
 def make_client(provider: ProviderName, *, api_key: str) -> Any:
-    if provider == "openai":
+    if provider in {"openai", "xai"}:
         try:
             from openai import OpenAI
         except ImportError as exc:
             raise RuntimeError(
-                "The openai package is required for OpenAI evaluation. "
+                "The openai package is required for OpenAI-compatible evaluation. "
                 'Install with `pip install -e ".[openai]"`.'
             ) from exc
+        if provider == "xai":
+            return OpenAI(api_key=api_key, base_url=XAI_API_BASE_URL, timeout=3600.0)
         return OpenAI(api_key=api_key)
 
     if provider == "anthropic":

@@ -76,7 +76,7 @@ def _dispatch_three_message_list(
     max_output_tokens: int,
 ) -> ContinuationResponse:
     provider = model_config.provider
-    if provider == "openai":
+    if provider in {"openai", "xai"}:
         return request_openai_messages(
             client=client,
             model_config=model_config,
@@ -147,7 +147,7 @@ def _dispatch_single_turn(
     max_output_tokens: int,
 ) -> ContinuationResponse:
     provider = model_config.provider
-    if provider == "openai":
+    if provider in {"openai", "xai"}:
         return request_openai_messages(
             client=client,
             model_config=model_config,

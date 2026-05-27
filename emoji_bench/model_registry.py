@@ -4,7 +4,7 @@ from dataclasses import asdict, dataclass, replace
 from typing import Literal
 
 
-ProviderName = Literal["openai", "anthropic", "mistral", "gemini", "openrouter"]
+ProviderName = Literal["openai", "anthropic", "mistral", "gemini", "openrouter", "xai"]
 OpenAIReasoningEffort = Literal["none", "minimal", "low", "medium", "high", "xhigh"]
 AnthropicEffort = Literal["low", "medium", "high", "max"]
 GeminiThinkingLevel = Literal["minimal", "low", "medium", "high"]
@@ -33,6 +33,7 @@ OPENAI_DOCS_BASE = "https://developers.openai.com/api/docs/models"
 ANTHROPIC_MODELS_DOCS_URL = "https://platform.claude.com/docs/en/about-claude/models/overview"
 GEMINI_MODELS_DOCS_URL = "https://ai.google.dev/gemini-api/docs/gemini-3"
 GEMINI_THINKING_DOCS_URL = "https://ai.google.dev/gemini-api/docs/thinking"
+XAI_REASONING_DOCS_URL = "https://docs.x.ai/developers/model-capabilities/text/reasoning"
 
 
 @dataclass(frozen=True)
@@ -158,6 +159,27 @@ def _mistral_model(
         docs_url=docs_url,
         api_key_env_var="MISTRAL_API_KEY",
         default_max_output_tokens=default_max_output_tokens,
+        notes=notes,
+    )
+
+
+def _xai_model(
+    *,
+    key: str,
+    label: str,
+    api_model: str,
+    openai_reasoning: OpenAIReasoningConfig | None = None,
+    notes: str | None = None,
+) -> ModelConfig:
+    return ModelConfig(
+        key=key,
+        label=label,
+        provider="xai",
+        api_model=api_model,
+        docs_url=XAI_REASONING_DOCS_URL,
+        api_key_env_var="XAI_API_KEY",
+        default_max_output_tokens=DEFAULT_MAX_OUTPUT_TOKENS,
+        openai_reasoning=openai_reasoning,
         notes=notes,
     )
 
@@ -302,6 +324,17 @@ MISTRAL_MEDIUM_2508 = _mistral_model(
     notes=(
         "Mistral Medium 3.1 v25.08 supports chat completions and structured outputs "
         "via the Chat Completions API."
+    ),
+)
+
+GROK_4_3_REASONING_HIGH = _xai_model(
+    key="grok-4.3-reasoning-high",
+    label="Grok 4.3 (reasoning high)",
+    api_model="grok-4.3",
+    openai_reasoning=OpenAIReasoningConfig(effort="high"),
+    notes=(
+        "Pinned benchmark alias for xAI Grok 4.3 with reasoning.effort='high'. "
+        "Uses xAI's OpenAI-compatible Responses API."
     ),
 )
 
@@ -461,6 +494,7 @@ MODEL_CONFIGS: dict[str, ModelConfig] = {
     MISTRAL_LARGE_2512.key: MISTRAL_LARGE_2512,
     MAGISTRAL_MEDIUM_2509.key: MAGISTRAL_MEDIUM_2509,
     MISTRAL_MEDIUM_2508.key: MISTRAL_MEDIUM_2508,
+    GROK_4_3_REASONING_HIGH.key: GROK_4_3_REASONING_HIGH,
 }
 
 _MODEL_ORDER: tuple[str, ...] = (
@@ -476,6 +510,7 @@ _MODEL_ORDER: tuple[str, ...] = (
     "gemini-3-flash-preview-thinking-high",
     "mistral-large-2512",
     "magistral-medium-2509",
+    "grok-4.3-reasoning-high",
 )
 _MODEL_ORDER_INDEX: dict[str, int] = {key: index for index, key in enumerate(_MODEL_ORDER)}
 
@@ -538,6 +573,11 @@ def apply_reasoning_effort_override(
     effort: ReasoningEffortOverride,
 ) -> ModelConfig:
     if model_config.openai_reasoning is not None:
+        if model_config.provider == "xai" and effort not in {"none", "low", "medium", "high"}:
+            raise ValueError(
+                f"xAI reasoning does not support effort={effort!r}; use one of "
+                f"{('none', 'low', 'medium', 'high')}."
+            )
         if effort == "max":
             raise ValueError(
                 f"OpenAI reasoning does not support effort={effort!r}; use one of "

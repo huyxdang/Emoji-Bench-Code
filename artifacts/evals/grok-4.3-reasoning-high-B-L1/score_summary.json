@@ -1,0 +1,44 @@
+{
+  "predictions_path": "artifacts/evals/grok-4.3-reasoning-high-B-L1/predictions.jsonl",
+  "scores_path": "artifacts/evals/grok-4.3-reasoning-high-B-L1/scores.jsonl",
+  "headline": {
+    "total": 21,
+    "final_answer_correct_rate": 0.9524,
+    "by_difficulty": {
+      "easy": {
+        "total": 21,
+        "final_answer_correct_rate": 0.9524
+      }
+    }
+  },
+  "headline_kind": "final_output_only",
+  "regex_baseline": {
+    "total": 21,
+    "outcome_buckets": {
+      "detect_recover": 3,
+      "silent_recovery": 17,
+      "detect_only": 0,
+      "blind_wrong_branch": 1,
+      "off_rails": 0,
+      "extraction_failed": 0
+    },
+    "rates": {
+      "self_detection_loose": 0.1429,
+      "self_detection_strict": 0.1429,
+      "final_answer_recovery": 0.9524,
+      "blind_cascade": 0.0476,
+      "extraction_ok": 1.0
+    },
+    "by_difficulty": {
+      "easy": {
+        "detect_recover": 3,
+        "silent_recovery": 17,
+        "detect_only": 0,
+        "blind_wrong_branch": 1,
+        "off_rails": 0,
+        "extraction_failed": 0,
+        "_total": 21
+      }
+    }
+  }
+}

@@ -329,6 +329,35 @@ def test_request_continuation_prefill_openai_sends_three_message_conversation():
     assert sent.get("reasoning") == {"effort": "medium"}
 
 
+def test_request_continuation_prefill_xai_sends_grok_reasoning_high():
+    level_0 = get_turn_2_prompt(0)
+    response = _make_openai_response("(grok continuation)")
+    client = _FakeOpenAIClient(response)
+    model_config = get_model_config("grok-4.3-reasoning-high")
+
+    result = request_continuation(
+        client=client,
+        model_config=model_config,
+        turn_1_user="[T1U]",
+        turn_1_assistant_prefill="[PREFILL]",
+        max_output_tokens=512,
+        mode="prefill",
+    )
+
+    assert result.mode == "prefill"
+    assert result.raw_continuation_text == "(grok continuation)"
+
+    sent = client.responses.calls[0]
+    assert sent["model"] == "grok-4.3"
+    assert sent["max_output_tokens"] == 512
+    assert sent["reasoning"] == {"effort": "high"}
+    assert sent["input"] == [
+        {"role": "user", "content": "[T1U]"},
+        {"role": "assistant", "content": "[PREFILL]"},
+        {"role": "user", "content": level_0},
+    ]
+
+
 def test_request_continuation_prefill_mistral_sends_three_message_conversation():
     level_0 = get_turn_2_prompt(0)
     client = _FakeMistralClient(

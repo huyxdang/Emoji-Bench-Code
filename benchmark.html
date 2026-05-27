@@ -22,7 +22,10 @@
       --hair:     #d6d1c2;
       --accent:   #7a1f23;
       --accent-2: #b8443a;
-      --gain:     #b8443a;
+      --unprompted-bar: #c95b4d;
+      --prompted-bar:   #5a5a3d;
+      --delta:          #7a1f23;
+      --gain:           var(--prompted-bar);
       --max:      1180px;
 
       --serif: "Source Serif 4", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
@@ -220,23 +223,21 @@
     .key {
       width: 28px;
       height: 8px;
-      border: 1px solid var(--hair);
-      background: rgba(21,20,15,0.16);
+      border: 1px solid #a94a40;
+      background: var(--unprompted-bar);
     }
     .key.gain {
-      border-color: rgba(122,31,35,0.35);
-      background:
-        repeating-linear-gradient(135deg, var(--gain) 0, var(--gain) 1px, transparent 1px, transparent 4px),
-        rgba(184,68,58,0.8);
+      border-color: #4f4f35;
+      background: var(--gain);
     }
 
     .chart-bars { display: grid; }
     .bar-row {
       display: grid;
-      grid-template-columns: minmax(180px, 0.78fr) 58px minmax(430px, 3fr) 70px;
-      gap: 14px;
+      grid-template-columns: minmax(170px, 0.5fr) 52px minmax(430px, 3fr) 70px;
+      gap: 10px;
       align-items: center;
-      padding: 15px 22px;
+      padding: 24px 22px;
       width: 100%;
       border-bottom: 1px solid var(--hair);
       color: inherit;
@@ -309,64 +310,62 @@
     }
     .paired-track {
       position: relative;
-      height: 44px;
+      display: grid;
+      gap: 8px;
+      height: 72px;
+      padding: 8px 0;
       border-left: 1px solid var(--hair);
       border-right: 1px solid var(--hair);
       background:
         linear-gradient(to right, rgba(21,20,15,0.09) 1px, transparent 1px) 0 0 / 25% 100%,
         rgba(21,20,15,0.025);
     }
-    .l0-fill,
-    .gain-fill {
+    .bar-lane {
+      position: relative;
+      min-width: 0;
+      height: 24px;
+    }
+    .lane-fill {
       position: absolute;
-      top: 50%;
-      transform: translateY(-50%) scaleX(0);
+      inset: 0 auto 0 0;
+      transform: scaleX(0);
       transform-origin: left center;
-      height: 18px;
       animation: bar-shoot 680ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
       animation-delay: calc(var(--row, 0) * 55ms);
       will-change: transform;
     }
     .l0-fill {
-      left: 0;
       width: calc(var(--l0) * 1%);
       min-width: 2px;
-      background: rgba(21,20,15,0.62);
-      border-bottom: 1px solid var(--hair);
+      background: var(--unprompted-bar);
+      border-bottom: 1px solid #a94a40;
     }
-    .gain-fill {
-      left: calc(var(--start) * 1%);
-      width: calc(var(--gain-width) * 1%);
+    .l1-fill {
+      width: calc(var(--l1) * 1%);
       min-width: 2px;
-      background:
-        repeating-linear-gradient(135deg, var(--gain) 0, var(--gain) 1px, transparent 1px, transparent 4px),
-        var(--gain);
-      border-bottom: 1px solid rgba(122,31,35,0.35);
+      background: var(--prompted-bar);
+      border-bottom: 1px solid #4f4f35;
     }
-    .tick {
-      position: absolute;
-      top: 4px;
-      bottom: 4px;
-      width: 0;
-      border-left: 1px solid var(--ink);
-    }
-    .tick.l0 { left: calc(var(--l0) * 1%); opacity: 0.7; }
     .score-value {
+      display: grid;
+      gap: 8px;
+      align-items: center;
       font-size: 14px;
       font-weight: 500;
+      line-height: 24px;
       color: var(--ink);
     }
+    .score-value .l1-score { color: var(--muted); }
     .delta-value {
       font-size: 14px;
       font-weight: 700;
-      color: var(--accent);
+      color: var(--delta);
     }
-    .bar-row.is-leader .score-value,
-    .bar-row.is-leader .delta-value { color: var(--accent); }
+    .bar-row.is-leader .delta-value { color: var(--delta); }
 
     @keyframes bar-shoot {
-      0% { transform: translateY(-50%) scaleX(0); }
-      100% { transform: translateY(-50%) scaleX(1); }
+      0% { transform: scaleX(0); }
+      100% { transform: scaleX(1); }
     }
 
     .table-footnote {
@@ -400,7 +399,7 @@
         grid-column: 1 / -1;
       }
       .chart-head .model-head { display: none; }
-      .model-cell { grid-column: span 4; }
+      .model-cell { grid-column: 1 / -1; }
     }
 
     @media (max-width: 620px) {
@@ -435,7 +434,7 @@
     <section class="section" id="benchmark">
       <div class="wrap">
         <h1>L0/L1 <em>Benchmark</em></h1>
-        <p class="lede">A focused view of the selected Anthropic, OpenAI, Google, and Mistral runs. Each row uses one shared bar: L0 is the baseline, and the accent segment shows the L1 gain.</p>
+        <p class="lede">A focused view of the selected Anthropic, OpenAI, Google, and Mistral runs. Each row compares the no-hint and hinted continuation scores as two separate bars.</p>
 
         <div class="meta-row">
           <span><strong>Variant</strong> B</span>
@@ -448,8 +447,8 @@
           <div class="table-toolbar">
             <p class="leaderboard-stamp">Emoji Bench</p>
             <div class="legend" aria-label="Bar legend">
-              <span class="legend-item"><span class="key"></span>W/out Hint</span>
-              <span class="legend-item"><span class="key gain"></span>With Hint</span>
+              <span class="legend-item"><span class="key"></span>Unprompted</span>
+              <span class="legend-item"><span class="key gain"></span>Prompted</span>
             </div>
           </div>
 
@@ -457,7 +456,7 @@
 
           <div class="table-footnote">
             <span><sup>&dagger;</sup>Each cell is <span class="num">100/100</span> marked. Values shown are final-answer correct rates.</span>
-            <span><sup>&Dagger;</sup>The accent segment starts at L0 and ends at L1, so its length is the L1 minus L0 improvement.</span>
+            <span><sup>&Dagger;</sup>The red bar shows unprompted accuracy; the dark bar shows prompted accuracy on the same 0-100 scale.</span>
           </div>
         </div>
       </div>
@@ -487,7 +486,7 @@
         l0: 78, l1: 99
       },
       {
-        model: "Magistral Medium", provider: "Mistral", logo: "public/mistral.png",
+        model: "Magistral Med.", provider: "Mistral", logo: "public/mistral.png",
         l0: 18, l1: 22
       },
       {
@@ -509,34 +508,37 @@
         <span class="model-head">Model</span>
         <span class="score-head swatch-head" aria-hidden="true"></span>
         <span class="perf-head">Performance</span>
-        <span class="score-head">Delta</span>
+        <span class="score-head">Gap</span>
       `;
       return row;
     }
 
     function renderRow(item, idx) {
       const delta = item.l0 - item.l1;
-      const gain = item.l1 - item.l0;
       const row = document.createElement("div");
       row.className = "bar-row" + (idx === 0 ? " is-leader" : "");
       row.style.setProperty("--l0", item.l0);
       row.style.setProperty("--l1", item.l1);
-      row.style.setProperty("--start", Math.min(item.l0, item.l1));
-      row.style.setProperty("--gain-width", Math.abs(gain));
       row.style.setProperty("--row", idx);
-      row.setAttribute("aria-label", `${item.model}, without hint ${item.l0}%, with hint ${item.l1}%, no-hint deficit ${signed(delta)} points`);
+      row.setAttribute("aria-label", `${item.model}, unprompted ${item.l0}%, prompted ${item.l1}%, gap ${signed(delta)}%`);
       row.innerHTML = `
         <span class="model-cell">
           <span class="logo-box"><img src="${item.logo}" alt="${item.provider} logo"></span>
           <span class="model-name">${item.model}</span>
         </span>
-        <span class="score-value">${pct(item.l0)}</span>
-        <span class="paired-track" aria-hidden="true">
-          <span class="l0-fill"></span>
-          <span class="gain-fill"></span>
-          <span class="tick l0"></span>
+        <span class="score-value" aria-hidden="true">
+          <span>${pct(item.l0)}</span>
+          <span class="l1-score">${pct(item.l1)}</span>
         </span>
-        <span class="delta-value">${signed(delta)}</span>
+        <span class="paired-track" aria-hidden="true">
+          <span class="bar-lane">
+            <span class="lane-fill l0-fill"></span>
+          </span>
+          <span class="bar-lane">
+            <span class="lane-fill l1-fill"></span>
+          </span>
+        </span>
+        <span class="delta-value">${signed(delta)}%</span>
       `;
       return row;
     }
