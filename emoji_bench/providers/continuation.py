@@ -24,6 +24,7 @@ from emoji_bench.providers.anthropic import request_anthropic_messages
 from emoji_bench.providers.gemini import request_gemini_messages
 from emoji_bench.providers.mistral import request_mistral_messages
 from emoji_bench.providers.openai import request_openai_messages
+from emoji_bench.providers.openrouter import request_openrouter_messages
 from emoji_bench.providers.transport import ContinuationMode, ContinuationResponse
 from emoji_bench.model_registry import ModelConfig
 
@@ -99,6 +100,18 @@ def _dispatch_three_message_list(
             max_output_tokens=max_output_tokens,
             mode="prefill",
         )
+    if provider == "openrouter":
+        return request_openrouter_messages(
+            client=client,
+            model_config=model_config,
+            messages=[
+                {"role": "user", "content": turn_1_user},
+                {"role": "assistant", "content": turn_1_assistant_prefill},
+                {"role": "user", "content": turn_2_user},
+            ],
+            max_output_tokens=max_output_tokens,
+            mode="prefill",
+        )
     if provider == "gemini":
         return request_gemini_messages(
             client=client,
@@ -152,6 +165,14 @@ def _dispatch_single_turn(
         )
     if provider == "mistral":
         return request_mistral_messages(
+            client=client,
+            model_config=model_config,
+            messages=[{"role": "user", "content": prompt}],
+            max_output_tokens=max_output_tokens,
+            mode="single_turn",
+        )
+    if provider == "openrouter":
+        return request_openrouter_messages(
             client=client,
             model_config=model_config,
             messages=[{"role": "user", "content": prompt}],

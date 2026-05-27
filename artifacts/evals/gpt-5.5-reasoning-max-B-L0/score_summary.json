@@ -1,0 +1,83 @@
+{
+  "predictions_path": "artifacts/evals/gpt-5.5-reasoning-max-B-L0/predictions.jsonl",
+  "scores_path": "artifacts/evals/gpt-5.5-reasoning-max-B-L0/scores.jsonl",
+  "headline": {
+    "total": 100,
+    "final_answer_correct_rate": 0.98,
+    "by_difficulty": {
+      "easy": {
+        "total": 25,
+        "final_answer_correct_rate": 0.96
+      },
+      "medium": {
+        "total": 25,
+        "final_answer_correct_rate": 1.0
+      },
+      "hard": {
+        "total": 25,
+        "final_answer_correct_rate": 0.96
+      },
+      "expert": {
+        "total": 25,
+        "final_answer_correct_rate": 1.0
+      }
+    }
+  },
+  "headline_kind": "final_output_only",
+  "regex_baseline": {
+    "total": 100,
+    "outcome_buckets": {
+      "detect_recover": 90,
+      "silent_recovery": 8,
+      "detect_only": 0,
+      "blind_wrong_branch": 2,
+      "off_rails": 0,
+      "extraction_failed": 0
+    },
+    "rates": {
+      "self_detection_loose": 0.9,
+      "self_detection_strict": 0.9,
+      "final_answer_recovery": 0.98,
+      "blind_cascade": 0.02,
+      "extraction_ok": 1.0
+    },
+    "by_difficulty": {
+      "easy": {
+        "detect_recover": 19,
+        "silent_recovery": 5,
+        "detect_only": 0,
+        "blind_wrong_branch": 1,
+        "off_rails": 0,
+        "extraction_failed": 0,
+        "_total": 25
+      },
+      "medium": {
+        "detect_recover": 24,
+        "silent_recovery": 1,
+        "detect_only": 0,
+        "blind_wrong_branch": 0,
+        "off_rails": 0,
+        "extraction_failed": 0,
+        "_total": 25
+      },
+      "hard": {
+        "detect_recover": 23,
+        "silent_recovery": 1,
+        "detect_only": 0,
+        "blind_wrong_branch": 1,
+        "off_rails": 0,
+        "extraction_failed": 0,
+        "_total": 25
+      },
+      "expert": {
+        "detect_recover": 24,
+        "silent_recovery": 1,
+        "detect_only": 0,
+        "blind_wrong_branch": 0,
+        "off_rails": 0,
+        "extraction_failed": 0,
+        "_total": 25
+      }
+    }
+  }
+}

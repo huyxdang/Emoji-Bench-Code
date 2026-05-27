@@ -14,6 +14,7 @@ from emoji_bench.model_registry import ModelConfig, ProviderName
 
 GEMINI_API_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models"
 MISTRAL_API_URL = "https://api.mistral.ai/v1/chat/completions"
+OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 _MAX_RETRIES = 6
 _BASE_BACKOFF_SECONDS = 2.0
@@ -200,6 +201,24 @@ class _MistralClient:
 
 
 @dataclass(frozen=True)
+class _OpenRouterClient:
+    api_key: str
+
+    def chat_complete(self, options: dict[str, Any]) -> dict[str, Any]:
+        payload = json.dumps(options).encode("utf-8")
+        request = urllib_request.Request(
+            OPENROUTER_API_URL,
+            data=payload,
+            headers={
+                "Authorization": f"Bearer {self.api_key}",
+                "Content-Type": "application/json",
+            },
+            method="POST",
+        )
+        return _retryable_urlopen(request, label="OpenRouter")
+
+
+@dataclass(frozen=True)
 class _GeminiClient:
     api_key: str
 
@@ -283,6 +302,9 @@ def make_client(provider: ProviderName, *, api_key: str) -> Any:
     if provider == "mistral":
         return _MistralClient(api_key=api_key)
 
+    if provider == "openrouter":
+        return _OpenRouterClient(api_key=api_key)
+
     if provider == "gemini":
         return _GeminiClient(api_key=api_key)
 
@@ -361,5 +383,27 @@ def extract_gemini_usage(response: dict[str, Any]) -> ProviderUsage | None:
         input_tokens=input_tokens if isinstance(input_tokens, int) else None,
         output_tokens=output_tokens if isinstance(output_tokens, int) else None,
         reasoning_tokens=thoughts_tokens if isinstance(thoughts_tokens, int) else None,
+        total_tokens=total_tokens if isinstance(total_tokens, int) else None,
+    )
+
+
+def extract_openrouter_usage(response: dict[str, Any]) -> ProviderUsage | None:
+    usage = response.get("usage")
+    if not isinstance(usage, dict):
+        return None
+
+    input_tokens = usage.get("prompt_tokens")
+    output_tokens = usage.get("completion_tokens")
+    total_tokens = usage.get("total_tokens")
+    reasoning_tokens = usage.get("reasoning_tokens")
+
+    completion_details = usage.get("completion_tokens_details")
+    if reasoning_tokens is None and isinstance(completion_details, dict):
+        reasoning_tokens = completion_details.get("reasoning_tokens")
+
+    return ProviderUsage(
+        input_tokens=input_tokens if isinstance(input_tokens, int) else None,
+        output_tokens=output_tokens if isinstance(output_tokens, int) else None,
+        reasoning_tokens=reasoning_tokens if isinstance(reasoning_tokens, int) else None,
         total_tokens=total_tokens if isinstance(total_tokens, int) else None,
     )

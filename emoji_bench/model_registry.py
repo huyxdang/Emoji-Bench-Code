@@ -4,7 +4,7 @@ from dataclasses import asdict, dataclass, replace
 from typing import Literal
 
 
-ProviderName = Literal["openai", "anthropic", "mistral", "gemini"]
+ProviderName = Literal["openai", "anthropic", "mistral", "gemini", "openrouter"]
 OpenAIReasoningEffort = Literal["none", "minimal", "low", "medium", "high", "xhigh"]
 AnthropicEffort = Literal["low", "medium", "high", "max"]
 GeminiThinkingLevel = Literal["minimal", "low", "medium", "high"]
@@ -13,6 +13,7 @@ ReasoningEffortOverride = Literal["none", "minimal", "low", "medium", "high", "x
 
 DEFAULT_MAX_OUTPUT_TOKENS = 4096
 GPT_5_2_MAX_OUTPUT_TOKENS = 128000
+GPT_5_5_MAX_OUTPUT_TOKENS = 128000
 GPT_5_4_MAX_OUTPUT_TOKENS = 128000
 CLAUDE_OPUS_MAX_OUTPUT_TOKENS = 128000
 CLAUDE_SONNET_MAX_OUTPUT_TOKENS = 64000
@@ -130,10 +131,10 @@ def _gemini_model(
     return ModelConfig(
         key=key,
         label=label,
-        provider="gemini",
-        api_model=api_model,
+        provider="openrouter",
+        api_model=f"google/{api_model}",
         docs_url=docs_url,
-        api_key_env_var="GEMINI_API_KEY",
+        api_key_env_var="OPENROUTER_API_KEY",
         default_max_output_tokens=DEFAULT_MAX_OUTPUT_TOKENS,
         gemini_thinking=gemini_thinking,
         notes=notes,
@@ -177,6 +178,14 @@ GPT_5_2 = _openai_model(
         "Previous frontier model for professional work. Defaults to medium "
         "reasoning for non-headline evaluation runs."
     ),
+)
+GPT_5_5 = _openai_model(
+    key="gpt-5.5",
+    label="GPT-5.5",
+    api_model="gpt-5.5",
+    docs_suffix="gpt-5.5",
+    openai_reasoning=OpenAIReasoningConfig(effort="medium"),
+    notes="Configured to use medium reasoning effort for evaluation runs.",
 )
 GPT_5_4 = _openai_model(
     key="gpt-5.4",
@@ -309,6 +318,19 @@ MODEL_CONFIGS: dict[str, ModelConfig] = {
         notes=(
             "Pinned benchmark alias for GPT-5.2 at reasoning.effort='xhigh'. "
             "Defaults to OpenAI's published 128k max output tokens."
+        ),
+    ),
+    GPT_5_5.key: GPT_5_5,
+    "gpt-5.5-reasoning-max": replace(
+        GPT_5_5,
+        key="gpt-5.5-reasoning-max",
+        label="GPT-5.5 (reasoning max)",
+        default_max_output_tokens=GPT_5_5_MAX_OUTPUT_TOKENS,
+        openai_reasoning=OpenAIReasoningConfig(effort="xhigh"),
+        notes=(
+            "Pinned benchmark alias for GPT-5.5 at OpenAI's highest documented "
+            "reasoning.effort value, 'xhigh'. The alias keeps the local benchmark "
+            "naming convention of reasoning-max while sending the valid API value."
         ),
     ),
     GPT_5_4.key: GPT_5_4,
@@ -445,6 +467,7 @@ _MODEL_ORDER: tuple[str, ...] = (
     "claude-opus-4-7-reasoning-max",
     "claude-opus-4-6-reasoning-max",
     "claude-sonnet-4-6-reasoning-max",
+    "gpt-5.5-reasoning-max",
     "gpt-5.2-reasoning-xhigh",
     "gpt-5.4-reasoning-xhigh",
     "gpt-5.4-mini-reasoning-xhigh",

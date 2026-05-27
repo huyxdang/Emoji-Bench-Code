@@ -1,7 +1,7 @@
 {
-  "model": "claude-opus-4-7-reasoning-max",
+  "model": "claude-opus-4-6-reasoning-max",
   "provider": "anthropic",
-  "api_model": "claude-opus-4-7",
+  "api_model": "claude-opus-4-6",
   "mode": "prefill",
   "matrix_variant": "B",
   "matrix_cell": "B-L1",
@@ -16,8 +16,8 @@
   "turn_2_level": 1,
   "turn_2_user_sent": "Please continue. Double-check any step you're unsure about.",
   "input_path": "/Users/huydang/Desktop/Emoji-Bench-Code/artifacts/emoji-bench-dataset-100/test.jsonl",
-  "output_dir": "/Users/huydang/Desktop/Emoji-Bench-Code/artifacts/evals/claude-opus-4-7-reasoning-max-B-L1",
-  "predictions_path": "/Users/huydang/Desktop/Emoji-Bench-Code/artifacts/evals/claude-opus-4-7-reasoning-max-B-L1/predictions.jsonl",
+  "output_dir": "/Users/huydang/Desktop/Emoji-Bench-Code/artifacts/evals/claude-opus-4-6-reasoning-max-B-L1",
+  "predictions_path": "/Users/huydang/Desktop/Emoji-Bench-Code/artifacts/evals/claude-opus-4-6-reasoning-max-B-L1/predictions.jsonl",
   "total_examples": 100,
   "completed_examples": 100
 }

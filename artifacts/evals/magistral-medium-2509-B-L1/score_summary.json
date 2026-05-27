@@ -1,0 +1,83 @@
+{
+  "predictions_path": "artifacts/evals/magistral-medium-2509-B-L1/predictions.jsonl",
+  "scores_path": "artifacts/evals/magistral-medium-2509-B-L1/scores.jsonl",
+  "headline": {
+    "total": 100,
+    "final_answer_correct_rate": 0.22,
+    "by_difficulty": {
+      "easy": {
+        "total": 25,
+        "final_answer_correct_rate": 0.28
+      },
+      "medium": {
+        "total": 25,
+        "final_answer_correct_rate": 0.16
+      },
+      "hard": {
+        "total": 25,
+        "final_answer_correct_rate": 0.16
+      },
+      "expert": {
+        "total": 25,
+        "final_answer_correct_rate": 0.28
+      }
+    }
+  },
+  "headline_kind": "final_output_only",
+  "regex_baseline": {
+    "total": 100,
+    "outcome_buckets": {
+      "detect_recover": 2,
+      "silent_recovery": 20,
+      "detect_only": 0,
+      "blind_wrong_branch": 72,
+      "off_rails": 6,
+      "extraction_failed": 0
+    },
+    "rates": {
+      "self_detection_loose": 0.02,
+      "self_detection_strict": 0.02,
+      "final_answer_recovery": 0.22,
+      "blind_cascade": 0.72,
+      "extraction_ok": 1.0
+    },
+    "by_difficulty": {
+      "easy": {
+        "detect_recover": 2,
+        "silent_recovery": 5,
+        "detect_only": 0,
+        "blind_wrong_branch": 17,
+        "off_rails": 1,
+        "extraction_failed": 0,
+        "_total": 25
+      },
+      "medium": {
+        "detect_recover": 0,
+        "silent_recovery": 4,
+        "detect_only": 0,
+        "blind_wrong_branch": 20,
+        "off_rails": 1,
+        "extraction_failed": 0,
+        "_total": 25
+      },
+      "hard": {
+        "detect_recover": 0,
+        "silent_recovery": 4,
+        "detect_only": 0,
+        "blind_wrong_branch": 20,
+        "off_rails": 1,
+        "extraction_failed": 0,
+        "_total": 25
+      },
+      "expert": {
+        "detect_recover": 0,
+        "silent_recovery": 7,
+        "detect_only": 0,
+        "blind_wrong_branch": 15,
+        "off_rails": 3,
+        "extraction_failed": 0,
+        "_total": 25
+      }
+    }
+  }
+}

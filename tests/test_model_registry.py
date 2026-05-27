@@ -5,6 +5,7 @@ from emoji_bench.model_registry import (
     CLAUDE_SONNET_MAX_OUTPUT_TOKENS,
     DEFAULT_MAX_OUTPUT_TOKENS,
     GPT_5_2_MAX_OUTPUT_TOKENS,
+    GPT_5_5_MAX_OUTPUT_TOKENS,
     GPT_5_4_MAX_OUTPUT_TOKENS,
     MODEL_CONFIGS,
     apply_reasoning_effort_override,
@@ -26,6 +27,8 @@ def test_requested_model_configs_are_present():
         "gemini-3-flash-preview",
         "gemini-3.1-pro-preview-thinking-high",
         "gemini-3.1-pro-preview",
+        "gpt-5.5-reasoning-max",
+        "gpt-5.5",
         "gpt-5.4-reasoning-xhigh",
         "gpt-5.2-reasoning-xhigh",
         "gpt-5.2",
@@ -54,6 +57,13 @@ def test_openai_models_default_to_medium_reasoning():
 
 
 def test_pinned_openai_reasoning_xhigh_aliases_are_present():
+    gpt_55 = get_model_config("gpt-5.5-reasoning-max")
+    assert gpt_55.provider == "openai"
+    assert gpt_55.api_model == "gpt-5.5"
+    assert gpt_55.openai_reasoning is not None
+    assert gpt_55.openai_reasoning.effort == "xhigh"
+    assert gpt_55.default_max_output_tokens == GPT_5_5_MAX_OUTPUT_TOKENS
+
     gpt_54 = get_model_config("gpt-5.4-reasoning-xhigh")
     assert gpt_54.provider == "openai"
     assert gpt_54.openai_reasoning is not None
@@ -134,12 +144,13 @@ def test_pinned_claude_opus_47_reasoning_max_alias_is_present():
 
 def test_pinned_gemini_thinking_high_aliases_are_present():
     for key, api_model in (
-        ("gemini-3.1-pro-preview-thinking-high", "gemini-3.1-pro-preview"),
-        ("gemini-3-flash-preview-thinking-high", "gemini-3-flash-preview"),
+        ("gemini-3.1-pro-preview-thinking-high", "google/gemini-3.1-pro-preview"),
+        ("gemini-3-flash-preview-thinking-high", "google/gemini-3-flash-preview"),
     ):
         config = get_model_config(key)
-        assert config.provider == "gemini"
+        assert config.provider == "openrouter"
         assert config.api_model == api_model
+        assert config.api_key_env_var == "OPENROUTER_API_KEY"
         assert config.gemini_thinking is not None
         assert config.gemini_thinking.level == "high"
 
@@ -154,6 +165,9 @@ def test_model_choices_put_stronger_claude_and_gemini_variants_first():
     )
     assert choices.index("gemini-3.1-pro-preview-thinking-high") < choices.index(
         "gemini-3-flash-preview-thinking-high"
+    )
+    assert choices.index("gpt-5.5-reasoning-max") < choices.index(
+        "gpt-5.4-reasoning-xhigh"
     )
     assert choices.index("gpt-5.2-reasoning-xhigh") < choices.index(
         "gpt-5.4-reasoning-xhigh"
@@ -179,6 +193,8 @@ def test_all_configured_models_use_expected_default_max_output_tokens():
             assert config.default_max_output_tokens == CLAUDE_OPUS_MAX_OUTPUT_TOKENS
         elif config.key == "gpt-5.2-reasoning-xhigh":
             assert config.default_max_output_tokens == GPT_5_2_MAX_OUTPUT_TOKENS
+        elif config.key == "gpt-5.5-reasoning-max":
+            assert config.default_max_output_tokens == GPT_5_5_MAX_OUTPUT_TOKENS
         elif config.key in {
             "gpt-5.4-reasoning-xhigh",
             "gpt-5.4-mini-reasoning-xhigh",
@@ -213,14 +229,14 @@ def test_resolve_api_key_uses_provider_specific_env_var():
     assert api_key == "test-key"
 
 
-def test_resolve_api_key_supports_gemini_env_var():
+def test_resolve_api_key_supports_openrouter_env_var_for_gemini_models():
     config = get_model_config("gemini-3-flash-preview")
     api_key = resolve_api_key(
         model_config=config,
         explicit_api_key=None,
-        env={"GEMINI_API_KEY": "test-gemini-key"},
+        env={"OPENROUTER_API_KEY": "test-openrouter-key"},
     )
-    assert api_key == "test-gemini-key"
+    assert api_key == "test-openrouter-key"
 
 
 def test_apply_reasoning_effort_override_updates_openai_and_anthropic_configs():

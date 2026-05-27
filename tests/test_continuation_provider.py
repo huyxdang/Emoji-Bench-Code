@@ -13,7 +13,7 @@ from emoji_bench.providers.continuation import (
     ContinuationResponse,
     request_continuation,
 )
-from emoji_bench.model_registry import get_model_config
+from emoji_bench.model_registry import GeminiThinkingConfig, ModelConfig, get_model_config
 
 
 class _FakeMessagesAPI:
@@ -88,6 +88,16 @@ class _FakeGeminiClient:
         return self._response
 
 
+class _FakeOpenRouterClient:
+    def __init__(self, response: dict):
+        self._response = response
+        self.calls: list[dict] = []
+
+    def chat_complete(self, options: dict) -> dict:
+        self.calls.append(options)
+        return self._response
+
+
 def _anthropic_text_block(text: str) -> SimpleNamespace:
     return SimpleNamespace(type="text", text=text)
 
@@ -106,6 +116,23 @@ def _make_openai_response(text: str) -> SimpleNamespace:
         output_text=text,
         output=[],
         usage=None,
+    )
+
+
+def _native_gemini_config(*, thinking_level: str | None = None) -> ModelConfig:
+    return ModelConfig(
+        key="native-gemini-test",
+        label="Native Gemini Test",
+        provider="gemini",
+        api_model="gemini-test",
+        docs_url="https://ai.google.dev/gemini-api/docs",
+        api_key_env_var="GEMINI_API_KEY",
+        default_max_output_tokens=4096,
+        gemini_thinking=(
+            None
+            if thinking_level is None
+            else GeminiThinkingConfig(level=thinking_level)  # type: ignore[arg-type]
+        ),
     )
 
 
@@ -347,7 +374,7 @@ def test_request_continuation_prefill_gemini_uses_model_role_for_prefill():
             },
         }
     )
-    model_config = get_model_config("gemini-3-flash-preview")
+    model_config = _native_gemini_config()
 
     result = request_continuation(
         client=client,
@@ -386,7 +413,7 @@ def test_request_continuation_prefill_gemini_thinking_high_sets_thinking_level()
             },
         }
     )
-    model_config = get_model_config("gemini-3.1-pro-preview-thinking-high")
+    model_config = _native_gemini_config(thinking_level="high")
 
     result = request_continuation(
         client=client,
@@ -407,6 +434,47 @@ def test_request_continuation_prefill_gemini_thinking_high_sets_thinking_level()
         {"role": "user", "parts": [{"text": level_0}]},
     ]
     assert sent["generationConfig"]["thinkingConfig"] == {"thinkingLevel": "high"}
+
+
+def test_request_continuation_openrouter_gemini_thinking_high_sends_reasoning_effort():
+    level_0 = get_turn_2_prompt(0)
+    client = _FakeOpenRouterClient(
+        {
+            "id": "or_id",
+            "choices": [{"message": {"content": "(openrouter gemini continuation)"}}],
+            "usage": {
+                "prompt_tokens": 5,
+                "completion_tokens": 6,
+                "total_tokens": 14,
+                "completion_tokens_details": {"reasoning_tokens": 3},
+            },
+        }
+    )
+    model_config = get_model_config("gemini-3.1-pro-preview-thinking-high")
+
+    result = request_continuation(
+        client=client,
+        model_config=model_config,
+        turn_1_user="[T1U]",
+        turn_1_assistant_prefill="[PREFILL]",
+        max_output_tokens=512,
+        mode="prefill",
+    )
+
+    assert result.raw_continuation_text == "(openrouter gemini continuation)"
+    assert result.mode == "prefill"
+    assert result.usage is not None
+    assert result.usage.reasoning_tokens == 3
+
+    sent = client.calls[0]
+    assert sent["model"] == "google/gemini-3.1-pro-preview"
+    assert sent["max_tokens"] == 512
+    assert sent["reasoning"] == {"effort": "high"}
+    assert sent["messages"] == [
+        {"role": "user", "content": "[T1U]"},
+        {"role": "assistant", "content": "[PREFILL]"},
+        {"role": "user", "content": level_0},
+    ]
 
 
 def test_request_continuation_single_turn_openai_one_user_message():
