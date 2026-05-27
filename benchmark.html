@@ -356,11 +356,22 @@
       line-height: 24px;
       color: var(--ink);
     }
+    .score-value .l0-score {
+      justify-self: end;
+      padding: 0 4px;
+      background: #f5d85e;
+      font-weight: 700;
+    }
     .score-value .l1-score { color: var(--muted); }
     .delta-value {
       font-size: 16px;
       font-weight: 700;
       color: var(--delta);
+      justify-self: end;
+    }
+    .delta-value.is-large-gap {
+      padding: 0 4px;
+      background: rgba(247, 203, 211, 0.62);
     }
     .bar-row.is-leader .delta-value { color: var(--delta); }
 
@@ -532,7 +543,7 @@
           <span class="model-name">${item.model}</span>
         </span>
         <span class="score-value" aria-hidden="true">
-          <span>${pct(item.l0)}</span>
+          <span class="l0-score">${pct(item.l0)}</span>
           <span class="l1-score">${pct(item.l1)}</span>
         </span>
         <span class="paired-track" aria-hidden="true">
@@ -543,7 +554,7 @@
             <span class="lane-fill l1-fill"></span>
           </span>
         </span>
-        <span class="delta-value">${signed(delta)}%</span>
+        <span class="delta-value${Math.abs(delta) > 20 ? " is-large-gap" : ""}">${signed(delta)}%</span>
       `;
       return row;
     }
