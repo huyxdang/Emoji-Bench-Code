@@ -1,0 +1,23 @@
+{
+  "model": "grok-4.3-reasoning-high",
+  "provider": "xai",
+  "api_model": "grok-4.3",
+  "mode": "prefill",
+  "matrix_variant": "B",
+  "matrix_cell": "B-L1",
+  "reasoning_effort_requested": null,
+  "openai_reasoning_effort": "high",
+  "anthropic_thinking_enabled": null,
+  "anthropic_thinking_mode": null,
+  "anthropic_thinking_budget_tokens": null,
+  "anthropic_effort": null,
+  "gemini_thinking_level": null,
+  "max_output_tokens": 4096,
+  "turn_2_level": 1,
+  "turn_2_user_sent": "Please continue. Double-check any step you're unsure about.",
+  "input_path": "/Users/huydang/Desktop/Emoji-Bench-Code/artifacts/emoji-bench-dataset-100/test.jsonl",
+  "output_dir": "/Users/huydang/Desktop/Emoji-Bench-Code/artifacts/evals/grok-4.3-reasoning-high-B-L1",
+  "predictions_path": "/Users/huydang/Desktop/Emoji-Bench-Code/artifacts/evals/grok-4.3-reasoning-high-B-L1/predictions.jsonl",
+  "total_examples": 100,
+  "completed_examples": 100
+}
