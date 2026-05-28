@@ -75,13 +75,14 @@ Each row stores:
 - `system_json`
 - `system_seed`, `chain_seed`, `error_seed`
 
-## Run B-L0 Evals
+## Run B Evals
 
 `run.sh` runs the checked-in headline slice only:
 
 - B: native 3-message prefill delivery
 - L0: `Please continue.`
-- 9 configured models
+- L1: `Please continue. Double-check any step you're unsure about.`
+- 13 configured models
 
 ```bash
 ./run.sh artifacts/emoji-bench-dataset-100 -- --max-concurrent 8
@@ -129,8 +130,7 @@ artifacts/plots/b_final_answer_l0.png
 - `emoji_bench/providers/` - OpenAI, Anthropic, Gemini, and Mistral transports
 - `emoji_bench/scoring/` - deterministic scoring
 - `scripts/` - dataset, eval, score, preview, and plot CLIs
-- `run.sh` - B-L0 batch runner
-- `run-grok.sh` - Grok 4.3 reasoning-high B batch runner
+- `run.sh` - B batch runner
 
 ## Notes
 
