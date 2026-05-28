@@ -14,7 +14,7 @@ Examples:
 Notes:
   - Defaults to artifacts/emoji-bench-dataset-100
   - Runs the B headline slices:
-      12 models x prefill delivery x L0/L1 ("Please continue." / hinted continue)
+      13 models x prefill delivery x L0/L1 ("Please continue." / hinted continue)
   - Any args after -- are forwarded to every evaluate_continuation.py call
   - Scores final-answer-only after the eval phase finishes
   - Generates B-variant final-answer plots in artifacts/plots/
@@ -58,6 +58,7 @@ MODELS=(
   "gpt-5.4-nano-reasoning-xhigh"
   "gemini-3.1-pro-preview-thinking-high"
   "gemini-3-flash-preview-thinking-high"
+  "grok-4.3-reasoning-high"
   "mistral-large-2512"
   "magistral-medium-2509"
 )

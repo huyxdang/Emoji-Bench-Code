@@ -38,6 +38,7 @@ def test_requested_model_configs_are_present():
         "gpt-5.4-mini",
         "gpt-5.4-nano-reasoning-xhigh",
         "gpt-5.4-nano",
+        "grok-4.3-reasoning-high",
         "magistral-medium-2509",
         "mistral-large-2512",
         "mistral-medium-2508",
@@ -95,6 +96,15 @@ def test_gpt54_mini_no_reasoning_alias_is_present():
     assert config.api_model == "gpt-5.4-mini"
     assert config.openai_reasoning is not None
     assert config.openai_reasoning.effort == "none"
+
+
+def test_grok43_reasoning_high_alias_is_present():
+    config = get_model_config("grok-4.3-reasoning-high")
+    assert config.provider == "xai"
+    assert config.api_model == "grok-4.3"
+    assert config.api_key_env_var == "XAI_API_KEY"
+    assert config.openai_reasoning is not None
+    assert config.openai_reasoning.effort == "high"
 
 
 def test_claude_sonnet_46_models_default_to_max_anthropic_effort():
@@ -239,6 +249,16 @@ def test_resolve_api_key_supports_openrouter_env_var_for_gemini_models():
     assert api_key == "test-openrouter-key"
 
 
+def test_resolve_api_key_supports_xai_env_var_for_grok_models():
+    config = get_model_config("grok-4.3-reasoning-high")
+    api_key = resolve_api_key(
+        model_config=config,
+        explicit_api_key=None,
+        env={"XAI_API_KEY": "test-xai-key"},
+    )
+    assert api_key == "test-xai-key"
+
+
 def test_apply_reasoning_effort_override_updates_openai_and_anthropic_configs():
     gpt = apply_reasoning_effort_override(get_model_config("gpt-5.4"), "high")
     assert gpt.openai_reasoning is not None
@@ -278,3 +298,6 @@ def test_apply_reasoning_effort_override_rejects_unsupported_combinations():
 
     with pytest.raises(ValueError, match="OpenAI reasoning does not support effort='max'"):
         apply_reasoning_effort_override(get_model_config("gpt-5.4"), "max")
+
+    with pytest.raises(ValueError, match="xAI reasoning does not support effort='xhigh'"):
+        apply_reasoning_effort_override(get_model_config("grok-4.3-reasoning-high"), "xhigh")
