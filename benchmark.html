@@ -364,7 +364,7 @@
     }
     .score-value .l1-score { color: var(--muted); }
     .delta-value {
-      font-size: 16px;
+      font-size: 20px;
       font-weight: 700;
       color: var(--delta);
       justify-self: end;
@@ -426,8 +426,8 @@
         padding: 14px 14px;
       }
       .model-name { font-size: 15px; }
-      .score-value,
-      .delta-value { font-size: 12px; }
+      .score-value { font-size: 12px; }
+      .delta-value { font-size: 16px; }
     }
   </style>
 </head>
@@ -446,7 +446,7 @@
     <section class="section" id="benchmark">
       <div class="wrap">
         <h1>L0/L1 <em>Benchmark</em></h1>
-        <p class="lede">A focused view of the selected Anthropic, OpenAI, Google, xAI, and Mistral runs. Each row compares the no-hint and hinted continuation scores as two separate bars.</p>
+        <p class="lede">A focused view of the selected Anthropic, OpenAI, Google, xAI, Mistral, Qwen, and Meta runs. Each row compares the no-hint and hinted continuation scores as two separate bars.</p>
 
         <div class="meta-row">
           <span><strong>Variant</strong> B</span>
@@ -459,7 +459,7 @@
           <div class="table-toolbar">
             <p class="leaderboard-stamp">Emoji Bench</p>
             <div class="legend" aria-label="Bar legend">
-              <span class="legend-item"><span class="key"></span>Unprompted</span>
+              <span class="legend-item"><span class="key"></span>Self-Correction</span>
               <span class="legend-item"><span class="key gain"></span>Prompted</span>
             </div>
           </div>
@@ -468,7 +468,7 @@
 
           <div class="table-footnote">
             <span><sup>&dagger;</sup>Each cell is <span class="num">100/100</span> marked. Values shown are final-answer correct rates.</span>
-            <span><sup>&Dagger;</sup>The red bar shows unprompted accuracy; the dark bar shows prompted accuracy on the same 0-100 scale.</span>
+            <span><sup>&Dagger;</sup>The red bar shows self-correction accuracy; the dark bar shows prompted accuracy on the same 0-100 scale.</span>
           </div>
         </div>
       </div>
@@ -488,6 +488,18 @@
       {
         model: "Gemini 3.1 Pro", provider: "Google", logo: "public/gemini.png",
         l0: 19, l1: 91
+      },
+      {
+        model: "Qwen3 8B", provider: "Qwen", logo: "public/qwen.png",
+        l0: 18, l1: 20
+      },
+      {
+        model: "Gemma 3 12B", provider: "Google", logo: "public/google.png",
+        l0: 16, l1: 23
+      },
+      {
+        model: "Llama 3.1 8B", provider: "Meta", logo: "public/meta.png",
+        l0: 13, l1: 20
       },
       {
         model: "Opus 4.7", provider: "Anthropic", logo: "public/claude.svg",
@@ -536,7 +548,7 @@
       row.style.setProperty("--l0", item.l0);
       row.style.setProperty("--l1", item.l1);
       row.style.setProperty("--row", idx);
-      row.setAttribute("aria-label", `${item.model}, unprompted ${item.l0}%, prompted ${item.l1}%, gap ${signed(delta)}%`);
+      row.setAttribute("aria-label", `${item.model}, self-correction ${item.l0}%, prompted ${item.l1}%, gap ${signed(delta)}%`);
       row.innerHTML = `
         <span class="model-cell">
           <span class="logo-box"><img src="${item.logo}" alt="${item.provider} logo"></span>
