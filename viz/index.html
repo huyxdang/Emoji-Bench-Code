@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Emoji-Bench &middot; LLMs Don't Look Back</title>
+  <title>Emoji-Bench</title>
   <meta name="description" content="A continuation benchmark measuring whether language models notice and repair their own mistakes when prompted only with 'Please continue.'">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -22,6 +22,9 @@
       --hair:     #d6d1c2;
       --accent:   #7a1f23;
       --accent-2: #b8443a;
+      --unprompted-bar: #c95b4d;
+      --prompted-bar:   #5a5a3d;
+      --delta:          #7a1f23;
       --max:      1180px;
 
       --serif: "Source Serif 4", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
@@ -484,6 +487,31 @@
     }
     .bubble p:last-child { margin-bottom: 0; }
     .turn p:last-child { margin-bottom: 0; }
+    .prompt-variants {
+      width: min(620px, 86%);
+      margin-left: auto;
+      display: grid;
+      gap: 18px;
+      padding: 4px 0;
+    }
+    .prompt-option {
+      display: grid;
+      justify-items: end;
+      gap: 6px;
+      text-align: right;
+    }
+    .prompt-label {
+      font-family: var(--sans);
+      font-size: 18px;
+      font-weight: 700;
+      line-height: 1.1;
+      color: var(--accent);
+      letter-spacing: 0.01em;
+    }
+    .prompt-option .bubble {
+      max-width: 100%;
+      width: fit-content;
+    }
     .prefill-tag {
       display: inline-flex;
       align-items: center;
@@ -564,11 +592,11 @@
       line-height: 1.45;
       color: var(--ink);
     }
-    .step.has-error .step-num { color: var(--accent); }
+    .step.has-error .step-num { color: #d93025; }
     .err-mark {
       padding: 1px 4px;
-      background: rgba(122, 31, 35, 0.09);
-      border-bottom: 1px solid var(--accent);
+      background: rgba(217, 48, 37, 0.12);
+      border-bottom: 2px solid #d93025;
       color: var(--ink);
     }
     .err-pill {
@@ -577,12 +605,12 @@
       padding: 1px 7px;
       font-family: var(--mono);
       font-size: 10px;
-      font-weight: 500;
+      font-weight: 700;
       letter-spacing: 0.10em;
       text-transform: uppercase;
-      color: var(--accent);
-      background: rgba(122, 31, 35, 0.08);
-      border: 1px solid rgba(122, 31, 35, 0.32);
+      color: #b42318;
+      background: rgba(255, 231, 230, 0.92);
+      border: 1px solid #d93025;
       vertical-align: 1px;
     }
 
@@ -812,6 +840,11 @@
     .result-layout {
       margin-top: 44px;
     }
+    .result-band .lede {
+      text-align: center;
+      margin-left: auto;
+      margin-right: auto;
+    }
     .leaderboard-stamp {
       margin: 0 0 8px;
       font-family: var(--mono);
@@ -837,39 +870,10 @@
       font-family: var(--sans);
       flex-wrap: wrap;
     }
-    .filters {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 7px;
-    }
-    .filter-button {
-      min-height: 28px;
-      padding: 0 11px;
-      border: 1px solid var(--hair);
-      background: var(--surface);
-      color: var(--muted);
-      font-family: var(--sans);
-      font-size: 10.5px;
-      font-weight: 500;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      cursor: pointer;
-      transition: background 120ms, border-color 120ms, color 120ms;
-    }
-    .filter-button:hover {
-      border-color: var(--ink);
-      color: var(--ink);
-    }
-    .filter-button[aria-pressed="true"] {
-      border-color: var(--ink);
-      background: var(--ink);
-      color: var(--paper);
-    }
     .view-control {
       display: inline-flex;
       align-items: center;
       gap: 10px;
-      margin-left: auto;
     }
     .view-label {
       font-family: var(--mono);
@@ -884,7 +888,7 @@
     }
     .view-toggle button {
       min-height: 28px;
-      min-width: 78px;
+      min-width: 102px;
       padding: 0 12px;
       border: 0;
       border-right: 1px solid var(--ink);
@@ -904,15 +908,42 @@
       background: var(--ink);
       color: var(--paper);
     }
-
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      align-items: center;
+      margin-left: auto;
+      font-family: var(--mono);
+      font-size: 10.5px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      white-space: nowrap;
+    }
+    .key {
+      width: 28px;
+      height: 8px;
+      border: 1px solid #a94a40;
+      background: var(--unprompted-bar);
+    }
+    .key.prompted {
+      border-color: #4f4f35;
+      background: var(--prompted-bar);
+    }
     .chart-bars { display: grid; }
 
     .bar-row {
       display: grid;
-      grid-template-columns: 44px minmax(220px, 1.6fr) repeat(4, minmax(74px, 1fr)) 96px;
-      gap: 14px;
+      grid-template-columns: 44px minmax(210px, max-content) 58px minmax(420px, 1fr) 72px;
+      gap: 10px;
       align-items: center;
-      padding: 14px 22px;
+      padding: 18px 22px;
       width: 100%;
       border: 0;
       border-bottom: 1px solid var(--hair);
@@ -924,7 +955,7 @@
     .bar-row:last-child { border-bottom: 0; }
     .bar-row.is-leader { background: rgba(122, 31, 35, 0.045); }
     .bar-row.is-leader .rank,
-    .bar-row.is-leader .score-value { color: var(--accent); }
+    .bar-row.is-leader .delta-value { color: var(--accent); }
 
     .rank {
       font-family: var(--mono);
@@ -937,108 +968,133 @@
       min-width: 0;
       display: flex;
       flex-direction: row;
-      align-items: baseline;
-      gap: 10px;
+      align-items: center;
+      gap: 12px;
     }
     .logo-box {
       flex: 0 0 auto;
       align-self: center;
       display: grid;
       place-items: center;
-      width: 22px;
-      height: 22px;
+      width: 28px;
+      height: 28px;
     }
     .logo-box img {
-      max-width: 20px;
-      max-height: 20px;
+      max-width: 25px;
+      max-height: 25px;
       object-fit: contain;
       opacity: 0.92;
     }
     .model-name {
       font-family: var(--serif);
       font-weight: 500;
-      font-size: 16px;
+      font-size: 20px;
       letter-spacing: -0.005em;
       color: var(--ink);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .model-cfg {
-      flex: 0 0 auto;
-      font-family: var(--mono);
-      font-size: 10.5px;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      color: var(--quiet);
-    }
-
-    .bar-track {
-      grid-column: span 4;
+    .paired-track {
       position: relative;
-      height: 28px;
-      background: transparent;
-      border-left: 1px solid transparent;
-      border-right: 1px solid transparent;
+      display: grid;
+      gap: 8px;
+      height: 72px;
+      padding: 8px 0;
+      border-left: 1px solid var(--hair);
+      border-right: 1px solid var(--hair);
+      background:
+        linear-gradient(to right, rgba(21,20,15,0.09) 1px, transparent 1px) 0 0 / 25% 100%,
+        rgba(21,20,15,0.025);
     }
-    .bar-fill {
+    .bar-lane {
+      position: relative;
+      min-width: 0;
+      height: 24px;
+    }
+    .lane-fill {
       display: block;
       position: absolute;
-      left: 0;
-      top: 50%;
-      transform: translateY(-50%) scaleX(0);
+      inset: 0 auto 0 0;
+      transform: scaleX(0);
       transform-origin: left center;
-      width: calc(var(--score) * 1%);
       min-width: 2px;
-      height: 12px;
-      border-bottom: 1px solid var(--hair);
-      background:
-        repeating-linear-gradient(135deg, var(--ink) 0, var(--ink) 1px, transparent 1px, transparent 4px),
-        var(--ink);
       animation: bar-shoot 680ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
       animation-delay: calc(var(--row, 0) * 55ms);
       will-change: transform;
     }
-    .bar-row.is-leader .bar-fill {
-      background:
-        repeating-linear-gradient(135deg, var(--accent) 0, var(--accent) 1px, transparent 1px, transparent 4px),
-        var(--accent);
+    .l0-fill {
+      width: calc(var(--l0) * 1%);
+      background: var(--unprompted-bar);
+      border-bottom: 1px solid #a94a40;
+    }
+    .l1-fill {
+      width: calc(var(--l1) * 1%);
+      background: var(--prompted-bar);
+      border-bottom: 1px solid #4f4f35;
     }
     @keyframes bar-shoot {
-      0% { transform: translateY(-50%) scaleX(0); }
-      100% { transform: translateY(-50%) scaleX(1); }
+      0% { transform: scaleX(0); }
+      100% { transform: scaleX(1); }
     }
 
     .score-value {
-      font-family: var(--serif);
+      display: grid;
+      gap: 8px;
+      align-items: center;
+      font-family: var(--mono);
       font-weight: 500;
-      font-size: 18px;
+      font-size: 13.5px;
+      line-height: 24px;
       text-align: right;
       font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum", "zero";
       color: var(--ink);
-      letter-spacing: -0.01em;
     }
-
+    .score-value .l0-score {
+      justify-self: end;
+      padding: 0 4px;
+      background: #f5d85e;
+      font-weight: 700;
+    }
+    .score-value .l1-score { color: var(--muted); }
+    .delta-value {
+      justify-self: end;
+      font-family: var(--mono);
+      font-size: 19px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum", "zero";
+      color: var(--delta);
+      text-align: right;
+    }
     /* per-difficulty layout (toggled) */
     .chart-bars.is-detail .bar-row {
-      grid-template-columns: 44px minmax(220px, 1.6fr) repeat(4, minmax(74px, 1fr)) 96px;
-      gap: 14px;
+      grid-template-columns: 44px minmax(210px, max-content) repeat(4, minmax(92px, 1fr));
+      gap: 10px;
     }
-    .chart-bars.is-detail .bar-row .bar-track { display: none; }
+    .chart-bars.is-detail .bar-row .paired-track { display: none; }
     .diff-cell {
       align-self: stretch;
       display: grid;
+      gap: 6px;
       place-items: center;
-      min-height: 28px;
-      padding: 0 4px;
+      min-height: 54px;
+      padding: 7px 5px;
       font-family: var(--mono);
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 500;
       color: var(--ink);
       font-variant-numeric: tabular-nums;
       background: rgba(21, 20, 15, calc(var(--d) * 0.0042));
       border-left: 1px solid var(--hair);
     }
+    .diff-cell .l0-score {
+      padding: 0 4px;
+      background: #f5d85e;
+      font-weight: 700;
+    }
+    .diff-cell .l1-score { color: var(--muted); }
     .diff-cell.first { border-left: 1px solid var(--ink); }
     .diff-cell.last  { border-right: 1px solid var(--ink); }
     .bar-row.is-leader .diff-cell {
@@ -1053,6 +1109,8 @@
     }
     .chart-head .rank,
     .chart-head .score-value,
+    .score-head,
+    .delta-head,
     .model-head,
     .perf-head,
     .level-label {
@@ -1067,11 +1125,18 @@
       font-size: 10px;
       letter-spacing: 0.08em;
     }
+    .score-head,
+    .delta-head {
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-align: right;
+    }
     .model-head {
       align-self: center;
     }
     .perf-head {
-      grid-column: span 4;
       align-self: center;
       text-align: left;
     }
@@ -1095,8 +1160,7 @@
     }
 
     .table-footnote {
-      display: grid;
-      gap: 6px;
+      margin: 0;
       padding: 14px 22px;
       border-top: 1px solid var(--hair);
       background: var(--paper);
@@ -1104,12 +1168,14 @@
       font-size: 12px;
       color: var(--muted);
       line-height: 1.5;
+      list-style-position: outside;
+      padding-left: 38px;
     }
-    .table-footnote sup {
-      font-family: var(--mono);
-      color: var(--accent);
-      font-size: 10px;
-      margin-right: 3px;
+    .table-footnote li {
+      padding-left: 4px;
+    }
+    .table-footnote li + li {
+      margin-top: 6px;
     }
 
 
@@ -1319,9 +1385,9 @@
     }
     @media (prefers-reduced-motion: reduce) {
       .reveal { animation: none; opacity: 1; transform: none; }
-      .bar-fill {
+      .lane-fill {
         animation: none;
-        transform: translateY(-50%) scaleX(1);
+        transform: scaleX(1);
       }
       .thinking-dots span {
         animation: none;
@@ -1348,15 +1414,15 @@
         width: auto; height: 1px;
       }
       .bar-row {
-        grid-template-columns: 30px minmax(0, 1fr) 70px;
+        grid-template-columns: 30px minmax(0, 1fr) 62px 68px;
         gap: 10px;
       }
-      .bar-row .bar-track { display: none; }
+      .bar-row .paired-track { display: none; }
+      .chart-head .perf-head { display: none; }
       .chart-bars.is-detail .bar-row {
         grid-template-columns: 30px minmax(120px, 1fr) repeat(4, minmax(40px, 1fr)) 70px;
       }
       .chart-bars.is-detail .bar-row .logo-box { display: none; }
-      .chart-head .perf-head { display: none; }
       .bubble,
       .turn-stack { max-width: 94%; }
       .bubble { padding: 12px 14px 14px; }
@@ -1379,10 +1445,10 @@
       <a class="brand" href="#top">Emoji&#8209;Bench</a>
       <div class="links">
         <a href="#leaderboard">Leaderboard</a>
-        <a href="#dataset">Dataset</a>
         <a href="#method">Methodology</a>
+        <a href="#dataset">Dataset</a>
         <a href="#contact">Contact</a>
-        <a class="ext icon-link" href="https://github.com/huyxdang/emoji-bench" target="_blank" rel="noopener noreferrer" aria-label="GitHub" title="GitHub">
+        <a class="ext icon-link" href="https://github.com/huyxdang/Emoji-Bench-Code" target="_blank" rel="noopener noreferrer" aria-label="GitHub" title="GitHub">
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
             <path d="M12 .5C5.65.5.5 5.65.5 12c0 5.1 3.29 9.42 7.86 10.95.58.11.79-.25.79-.56v-2.16c-3.2.7-3.87-1.36-3.87-1.36-.52-1.33-1.27-1.69-1.27-1.69-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.19 1.76 1.19 1.02 1.75 2.68 1.24 3.34.95.1-.74.4-1.24.73-1.53-2.55-.29-5.23-1.28-5.23-5.68 0-1.25.45-2.28 1.18-3.08-.12-.29-.51-1.46.11-3.04 0 0 .96-.31 3.15 1.18.91-.25 1.89-.38 2.86-.38.97 0 1.95.13 2.86.38 2.19-1.49 3.15-1.18 3.15-1.18.62 1.58.23 2.75.11 3.04.73.8 1.18 1.83 1.18 3.08 0 4.42-2.69 5.39-5.25 5.67.41.36.78 1.07.78 2.16v3.2c0 .31.21.68.8.56A11.51 11.51 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z"/>
           </svg>
@@ -1396,14 +1462,14 @@
     <section class="hero section" id="hero">
       <div class="wrap">
         <div class="meta-row reveal">
-          <span class="item">By:<strong><a href="https://www.huyxdang.com/" target="_blank" rel="noopener noreferrer">Huy Dang</a>, <a href="https://www.linkedin.com/in/lehaivin03/" target="_blank" rel="noopener noreferrer">Hai Le</a></strong></span>
+          <span class="item">By:<strong><a href="https://www.huyxdang.com/" target="_blank" rel="noopener noreferrer">Huy Dang</a>, <a href="https://lehaivin03.vercel.app" target="_blank" rel="noopener noreferrer">Hai Le</a></strong></span>
         </div>
 
         <h1 class="reveal d1">LLMs <em>don't</em><br>look back.</h1>
 
-        <p class="lede reveal d2">Measuring model's ability to naturally recover from errors.</p>
+        <p class="lede reveal d2">Measuring a model's ability to naturally recover from errors.</p>
 
-        <p class="abstract reveal d3"><strong>Emoji-Bench</strong> presents models with 100 tasks, each a logical expression to solve step-by-step. We inject an incorrect step into a pre-filled model response, then prompt the model to "Please continue." The better a model recovers from the error to reach the correct answer, the higher its score.</p>
+        <p class="abstract reveal d3"><strong>With fully autonomous AI agents</strong>, constant human supervision will not be possible. In real-world, long-horizon tasks, no one will be there to tell agents to correct their mistakes; On their own, agents must recognize, correct, and recover from errors while the work is still in progress.</p>
 
         <div class="actions reveal d5">
           <a class="button" href="#leaderboard">Leaderboard <span class="arrow">&rarr;</span></a>
@@ -1415,77 +1481,38 @@
     <!-- ═════════════════════════ LEADERBOARD ═════════════════════════ -->
     <section class="section result-band" id="leaderboard">
       <div class="wrap">
-        <h2>Leaderboard</h2>
+        <h2>Emoji Bench</h2>
+        <p class="lede">How well can a model <u>autonomously</u> self-correct its errors?</p>
 
         <div class="result-layout">
           <div class="leaderboard-only">
             <div class="table-frame">
               <div class="table-toolbar">
-                <div class="filters" role="group" aria-label="Choose model families to show">
-                  <button class="filter-button" type="button" data-provider="all" aria-pressed="true">All</button>
-                  <button class="filter-button" type="button" data-provider="OpenAI" aria-pressed="false">OpenAI</button>
-                  <button class="filter-button" type="button" data-provider="Anthropic" aria-pressed="false">Claude</button>
-                  <button class="filter-button" type="button" data-provider="Google" aria-pressed="false">Google</button>
-                  <button class="filter-button" type="button" data-provider="Mistral" aria-pressed="false">Mistral</button>
-                </div>
                 <div class="view-control">
                   <span class="view-label">View:</span>
-                  <div class="view-toggle" role="group" aria-label="View">
+                  <div class="view-toggle" role="group" aria-label="Benchmark view">
                     <button type="button" data-view="overall" aria-pressed="true">Overall</button>
-                    <button type="button" data-view="diff" aria-pressed="false">By level</button>
+                    <button type="button" data-view="diff" aria-pressed="false">By Difficulty</button>
                   </div>
+                </div>
+                <div class="legend" aria-label="Score legend">
+                  <span class="legend-item"><span class="key" aria-hidden="true"></span>Self-Correct</span>
+                  <span class="legend-item"><span class="key prompted" aria-hidden="true"></span>Prompted to double-check</span>
                 </div>
               </div>
 
               <div class="chart-bars" id="result-chart"></div>
-              <div class="empty-chart" id="empty-chart">No results for this filter.</div>
+              <div class="empty-chart" id="empty-chart">No results available.</div>
 
-              <div class="table-footnote">
-                <span><sup>&dagger;</sup>Sample: <span class="mono">n = 100</span>, balanced as <span class="mono">25 &times;</span> easy / medium / hard / expert.</span>
-                <span><sup>&Dagger;</sup>All models run at their max output tokens, efforts, and reasoning if available.</span>
-                <span><sup>&sect;</sup>Gemini results were produced via OpenRouter, not Google's official Gemini API.</span>
-              </div>
+              <ul class="table-footnote">
+                <li>Each score is measured on 100 examples, evenly split across easy, medium, hard, and expert tasks.</li>
+                <li>All models run at their max output tokens, efforts, and reasoning if available.</li>
+                <li>Gemini results were produced via OpenRouter, not Google's official Gemini API.</li>
+              </ul>
             </div>
           </div>
 
         </div>
-      </div>
-    </section>
-
-    <!-- ═════════════════════════ DATASET ═════════════════════════ -->
-    <section class="section" id="dataset">
-      <div class="wrap">
-        <h2>Dataset</h2>
-        <p class="body-copy">Every problem are emoji-based and procedurally generated. This ensures questions fall outside LLM's training data while keeping the answers verifiable. </p>
-
-        <div class="obs">
-          <article class="obs-item">
-            <div class="obs-tag">Choice &middot; Symbols</div>
-            <h3>Why emojis?</h3>
-            <p>Emojis act as neutral, out-of-distribution variables with no formal logic priors. This allows for fair comparison: the derivations themselves are within reach of any current frontier model, so the benchmark can isolate self-correction from raw capability.</p>
-          </article>
-
-          <article class="obs-item">
-            <div class="obs-tag">Method &middot; Procedural</div>
-            <h3>Procedurally generated, never seen.</h3>
-            <p>Each formal system, operator table, and target expression is sampled from a controllable difficulty knob, which scales on number of rules, number of emojis, expression depth, etc. Synthetic generation makes samples cheap at scale, and because the logic is fully specified, every answer is verifiable by construction.</p>
-          </article>
-        </div>
-
-        <figure class="example-demo" aria-label="Sample problem at the selected difficulty">
-          <div class="pipeline-cap">
-            <span class="label" id="example-label">Sample 01/100</span>
-          </div>
-
-          <div class="example-toggle" role="group" aria-label="Difficulty">
-            <button type="button" data-diff="easy"   aria-pressed="true">Easy</button>
-            <button type="button" data-diff="medium" aria-pressed="false">Medium</button>
-            <button type="button" data-diff="hard"   aria-pressed="false">Hard</button>
-            <button type="button" data-diff="expert" aria-pressed="false">Expert</button>
-          </div>
-
-          <div class="example-body" id="example-body"></div>
-        </figure>
       </div>
     </section>
 
@@ -1562,9 +1589,18 @@
               </div>
             </div>
 
-            <div class="turn-row is-user" aria-label="User continuation prompt">
-              <div class="bubble is-user">
-                <p>Please continue.</p>
+            <div class="prompt-variants" aria-label="Continuation prompt variants">
+              <div class="prompt-option">
+                <span class="prompt-label">#1: Self-Correction</span>
+                <div class="bubble is-user">
+                  <p>Please continue.</p>
+                </div>
+              </div>
+              <div class="prompt-option">
+                <span class="prompt-label">#2: Prompted to double-check</span>
+                <div class="bubble is-user">
+                  <p>Please continue. Double-check any step you're unsure about.</p>
+                </div>
               </div>
             </div>
 
@@ -1581,11 +1617,47 @@
       </div>
     </section>
 
+    <!-- ═════════════════════════ DATASET ═════════════════════════ -->
+    <section class="section" id="dataset">
+      <div class="wrap">
+        <h2>Dataset</h2>
+        <p class="body-copy">Every problem are emoji-based and procedurally generated. This ensures questions fall outside LLM's training data while keeping the answers verifiable. </p>
+
+        <div class="obs">
+          <article class="obs-item">
+            <div class="obs-tag">Choice &middot; Symbols</div>
+            <h3>Why emojis?</h3>
+            <p>Emojis act as neutral, out-of-distribution variables with no formal logic priors. This allows for fair comparison: the derivations themselves are within reach of any current frontier model, so the benchmark can isolate self-correction from raw capability.</p>
+          </article>
+
+          <article class="obs-item">
+            <div class="obs-tag">Method &middot; Procedural</div>
+            <h3>Procedurally generated</h3>
+            <p>Each system and expression are sampled from a difficulty knob, with a validator that ensures problems are solvable with an unique solution. Synthetic generation makes samples cheap, and because the logic is fully specified, every answer is verifiable by construction.</p>
+          </article>
+        </div>
+
+        <figure class="example-demo" aria-label="Sample problem at the selected difficulty">
+          <div class="pipeline-cap">
+            <span class="label" id="example-label">Sample 01/100</span>
+          </div>
+
+          <div class="example-toggle" role="group" aria-label="Difficulty">
+            <button type="button" data-diff="easy"   aria-pressed="true">Easy</button>
+            <button type="button" data-diff="medium" aria-pressed="false">Medium</button>
+            <button type="button" data-diff="hard"   aria-pressed="false">Hard</button>
+            <button type="button" data-diff="expert" aria-pressed="false">Expert</button>
+          </div>
+
+          <div class="example-body" id="example-body"></div>
+        </figure>
+      </div>
+    </section>
+
     <!-- ═════════════════════════ CONTACT ═════════════════════════ -->
     <section class="section cite-band" id="contact">
       <div class="wrap">
-        <h2>Contact</h2>
-        <p class="body-copy">For feedback, questions, collaboration - or anything in between. </p>
+        <h2>Did you find this useful?</h2>
 
         <div class="contact-list">
           <div class="contact-row">
@@ -1611,100 +1683,123 @@
 
   <script>
     // ─── data ──────────────────────────────────────────────────────────
-    // Source: artifacts/evals/{model}-B-L0/score_summary.json (headline.by_difficulty)
+    // Source: artifacts/evals/{model}-B-L{0,1}/score_summary.json (headline.final_answer_correct_rate)
+    // Rows with missing or partial L1 score summaries are omitted.
     const resultData = [
       {
+        model: "GPT-5.5", provider: "OpenAI", logo: "public/openai.svg",
+        l0: 98, l1: 100, rows: 100, apiModel: "gpt-5.5", maxOutput: "128k tokens",
+        reasoning: "max", route: "OpenAI API", config: "reasoning max",
+        byDifficulty: {
+          easy: { l0: 96, l1: 100 },
+          medium: { l0: 100, l1: 100 },
+          hard: { l0: 96, l1: 100 },
+          expert: { l0: 100, l1: 100 }
+        }
+      },
+      {
         model: "GPT-5.4", provider: "OpenAI", logo: "public/openai.svg",
-        score: 96, rows: 100, apiModel: "gpt-5.4", maxOutput: "128k tokens",
+        l0: 96, l1: 100, rows: 100, apiModel: "gpt-5.4", maxOutput: "128k tokens",
         reasoning: "xhigh", route: "OpenAI API", config: "reasoning xhigh",
-        byDifficulty: { easy: 100, medium: 92, hard: 96, expert: 96 }
+        byDifficulty: {
+          easy: { l0: 100, l1: 100 },
+          medium: { l0: 92, l1: 100 },
+          hard: { l0: 96, l1: 100 },
+          expert: { l0: 96, l1: 100 }
+        }
       },
       {
-        model: "GPT-5.4 mini", provider: "OpenAI", logo: "public/openai.svg",
-        score: 80, rows: 100, apiModel: "gpt-5.4-mini", maxOutput: "128k tokens",
-        reasoning: "xhigh", route: "OpenAI API", config: "reasoning xhigh",
-        byDifficulty: { easy: 76, medium: 84, hard: 76, expert: 84 }
-      },
-      {
-        model: "GPT-5.4 nano", provider: "OpenAI", logo: "public/openai.svg",
-        score: 80, rows: 100, apiModel: "gpt-5.4-nano", maxOutput: "128k tokens",
-        reasoning: "xhigh", route: "OpenAI API", config: "reasoning xhigh",
-        byDifficulty: { easy: 80, medium: 92, hard: 68, expert: 80 }
-      },
-      {
-        model: "Claude Opus 4.6", provider: "Anthropic", logo: "public/claude.svg",
-        score: 78, rows: 100, apiModel: "claude-opus-4-6", maxOutput: "128k tokens",
+        model: "Opus 4.6", provider: "Anthropic", logo: "public/claude.svg",
+        l0: 78, l1: 99, rows: 100, apiModel: "claude-opus-4-6", maxOutput: "128k tokens",
         reasoning: "adaptive · max", route: "Anthropic Messages API", config: "reasoning max",
-        byDifficulty: { easy: 88, medium: 72, hard: 80, expert: 72 }
-      },
-      {
-        model: "Claude Sonnet 4.6", provider: "Anthropic", logo: "public/claude.svg",
-        score: 66, rows: 100, apiModel: "claude-sonnet-4-6", maxOutput: "64k tokens",
-        reasoning: "adaptive · max", route: "Anthropic Messages API", config: "reasoning max",
-        byDifficulty: { easy: 56, medium: 60, hard: 72, expert: 76 }
+        byDifficulty: {
+          easy: { l0: 88, l1: 100 },
+          medium: { l0: 72, l1: 100 },
+          hard: { l0: 80, l1: 96 },
+          expert: { l0: 72, l1: 100 }
+        }
       },
       {
         model: "GPT-5.2", provider: "OpenAI", logo: "public/openai.svg",
-        score: 58, rows: 100, apiModel: "gpt-5.2", maxOutput: "128k tokens",
+        l0: 58, l1: 99, rows: 100, apiModel: "gpt-5.2", maxOutput: "128k tokens",
         reasoning: "xhigh", route: "OpenAI API", config: "reasoning xhigh",
-        byDifficulty: { easy: 64, medium: 64, hard: 48, expert: 56 }
+        byDifficulty: {
+          easy: { l0: 64, l1: 96 },
+          medium: { l0: 64, l1: 100 },
+          hard: { l0: 48, l1: 100 },
+          expert: { l0: 56, l1: 100 }
+        }
       },
       {
-        model: "Claude Opus 4.7", provider: "Anthropic", logo: "public/claude.svg",
-        score: 45, rows: 100, apiModel: "claude-opus-4-7", maxOutput: "128k tokens",
+        model: "Opus 4.7", provider: "Anthropic", logo: "public/claude.svg",
+        l0: 45, l1: 100, rows: 100, apiModel: "claude-opus-4-7", maxOutput: "128k tokens",
         reasoning: "adaptive · max", route: "Anthropic Messages API", config: "reasoning max",
-        byDifficulty: { easy: 68, medium: 48, hard: 28, expert: 36 }
+        byDifficulty: {
+          easy: { l0: 68, l1: 100 },
+          medium: { l0: 48, l1: 100 },
+          hard: { l0: 28, l1: 100 },
+          expert: { l0: 36, l1: 100 }
+        }
+      },
+      {
+        model: "Grok 4.3", provider: "xAI", logo: "public/grok.webp",
+        l0: 33, l1: 84, rows: 100, apiModel: "grok-4.3", maxOutput: "default",
+        reasoning: "high", route: "xAI Responses API", config: "reasoning high",
+        byDifficulty: {
+          easy: { l0: 64, l1: 92 },
+          medium: { l0: 32, l1: 92 },
+          hard: { l0: 24, l1: 76 },
+          expert: { l0: 12, l1: 76 }
+        }
       },
       {
         model: "Gemini 3.1 Pro", provider: "Google", logo: "public/gemini.png",
-        score: 19, rows: 100, apiModel: "gemini-3.1-pro-preview", maxOutput: "64k tokens",
+        l0: 19, l1: 91, rows: 100, apiModel: "gemini-3.1-pro-preview", maxOutput: "64k tokens",
         reasoning: "thinking high", route: "OpenRouter", config: "thinking high",
-        byDifficulty: { easy: 16, medium: 36, hard: 16, expert: 8 }
+        byDifficulty: {
+          easy: { l0: 16, l1: 96 },
+          medium: { l0: 36, l1: 92 },
+          hard: { l0: 16, l1: 96 },
+          expert: { l0: 8, l1: 80 }
+        }
       },
       {
         model: "Magistral Medium", provider: "Mistral", logo: "public/mistral.png",
-        score: 18, rows: 100, apiModel: "magistral-medium-2509", maxOutput: "32k tokens",
+        l0: 18, l1: 22, rows: 100, apiModel: "magistral-medium-2509", maxOutput: "40k tokens",
         reasoning: "default", route: "Mistral API", config: "default",
-        byDifficulty: { easy: 28, medium: 32, hard: 4, expert: 8 }
-      },
-      {
-        model: "Gemini 3 Flash", provider: "Google", logo: "public/gemini.png",
-        score: 10, rows: 100, apiModel: "gemini-3-flash-preview", maxOutput: "64k tokens",
-        reasoning: "thinking high", route: "OpenRouter", config: "thinking high",
-        byDifficulty: { easy: 28, medium: 12, hard: 0, expert: 0 }
+        byDifficulty: {
+          easy: { l0: 28, l1: 28 },
+          medium: { l0: 32, l1: 16 },
+          hard: { l0: 4, l1: 16 },
+          expert: { l0: 8, l1: 28 }
+        }
       },
       {
         model: "Mistral Large", provider: "Mistral", logo: "public/mistral.png",
-        score: 10, rows: 100, apiModel: "mistral-large-2512", maxOutput: "32k tokens",
+        l0: 10, l1: 14, rows: 100, apiModel: "mistral-large-2512", maxOutput: "40k tokens",
         reasoning: "default", route: "Mistral API", config: "default",
-        byDifficulty: { easy: 20, medium: 12, hard: 4, expert: 4 }
+        byDifficulty: {
+          easy: { l0: 20, l1: 24 },
+          medium: { l0: 12, l1: 8 },
+          hard: { l0: 4, l1: 12 },
+          expert: { l0: 4, l1: 12 }
+        }
       }
     ];
 
     const chart      = document.querySelector("#result-chart");
     const emptyChart = document.querySelector("#empty-chart");
-    const filterBtns = Array.from(document.querySelectorAll(".filter-button"));
     const viewBtns   = Array.from(document.querySelectorAll(".view-toggle button"));
 
-    let activeProviders = new Set();
-    let activeView     = "overall";
+    let activeView = "overall";
 
     function selectedResults() {
-      return resultData
-        .filter(r => !activeProviders.size || activeProviders.has(r.provider))
-        .sort((a, b) => b.score - a.score);
-    }
-
-    function updateProviderFilters() {
-      const showingAll = activeProviders.size === 0;
-      filterBtns.forEach(btn => {
-        const provider = btn.dataset.provider;
-        const isPressed = provider === "all" ? showingAll : activeProviders.has(provider);
-        btn.setAttribute("aria-pressed", String(isPressed));
-      });
+      return resultData.slice();
     }
 
     function pad(n) { return `#${n}`; }
+    function pct(n) { return `${n}%`; }
+    function signed(n) { return `${n >= 0 ? "+" : ""}${n}`; }
 
     function renderHeader() {
       const row = document.createElement("div");
@@ -1718,52 +1813,64 @@
           <span class="level-label">Medium</span>
           <span class="level-label">Hard</span>
           <span class="level-label last">Expert</span>
-          <span class="score-value">Overall</span>
         `;
-      } else {
-        row.innerHTML = `
-          <span class="rank">#</span>
-          <span class="model-head">Model</span>
-          <span class="perf-head">Performance</span>
-          <span class="score-value">Accuracy</span>
-        `;
+        return row;
       }
+      row.innerHTML = `
+        <span class="rank">#</span>
+        <span class="model-head">Model</span>
+        <span class="score-head" aria-hidden="true"></span>
+        <span class="perf-head">Performance</span>
+        <span class="delta-head">Gap</span>
+      `;
       return row;
     }
 
     function renderRow(item, idx) {
+      const delta = item.l0 - item.l1;
       const row = document.createElement("div");
       row.className = "bar-row" + (idx === 0 ? " is-leader" : "");
       row.dataset.model = item.model;
-      row.style.setProperty("--score", item.score);
+      row.style.setProperty("--l0", item.l0);
+      row.style.setProperty("--l1", item.l1);
       row.style.setProperty("--row", idx);
-      row.setAttribute("aria-label", `${item.model}, ${item.provider}, ${item.score}% correct`);
-
+      row.setAttribute("aria-label", `${item.model}, ${item.provider}, self-correction ${item.l0}% correct, prompted ${item.l1}% correct, gap ${signed(delta)}%`);
       if (activeView === "diff") {
-        const cell = (key, pos) =>
-          `<span class="diff-cell ${pos}" style="--d:${item.byDifficulty[key]}">${item.byDifficulty[key]}</span>`;
+        const cell = (key, pos) => {
+          const scores = item.byDifficulty[key];
+          return `
+            <span class="diff-cell ${pos}" style="--d:${scores.l0}" aria-label="${key}: self-correction ${scores.l0}%, prompted ${scores.l1}%">
+              <span class="l0-score">${pct(scores.l0)}</span>
+              <span class="l1-score">${pct(scores.l1)}</span>
+            </span>
+          `;
+        };
         row.innerHTML = `
           <span class="rank">${pad(idx + 1)}</span>
           <span class="model-cell">
             <span class="logo-box"><img src="${item.logo}" alt="${item.provider} logo"></span>
             <span class="model-name">${item.model}</span>
-            <span class="model-cfg">${item.config.replace(/^(reasoning|thinking)\s+/, "")}</span>
           </span>
           ${cell("easy", "first")}${cell("medium", "")}${cell("hard", "")}${cell("expert", "last")}
-          <span class="score-value">${item.score}%</span>
         `;
-      } else {
-        row.innerHTML = `
-          <span class="rank">${pad(idx + 1)}</span>
-          <span class="model-cell">
-            <span class="logo-box"><img src="${item.logo}" alt="${item.provider} logo"></span>
-            <span class="model-name">${item.model}</span>
-            <span class="model-cfg">${item.config.replace(/^(reasoning|thinking)\s+/, "")}</span>
-          </span>
-          <span class="bar-track" aria-hidden="true"><span class="bar-fill"></span></span>
-          <span class="score-value">${item.score}%</span>
-        `;
+        return row;
       }
+      row.innerHTML = `
+        <span class="rank">${pad(idx + 1)}</span>
+        <span class="model-cell">
+          <span class="logo-box"><img src="${item.logo}" alt="${item.provider} logo"></span>
+          <span class="model-name">${item.model}</span>
+        </span>
+        <span class="score-value" aria-hidden="true">
+          <span class="l0-score">${pct(item.l0)}</span>
+          <span class="l1-score">${pct(item.l1)}</span>
+        </span>
+        <span class="paired-track" aria-hidden="true">
+          <span class="bar-lane"><span class="lane-fill l0-fill"></span></span>
+          <span class="bar-lane"><span class="lane-fill l1-fill"></span></span>
+        </span>
+        <span class="delta-value">${signed(delta)}%</span>
+      `;
 
       return row;
     }
@@ -1777,21 +1884,6 @@
       chart.appendChild(renderHeader());
       rows.forEach((item, idx) => chart.appendChild(renderRow(item, idx)));
     }
-
-    filterBtns.forEach(btn => {
-      btn.addEventListener("click", () => {
-        const provider = btn.dataset.provider;
-        if (provider === "all") {
-          activeProviders.clear();
-        } else if (activeProviders.has(provider)) {
-          activeProviders.delete(provider);
-        } else {
-          activeProviders.add(provider);
-        }
-        updateProviderFilters();
-        renderChart();
-      });
-    });
 
     viewBtns.forEach(btn => {
       btn.addEventListener("click", () => {
