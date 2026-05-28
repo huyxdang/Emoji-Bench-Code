@@ -17,6 +17,7 @@ from emoji_bench.providers.clients import resolve_api_key
 
 def test_requested_model_configs_are_present():
     assert {
+        "claude-opus-4-8-reasoning-max",
         "claude-opus-4-7-reasoning-max",
         "claude-opus-4-6-reasoning-high",
         "claude-haiku-4-5",
@@ -152,6 +153,18 @@ def test_pinned_claude_opus_47_reasoning_max_alias_is_present():
     assert config.anthropic_thinking.budget_tokens is None
 
 
+def test_pinned_claude_opus_48_reasoning_max_alias_is_present():
+    config = get_model_config("claude-opus-4-8-reasoning-max")
+    assert config.provider == "anthropic"
+    assert config.api_model == "claude-opus-4-8"
+    assert config.anthropic_effort == "max"
+    assert config.default_max_output_tokens == CLAUDE_OPUS_MAX_OUTPUT_TOKENS
+    assert config.anthropic_thinking is not None
+    assert config.anthropic_thinking.enabled is True
+    assert config.anthropic_thinking.mode == "adaptive"
+    assert config.anthropic_thinking.budget_tokens is None
+
+
 def test_pinned_gemini_thinking_high_aliases_are_present():
     for key, api_model in (
         ("gemini-3.1-pro-preview-thinking-high", "google/gemini-3.1-pro-preview"),
@@ -167,6 +180,9 @@ def test_pinned_gemini_thinking_high_aliases_are_present():
 
 def test_model_choices_put_stronger_claude_and_gemini_variants_first():
     choices = model_choices()
+    assert choices.index("claude-opus-4-8-reasoning-max") < choices.index(
+        "claude-opus-4-7-reasoning-max"
+    )
     assert choices.index("claude-opus-4-7-reasoning-max") < choices.index(
         "claude-opus-4-6-reasoning-max"
     )
@@ -197,6 +213,7 @@ def test_all_configured_models_use_expected_default_max_output_tokens():
     assert DEFAULT_MAX_OUTPUT_TOKENS == 4096
     for config in MODEL_CONFIGS.values():
         if config.key in {
+            "claude-opus-4-8-reasoning-max",
             "claude-opus-4-7-reasoning-max",
             "claude-opus-4-6-reasoning-max",
         }:
@@ -284,6 +301,15 @@ def test_apply_reasoning_effort_override_updates_openai_and_anthropic_configs():
     assert opus_47.anthropic_thinking is not None
     assert opus_47.anthropic_thinking.enabled is True
     assert opus_47.anthropic_thinking.mode == "adaptive"
+
+    opus_48 = apply_reasoning_effort_override(
+        get_model_config("claude-opus-4-8-reasoning-max"),
+        "xhigh",
+    )
+    assert opus_48.anthropic_effort == "xhigh"
+    assert opus_48.anthropic_thinking is not None
+    assert opus_48.anthropic_thinking.enabled is True
+    assert opus_48.anthropic_thinking.mode == "adaptive"
 
 
 def test_apply_reasoning_effort_override_rejects_unsupported_combinations():

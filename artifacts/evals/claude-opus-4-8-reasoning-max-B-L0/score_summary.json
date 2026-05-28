@@ -1,0 +1,83 @@
+{
+  "predictions_path": "artifacts/evals/claude-opus-4-8-reasoning-max-B-L0/predictions.jsonl",
+  "scores_path": "artifacts/evals/claude-opus-4-8-reasoning-max-B-L0/scores.jsonl",
+  "headline": {
+    "total": 100,
+    "final_answer_correct_rate": 0.5,
+    "by_difficulty": {
+      "easy": {
+        "total": 25,
+        "final_answer_correct_rate": 0.8
+      },
+      "medium": {
+        "total": 25,
+        "final_answer_correct_rate": 0.8
+      },
+      "hard": {
+        "total": 25,
+        "final_answer_correct_rate": 0.24
+      },
+      "expert": {
+        "total": 25,
+        "final_answer_correct_rate": 0.16
+      }
+    }
+  },
+  "headline_kind": "final_output_only",
+  "regex_baseline": {
+    "total": 100,
+    "outcome_buckets": {
+      "detect_recover": 50,
+      "silent_recovery": 0,
+      "detect_only": 0,
+      "blind_wrong_branch": 50,
+      "off_rails": 0,
+      "extraction_failed": 0
+    },
+    "rates": {
+      "self_detection_loose": 0.5,
+      "self_detection_strict": 0.5,
+      "final_answer_recovery": 0.5,
+      "blind_cascade": 0.5,
+      "extraction_ok": 1.0
+    },
+    "by_difficulty": {
+      "easy": {
+        "detect_recover": 20,
+        "silent_recovery": 0,
+        "detect_only": 0,
+        "blind_wrong_branch": 5,
+        "off_rails": 0,
+        "extraction_failed": 0,
+        "_total": 25
+      },
+      "medium": {
+        "detect_recover": 20,
+        "silent_recovery": 0,
+        "detect_only": 0,
+        "blind_wrong_branch": 5,
+        "off_rails": 0,
+        "extraction_failed": 0,
+        "_total": 25
+      },
+      "hard": {
+        "detect_recover": 6,
+        "silent_recovery": 0,
+        "detect_only": 0,
+        "blind_wrong_branch": 19,
+        "off_rails": 0,
+        "extraction_failed": 0,
+        "_total": 25
+      },
+      "expert": {
+        "detect_recover": 4,
+        "silent_recovery": 0,
+        "detect_only": 0,
+        "blind_wrong_branch": 21,
+        "off_rails": 0,
+        "extraction_failed": 0,
+        "_total": 25
+      }
+    }
+  }
+}

@@ -103,8 +103,8 @@ def main() -> None:
         help=(
             "Override the configured reasoning effort. OpenAI models accept "
             "none/minimal/low/medium/high/xhigh. Anthropic effort-capable "
-            "models accept none/low/medium/high/max, where none omits "
-            "output_config.effort."
+            "models accept none/low/medium/high/xhigh/max where supported, "
+            "where none omits output_config.effort."
         ),
     )
     parser.add_argument(
