@@ -10,8 +10,9 @@
 
 set -e
 
-export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6
-
+export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+export TORCHINDUCTOR_CACHE_DIR=/data/long/hai/tmp/torchinductor
 base_model="${1:-Qwen/Qwen3-8B}"
 model="${base_model##*/}"
 dataset_name="emoji_grpo"
@@ -62,7 +63,7 @@ python scripts/Exp2_Local_Model/grpo_train/prepare_emoji_grpo_data.py \
 
 echo
 echo "=== Step 2: GRPO training ==="
-torchrun --nproc-per-node "${gpu_count}" --master_port 12349 \
+torchrun --nproc-per-node "${gpu_count}" --master_port 12347 \
     scripts/Exp2_Local_Model/grpo_train/emoji_grpo.py \
     --model_name                 "${base_model}" \
     --train_file_path            "${grpo_dataset}" \
@@ -70,9 +71,9 @@ torchrun --nproc-per-node "${gpu_count}" --master_port 12349 \
     --per_device_train_batch_size  2 \
     --per_device_eval_batch_size   2 \
     --gradient_accumulation_steps  4 \
-    --num_train_epochs             3 \
+    --num_train_epochs             1 \
     --learning_rate                5e-7 \
-    --max_completion_length        2048 \
+    --max_completion_length        1024 \
     --num_generations              8 \
     --temperature                  0.8 \
     --top_p                        1.0 \
@@ -86,9 +87,9 @@ torchrun --nproc-per-node "${gpu_count}" --master_port 12349 \
     --eval_strategy                "epoch" \
     --remove_unused_columns        False \
     --use_vllm                     True \
-    --vllm_gpu_memory_utilization   0.8 \
+    --vllm_gpu_memory_utilization       0.85 \
     --vllm_mode                    colocate \
-    --vllm_max_model_length        8192 \
+    --vllm_max_model_length        4096 \
     --fsdp full_shard --fsdp auto_wrap \
     --fsdp_config                  "${fsdp_config}" \
     --gradient_checkpointing       True \

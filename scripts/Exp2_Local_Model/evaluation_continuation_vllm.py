@@ -36,9 +36,19 @@ from emoji_bench.eval.paths import (
 from emoji_bench.jsonl_io import append_jsonl, load_jsonl_records
 
 
-def _model_slug(hf_model: str) -> str:
-    """Convert an HF model name to a filesystem-safe slug (mirrors matrix.py)."""
-    return hf_model.replace("/", "-")
+def _model_slug(model: str) -> str:
+    """Convert an HF model name or local path to a filesystem-safe slug.
+
+    HF names like ``Qwen/Qwen2.5-3B-Instruct`` → ``Qwen-Qwen2.5-3B-Instruct``.
+    Local paths with more than 2 components use the last two parts so the slug
+    stays readable, e.g. ``.../Qwen2.5-3B-Instruct/emoji_grpo`` →
+    ``Qwen2.5-3B-Instruct-emoji_grpo``.
+    """
+    parts = model.replace("\\", "/").rstrip("/").split("/")
+    parts = [p for p in parts if p]  # drop empty segments from leading "/"
+    if len(parts) <= 2:
+        return "-".join(parts)
+    return f"{parts[-2]}-{parts[-1]}"
 
 
 def _build_messages(record: dict, turn_2_user: str, mode: str) -> list[dict]:
@@ -58,10 +68,15 @@ def _build_messages(record: dict, turn_2_user: str, mode: str) -> list[dict]:
     return [{"role": "user", "content": prompt}]
 
 
-def _apply_template(tokenizer, messages: list[dict], model_name: str) -> str:
-    """Apply the tokenizer chat template; disable thinking for Qwen3."""
+def _apply_template(tokenizer, messages: list[dict], model_path: str) -> str:
+    """Apply the tokenizer chat template; disable thinking for Qwen3.
+
+    ``model_path`` may be an HF id or a local directory — we check all path
+    components so that finetuned variants stored under a Qwen3 directory are
+    handled correctly.
+    """
     kwargs: dict = {"tokenize": False, "add_generation_prompt": True}
-    if "qwen3" in model_name.lower():
+    if any("qwen3" in part.lower() for part in model_path.replace("\\", "/").split("/")):
         kwargs["enable_thinking"] = False
     return tokenizer.apply_chat_template(messages, **kwargs)
 
@@ -122,6 +137,15 @@ def main() -> None:
     parser.add_argument("--gpu-memory-utilization", type=float, default=0.9)
     parser.add_argument("--max-model-len", type=int, default=None)
     parser.add_argument("--no-resume", action="store_true", help="Ignore and overwrite any existing predictions.jsonl.")
+    parser.add_argument(
+        "--model-name",
+        default=None,
+        help=(
+            "Short name used for the output directory and predictions "
+            "(default: auto-derived from --model). Useful when --model is a "
+            "local path, e.g. --model-name Qwen2.5-3B-grpo."
+        ),
+    )
     args = parser.parse_args()
 
     if args.input_path is None:
@@ -148,7 +172,7 @@ def main() -> None:
         records = records[: args.limit]
     n_total = len(records)
 
-    slug = _model_slug(args.model)
+    slug = args.model_name or _model_slug(args.model)
     cell = matrix_cell(args.mode, args.turn_2_prompt_level)
     output_dir = (
         Path(args.output_dir)

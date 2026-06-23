@@ -28,7 +28,7 @@ from trl import GRPOTrainer, GRPOConfig
 
 @dataclass
 class RLTrainingConfig:
-    model_name: str = field(default="Qwen/Qwen3-8B")
+    model_name: str = field(default="Qwen/Qwen2.5-3B-Instruct")
     train_file_path: Optional[str] = field(
         default="scripts/Exp2_Local_Model/grpo_train/ft_dataset/emoji_grpo"
     )
