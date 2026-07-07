@@ -21,6 +21,8 @@ def request_gemini_messages(
             "maxOutputTokens": max_output_tokens,
         },
     }
+    if model_config.temperature is not None:
+        options["generationConfig"]["temperature"] = model_config.temperature
     if model_config.gemini_thinking is not None:
         options["generationConfig"]["thinkingConfig"] = {
             "thinkingLevel": model_config.gemini_thinking.level,

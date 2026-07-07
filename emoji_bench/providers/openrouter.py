@@ -20,6 +20,8 @@ def request_openrouter_messages(
         "messages": messages,
         "max_tokens": max_output_tokens,
     }
+    if model_config.temperature is not None:
+        options["temperature"] = model_config.temperature
     if model_config.gemini_thinking is not None:
         options["reasoning"] = {"effort": model_config.gemini_thinking.level}
 

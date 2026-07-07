@@ -179,6 +179,15 @@ def _parse_expression(text: str, system: FormalSystem) -> Expression:
     return result
 
 
+def parse_expression(text: str, system: FormalSystem) -> Expression:
+    """Public entry point for parsing a single rendered expression.
+
+    Raises ``ParseError`` when the text is not a well-formed expression of
+    the given system.
+    """
+    return _parse_expression(text, system)
+
+
 def parse_continuation_steps(
     text: str,
     system: FormalSystem,

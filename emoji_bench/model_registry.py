@@ -67,6 +67,10 @@ class ModelConfig:
     anthropic_thinking: AnthropicThinkingConfig | None = None
     anthropic_effort: AnthropicEffort | None = None
     gemini_thinking: GeminiThinkingConfig | None = None
+    # Sampling temperature sent to the provider. None means "provider
+    # default" (deliberately not pinned for reasoning models, several of
+    # which reject the parameter). Recorded per prediction row either way.
+    temperature: float | None = None
     notes: str | None = None
 
     def to_dict(self) -> dict[str, object]:
@@ -159,6 +163,9 @@ def _mistral_model(
         docs_url=docs_url,
         api_key_env_var="MISTRAL_API_KEY",
         default_max_output_tokens=default_max_output_tokens,
+        # Historical benchmark setting: Mistral runs were always sent at
+        # temperature 0 (previously hardcoded in the provider transport).
+        temperature=0.0,
         notes=notes,
     )
 

@@ -1,0 +1,70 @@
+{
+  "total": 100,
+  "corrupted_correct": 80,
+  "clean_correct": 97,
+  "corrupted_rate": 0.8,
+  "clean_rate": 0.97,
+  "survival_rate": 0.8247,
+  "survival_ci95": [
+    0.7434,
+    0.915
+  ],
+  "conditional_recovery_rate": 0.7938,
+  "conditional_recovery_ci95": [
+    0.7029,
+    0.8624
+  ],
+  "conditional_denominator": 97,
+  "by_difficulty": {
+    "easy": {
+      "total": 25,
+      "corrupted_correct": 19,
+      "clean_correct": 25,
+      "corrupted_rate": 0.76,
+      "clean_rate": 1.0,
+      "survival_rate": 0.76,
+      "survival_ci95": [
+        0.6097,
+        0.9473
+      ]
+    },
+    "expert": {
+      "total": 25,
+      "corrupted_correct": 21,
+      "clean_correct": 22,
+      "corrupted_rate": 0.84,
+      "clean_rate": 0.88,
+      "survival_rate": 0.9545,
+      "survival_ci95": [
+        0.7629,
+        1.1943
+      ]
+    },
+    "hard": {
+      "total": 25,
+      "corrupted_correct": 19,
+      "clean_correct": 25,
+      "corrupted_rate": 0.76,
+      "clean_rate": 1.0,
+      "survival_rate": 0.76,
+      "survival_ci95": [
+        0.6097,
+        0.9473
+      ]
+    },
+    "medium": {
+      "total": 25,
+      "corrupted_correct": 21,
+      "clean_correct": 25,
+      "corrupted_rate": 0.84,
+      "clean_rate": 1.0,
+      "survival_rate": 0.84,
+      "survival_ci95": [
+        0.7079,
+        0.9967
+      ]
+    }
+  },
+  "corrupted_dir": "artifacts/evals/gpt-5.4-mini-reasoning-xhigh-B-L0",
+  "control_dir": "artifacts/evals-clean/gpt-5.4-mini-reasoning-xhigh-clean-B-L0"
+}

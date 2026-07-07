@@ -5,7 +5,11 @@ import random
 from emoji_bench.domain.types import Symbol
 
 # Curated pool of ~30 emoji with no mathematical/logical associations.
-# Each must tokenize as a single token across major model families.
+# Invariants (enforced by tests/test_symbols.py): each entry is a single
+# Unicode codepoint with no variation selectors or ZWJ sequences, so
+# string-equality scoring and expression parsing never depend on
+# normalization. Token counts vary by model family and are deliberately
+# not part of the contract.
 EMOJI_POOL: tuple[str, ...] = (
     # Animals
     "🦩", "🐙", "🦔", "🪼", "🦎", "🐌",

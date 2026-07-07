@@ -19,8 +19,9 @@ def request_mistral_messages(
         "model": model_config.api_model,
         "messages": messages,
         "max_tokens": max_output_tokens,
-        "temperature": 0,
     }
+    if model_config.temperature is not None:
+        options["temperature"] = model_config.temperature
     response = client.chat_complete(options)
     return ContinuationResponse(
         raw_continuation_text=_mistral_text(response),

@@ -66,6 +66,13 @@ def test_continuation_records_have_full_schema_and_invariants():
         assert record["ground_truth_final_output"] != record["wrong_branch_final_output"]
         assert record["error_type"] == "E-CONTINUE"
 
+        # Condition fields shared with the clean-control variant (and
+        # present in the checked-in reference dataset).
+        assert record["condition"] == "error_injected"
+        assert record["has_prefill_error"] is True
+        assert record["turn_2_user"] == "Please continue."
+        assert record["prefill_cutoff_step"] == record["prefill_error_step"]
+
         # Structural invariants.
         x = record["chain_length_x"]
         y = record["prefill_error_step"]

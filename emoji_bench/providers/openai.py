@@ -20,6 +20,8 @@ def request_openai_messages(
         "input": messages,
         "max_output_tokens": max_output_tokens,
     }
+    if model_config.temperature is not None:
+        options["temperature"] = model_config.temperature
     if model_config.openai_reasoning is not None:
         reasoning: dict[str, str] = {"effort": model_config.openai_reasoning.effort}
         if model_config.openai_reasoning.summary:

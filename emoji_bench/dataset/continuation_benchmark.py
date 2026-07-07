@@ -20,6 +20,7 @@ from emoji_bench.continuation_formatter import (
     format_clean_derivation,
     format_continuation_prefill,
     format_continuation_turn_1_user,
+    get_turn_2_prompt,
 )
 from emoji_bench.domain.types import FormalSystem, Symbol
 
@@ -187,10 +188,13 @@ def continuation_record(
         "split": split,
         "difficulty": difficulty,
         "error_type": "E-CONTINUE",
+        "condition": "error_injected",
+        "has_prefill_error": True,
 
         # Conversation.
         "turn_1_user": instance.turn_1_user,
         "turn_1_assistant_prefill": instance.turn_1_assistant_prefill,
+        "turn_2_user": get_turn_2_prompt(0),
         "clean_derivation": format_clean_derivation(instance.clean_chain, instance.system),
 
         # Scoring.
@@ -200,6 +204,7 @@ def continuation_record(
         # Structural metadata.
         "chain_length_x": instance.chain_length_x,
         "prefill_error_step": instance.prefill_error_step,
+        "prefill_cutoff_step": instance.prefill_error_step,
         "target_step_count": target_step_count,
 
         # Repro.

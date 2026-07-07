@@ -55,6 +55,15 @@ def resolve_dataset_path_from_summary(summary_path: Path) -> Path | None:
         return None
     path = resolve_dataset_split_path(input_path)
     if not path.exists():
+        # Summaries record absolute paths, which go stale when artifacts
+        # move between machines. Datasets live under artifacts/, so retry
+        # the artifacts/-relative suffix against the current working dir.
+        parts = Path(input_path).parts
+        if "artifacts" in parts:
+            relative = Path(*parts[parts.index("artifacts"):])
+            candidate = resolve_dataset_split_path(relative)
+            if candidate.exists():
+                return candidate
         return None
     return path
 

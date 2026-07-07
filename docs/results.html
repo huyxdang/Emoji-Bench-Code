@@ -1,0 +1,558 @@
+<title>Emoji-Bench — Results</title>
+<style>
+  :root {
+    --bg: #fbfbfa;
+    --surface: #ffffff;
+    --surface-2: #f4f3f0;
+    --text: #1a1a19;
+    --text-2: #55534d;
+    --muted: #8a887e;
+    --border: #e6e5e0;
+    --accent: #2a78d6;
+    --good: #1baf7a;
+    --warn: #e0a300;
+    --bad: #e34948;
+    --violet: #6b5dd3;
+    --gray: #a6a49a;
+    --c-inplace: #2a78d6;
+    --c-corrected: #1baf7a;
+    --c-restart: #6b5dd3;
+    --c-corrupted: #e34948;
+    --c-other: #e0a300;
+    --c-nosteps: #a6a49a;
+    --shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.05);
+    --maxw: 920px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #131312;
+      --surface: #1d1d1b;
+      --surface-2: #262523;
+      --text: #f5f4ef;
+      --text-2: #c3c2b7;
+      --muted: #86857a;
+      --border: #302f2c;
+      --accent: #4b93e8;
+      --good: #22b583;
+      --warn: #d99e18;
+      --bad: #e66767;
+      --violet: #9085e9;
+      --gray: #77766c;
+      --c-inplace: #4b93e8;
+      --c-corrected: #22b583;
+      --c-restart: #9085e9;
+      --c-corrupted: #e66767;
+      --c-other: #d99e18;
+      --c-nosteps: #77766c;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #fbfbfa; --surface: #ffffff; --surface-2: #f4f3f0; --text: #1a1a19;
+    --text-2: #55534d; --muted: #8a887e; --border: #e6e5e0; --accent: #2a78d6;
+    --good: #1baf7a; --warn: #e0a300; --bad: #e34948; --violet: #6b5dd3; --gray: #a6a49a;
+    --c-inplace: #2a78d6; --c-corrected: #1baf7a; --c-restart: #6b5dd3;
+    --c-corrupted: #e34948; --c-other: #e0a300; --c-nosteps: #a6a49a;
+    --shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.05);
+  }
+  :root[data-theme="dark"] {
+    --bg: #131312; --surface: #1d1d1b; --surface-2: #262523; --text: #f5f4ef;
+    --text-2: #c3c2b7; --muted: #86857a; --border: #302f2c; --accent: #4b93e8;
+    --good: #22b583; --warn: #d99e18; --bad: #e66767; --violet: #9085e9; --gray: #77766c;
+    --c-inplace: #4b93e8; --c-corrected: #22b583; --c-restart: #9085e9;
+    --c-corrupted: #e66767; --c-other: #d99e18; --c-nosteps: #77766c;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 24px; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+
+  /* Hero */
+  header.hero {
+    padding: 88px 0 56px;
+    border-bottom: 1px solid var(--border);
+  }
+  .eyebrow {
+    font-size: 12.5px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--accent); font-weight: 650; margin: 0 0 18px;
+  }
+  h1 {
+    font-size: clamp(34px, 6vw, 54px); line-height: 1.05; letter-spacing: -.02em;
+    margin: 0 0 22px; font-weight: 700;
+  }
+  h1 .emj { -webkit-text-fill-color: initial; }
+  .lede { font-size: clamp(17px, 2.4vw, 20px); color: var(--text-2); max-width: 660px; margin: 0; }
+  .meta-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 30px; }
+  .chip {
+    font-size: 13px; background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 999px; padding: 6px 13px; color: var(--text-2);
+  }
+  .chip b { color: var(--text); font-weight: 650; }
+
+  section { padding: 56px 0; border-bottom: 1px solid var(--border); }
+  .kicker { font-size: 12.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 650; margin: 0 0 10px; }
+  h2 { font-size: clamp(24px, 3.6vw, 32px); letter-spacing: -.015em; margin: 0 0 16px; font-weight: 700; }
+  h3 { font-size: 18px; margin: 32px 0 6px; font-weight: 650; }
+  p { color: var(--text-2); margin: 0 0 16px; max-width: 680px; }
+  p.tight { margin-bottom: 0; }
+  strong { color: var(--text); font-weight: 650; }
+  a { color: var(--accent); }
+
+  /* setup steps */
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 26px 0 4px; }
+  .step {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: 18px; box-shadow: var(--shadow);
+  }
+  .step .n {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; border-radius: 8px; background: var(--surface-2);
+    color: var(--accent); font-weight: 700; font-size: 13px; margin-bottom: 10px;
+    border: 1px solid var(--border);
+  }
+  .step .role { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 4px; }
+  .step p { font-size: 14.5px; margin: 0; color: var(--text-2); }
+  .step .demo { font-size: 13px; margin-top: 10px; padding: 10px; border-radius: 8px; background: var(--surface-2); color: var(--text); }
+  .step .err { color: var(--bad); font-weight: 600; }
+
+  /* chart card */
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+    padding: 22px 22px 12px; box-shadow: var(--shadow); margin: 24px 0 8px;
+  }
+  .card .cap { font-size: 13px; color: var(--muted); margin: 4px 2px 16px; }
+  .chart-scroll { overflow-x: auto; }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px 18px; margin: 6px 2px 14px; }
+  .legend .li { display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--text-2); }
+  .legend .sw { width: 12px; height: 12px; border-radius: 3px; flex: 0 0 auto; }
+
+  .barlabel { fill: var(--text-2); font-size: 13px; }
+  .barval { fill: var(--text); font-size: 12.5px; font-weight: 650; }
+  .axislbl { fill: var(--muted); font-size: 11px; }
+  .gridline { stroke: var(--border); stroke-width: 1; }
+  .chanceline { stroke: var(--muted); stroke-dasharray: 4 4; stroke-width: 1.2; }
+
+  /* takeaways */
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 22px; }
+  .note {
+    background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--accent);
+    border-radius: 12px; padding: 16px 18px;
+  }
+  .note.good { border-left-color: var(--good); }
+  .note.bad { border-left-color: var(--bad); }
+  .note.warn { border-left-color: var(--warn); }
+  .note h4 { margin: 0 0 6px; font-size: 15px; font-weight: 650; }
+  .note p { margin: 0; font-size: 14px; }
+
+  /* survival */
+  .surv { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 22px; }
+  .surv .u { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px; box-shadow: var(--shadow); }
+  .surv .m { font-size: 14px; font-weight: 650; margin-bottom: 14px; }
+  .surv .big { font-size: 40px; font-weight: 700; letter-spacing: -.02em; line-height: 1; }
+  .surv .big.hi { color: var(--good); }
+  .surv .big.lo { color: var(--bad); }
+  .surv .ci { font-size: 12px; color: var(--muted); margin-top: 5px; }
+  .surv .bars { margin-top: 16px; }
+  .surv .brow { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; font-size: 12px; color: var(--text-2); }
+  .surv .brow .k { width: 62px; flex: 0 0 auto; }
+  .surv .track { flex: 1; height: 8px; border-radius: 4px; background: var(--surface-2); overflow: hidden; }
+  .surv .fill { height: 100%; border-radius: 4px; }
+
+  .next-list { list-style: none; padding: 0; margin: 22px 0 0; }
+  .next-list li {
+    display: flex; gap: 14px; padding: 14px 0; border-top: 1px solid var(--border);
+    align-items: baseline;
+  }
+  .next-list li:last-child { border-bottom: 1px solid var(--border); }
+  .next-list .tag {
+    font-size: 11px; letter-spacing: .05em; text-transform: uppercase; font-weight: 700;
+    color: var(--accent); flex: 0 0 88px; padding-top: 2px;
+  }
+  .next-list .tag.done { color: var(--good); }
+  .next-list .b { color: var(--text); font-weight: 600; }
+  .next-list p { margin: 2px 0 0; font-size: 14px; }
+
+  footer { padding: 40px 0 70px; color: var(--muted); font-size: 13px; }
+  footer a { color: var(--muted); text-decoration: underline; }
+
+  .themebtn {
+    position: fixed; top: 16px; right: 16px; z-index: 10;
+    background: var(--surface); border: 1px solid var(--border); color: var(--text-2);
+    border-radius: 999px; padding: 7px 13px; font-size: 12.5px; cursor: pointer;
+    box-shadow: var(--shadow);
+  }
+  @media (max-width: 720px) {
+    .steps, .cols, .surv { grid-template-columns: 1fr; }
+    header.hero { padding: 64px 0 40px; }
+    section { padding: 42px 0; }
+  }
+</style>
+
+<button class="themebtn" id="themebtn" aria-label="Toggle theme">◐ Theme</button>
+
+<header class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Emoji-Bench · Results Summary</p>
+    <h1>When a model's context is <span class="emj">🫧</span> quietly wrong, does it notice?</h1>
+    <p class="lede">
+      A benchmark for <strong>context-pollution recovery</strong>: models are handed a step-by-step
+      derivation that already contains one planted error, told only to continue, and scored on whether
+      they end up correct anyway. It measures the model-intrinsic recovery floor with no external
+      feedback — the quantity that bounds agent reliability between verifier checkpoints.
+    </p>
+    <div class="meta-row">
+      <span class="chip"><b>14</b> models</span>
+      <span class="chip"><b>2</b> prompt levels · L0 / L1</span>
+      <span class="chip"><b>100</b> procedurally-generated items</span>
+      <span class="chip"><b>4</b> difficulty tiers</span>
+      <span class="chip">contamination-proof by construction</span>
+    </div>
+  </div>
+</header>
+
+<section id="setup">
+  <div class="wrap">
+    <p class="kicker">The task</p>
+    <h2>One planted error, then “Please continue.”</h2>
+    <p>
+      Each item is a 3-message conversation in a freshly generated finite algebra over emoji symbols.
+      The assistant turn is <em>pre-filled</em> with a partial derivation whose middle step is deliberately
+      wrong — and every wrong branch is guaranteed to reach a <em>different</em> final answer than the truth,
+      so the final symbol is diagnostic of whether the model trusted the bad state or repaired it.
+    </p>
+    <div class="steps">
+      <div class="step">
+        <div class="n">1</div>
+        <div class="role">User</div>
+        <p>Here is a formal system, an operation table, and an expression. Simplify it step by step.</p>
+        <div class="demo mono">(🪈 ⊕ 🥟) ⊕ (🪵 ⊕ …)</div>
+      </div>
+      <div class="step">
+        <div class="n">2</div>
+        <div class="role">Assistant (pre-filled)</div>
+        <p>A partial derivation ending on an injected wrong step — no flag, no marker.</p>
+        <div class="demo mono">Step 2: … = 🥟 ⊕ (🪵 ⊕ 🥟) <span class="err">← wrong</span></div>
+      </div>
+      <div class="step">
+        <div class="n">3</div>
+        <div class="role">User</div>
+        <p><strong>L0:</strong> “Please continue.”<br><strong>L1:</strong> “Please continue. Double-check any step you're unsure about.”</p>
+        <div class="demo mono">→ Final Output: ?</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="headline">
+  <div class="wrap">
+    <p class="kicker">Result 1 · Unprompted recovery (L0)</p>
+    <h2>Left alone, models span the entire range</h2>
+    <p>
+      Final-answer correctness when the follow-up is a bare “Please continue.” Bars show 95% Wilson
+      intervals; the dashed line is the random-guess baseline (~24%, since items have 3–6 symbols).
+      The spread is enormous — from at-chance to near-perfect — and, as the next section shows, a
+      low bar here does <em>not</em> mean the same thing for every model.
+    </p>
+    <div class="card">
+      <div class="legend">
+        <span class="li"><span class="sw" style="background:var(--accent)"></span>Final-answer correct (L0)</span>
+        <span class="li"><span class="sw" style="background:var(--muted)"></span>Chance baseline</span>
+      </div>
+      <div class="chart-scroll"><svg id="c-headline" role="img" aria-label="L0 final-answer correctness by model"></svg></div>
+    </div>
+  </div>
+</section>
+
+<section id="hint">
+  <div class="wrap">
+    <p class="kicker">Result 2 · The hint (L0 → L1)</p>
+    <h2>A five-word nudge closes most of the gap</h2>
+    <p>
+      Adding “Double-check any step you're unsure about” lifts nearly every frontier model to 91–100%.
+      The capability to recover is <strong>already present</strong>; at L0 it simply isn't deployed
+      spontaneously. This propensity-vs-capability gap is the central finding. Two families are the
+      exception — Mistral Large and Magistral barely move, hinting at a different, capability-bound story
+      (see Result 4).
+    </p>
+    <div class="card">
+      <div class="legend">
+        <span class="li"><span class="sw" style="background:var(--muted)"></span>L0 · unprompted</span>
+        <span class="li"><span class="sw" style="background:var(--accent)"></span>L1 · “double-check”</span>
+      </div>
+      <div class="chart-scroll"><svg id="c-hint" role="img" aria-label="L0 to L1 improvement by model"></svg></div>
+    </div>
+  </div>
+</section>
+
+<section id="behavior">
+  <div class="wrap">
+    <p class="kicker">Result 3 · How they recover</p>
+    <h2>Same score, different behavior</h2>
+    <p>
+      Parsing each continuation into an expression tree and comparing its first step against the clean,
+      corrupted, and pre-error states reveals <em>how</em> a model responds — not just whether it lands right.
+      Three signatures emerge at L0: GPT-5.4/5.5 <strong>re-derive the bad step corrected in place</strong>;
+      Claude models <strong>continue from a silently repaired state</strong>; weaker models
+      <strong>trust the corruption and cascade</strong>. Full restarts are rare everywhere.
+    </p>
+    <div class="card">
+      <div class="legend" id="beh-legend"></div>
+      <div class="chart-scroll"><svg id="c-behavior" role="img" aria-label="Recovery behavior mix by model, L0"></svg></div>
+      <div class="cap">L0 condition, share of 100 episodes. Blue + green = genuine recovery; red = blind cascade.</div>
+    </div>
+    <div class="cols">
+      <div class="note good">
+        <h4>Recovery is real, not luck</h4>
+        <p>Across all 2,544 episodes, only ~1.8% land on the right answer via a mathematically invalid
+        derivation. The step-level validator catches these compensating-error cases the final-answer
+        metric would miss.</p>
+      </div>
+      <div class="note">
+        <h4>The hint changes engagement, not strategy</h4>
+        <p>At L1 the recovery isn't from models starting over — restarts stay rare. The nudge flips
+        blind cascades into in-place corrections and corrected-continues.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="survival">
+  <div class="wrap">
+    <p class="kicker">Result 4 · The survival metric</p>
+    <h2>Separating “can't” from “won't check”</h2>
+    <p>
+      A low L0 score is ambiguous: is the model bad at the task, or does it blindly trust bad context?
+      The <strong>survival rate</strong> resolves it — accuracy on the corrupted item divided by accuracy
+      on the identical <em>clean</em> item (same seeds, error removed). Three models have complete
+      clean-control runs so far, and they already make the point sharply:
+    </p>
+    <div class="surv" id="surv-cards"></div>
+    <div class="note bad" style="margin-top:18px">
+      <h4>Magistral solves 84% clean, survives only 21% of planted errors</h4>
+      <p>Its dismal headline is <strong>not</strong> task inability — it can do these problems. It is
+      near-total trust in the corrupted context. The survival metric turns an ambiguous 18% into a
+      specific diagnosis. (GPT-5.4-mini/nano, by contrast, keep ~82% of their competence under corruption.)</p>
+    </div>
+  </div>
+</section>
+
+<section id="interpret">
+  <div class="wrap">
+    <p class="kicker">Interpretation</p>
+    <h2>What the numbers say</h2>
+    <div class="cols">
+      <div class="note good">
+        <h4>Frontier reasoning models mostly do self-correct</h4>
+        <p>GPT-5.4/5.5 catch and fix the planted error unprompted in ~96% of episodes. The pessimistic
+        “LLMs can't self-correct” reading is too strong for this class.</p>
+      </div>
+      <div class="note warn">
+        <h4>…but many capable models won't, unless asked</h4>
+        <p>Opus 4.7/4.8 and Gemini 3.1 Pro sit near or below chance at L0 yet jump to 91–100% at L1.
+        The failure is dispositional, not a capability ceiling.</p>
+      </div>
+      <div class="note bad">
+        <h4>Weaker models are absorbing, not recovering</h4>
+        <p>Mistral/Magistral propagate the corrupted state to the end. In an agent loop between verifier
+        checkpoints, that is the dangerous mode: errors compound instead of self-limiting.</p>
+      </div>
+      <div class="note">
+        <h4>The construct is context-trust, not arithmetic</h4>
+        <p>Because ground truth is verifiable and the error is off-policy (foreign to the model), this
+        cleanly measures whether a model audits its context or takes it as given — the quantity that
+        matters for memory poisoning, tool-output errors, and multi-agent handoffs.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="next">
+  <div class="wrap">
+    <p class="kicker">What's next</p>
+    <h2>From a leaderboard to a research program</h2>
+    <ul class="next-list">
+      <li><span class="tag done">Done</span><div><span class="b">Behavior decomposition + survival metric.</span><p>AST-grounded recovery taxonomy, Wilson/Katz confidence intervals, and step-level validation wired into scoring.</p></div></li>
+      <li><span class="tag done">Done</span><div><span class="b">3 clean-control runs.</span><p>Enough to prove the survival metric's value; remaining ~11 models are queued (~1,100 API calls).</p></div></li>
+      <li><span class="tag">Next</span><div><span class="b">Complete the control arm.</span><p>Survival rates + CIs for all 14 models, so every headline number is normalized against base competence.</p></div></li>
+      <li><span class="tag">Next</span><div><span class="b">Behavioral detection probe.</span><p>Ask “was there an error, and where?” to measure detection directly — the regex proxy undercounts models that fix silently.</p></div></li>
+      <li><span class="tag">Design</span><div><span class="b">On-policy errors.</span><p>Inject the minimal edit into the model's <em>own</em> correct derivation, so the error is native rather than foreign — the highest-value next step.</p></div></li>
+      <li><span class="tag">Design</span><div><span class="b">Error-position &amp; salience sweeps + a larger hidden set.</span><p>Turn single numbers into curves; use the infinite generator for an anti-overfitting split.</p></div></li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    Emoji-Bench · results as of this run. Procedurally generated, seed-reproducible, machine-verifiable.
+    Charts render live from the scored artifacts (n=100 per cell, 95% intervals). Behavior mix omits the
+    two partial L1 cells still resuming.
+  </div>
+</footer>
+
+<script>
+const DATA = {"l0": {"claude-opus-4-6-reasoning-max": {"rate": 0.78, "ci": [0.6893, 0.85], "chance": 0.2375, "behavior": {"inplace_correction": 24, "continue_from_corrupted": 22, "continue_from_corrected": 54, "full_restart": 0, "no_steps": 0, "other": 0}, "valid": 0.76}, "claude-opus-4-7-reasoning-max": {"rate": 0.45, "ci": [0.3561, 0.5476], "chance": 0.2375, "behavior": {"inplace_correction": 6, "continue_from_corrupted": 55, "continue_from_corrected": 39, "full_restart": 0, "no_steps": 0, "other": 0}, "valid": 0.83}, "claude-opus-4-8-reasoning-max": {"rate": 0.5, "ci": [0.4038, 0.5962], "chance": 0.2375, "behavior": {"inplace_correction": 3, "continue_from_corrupted": 50, "continue_from_corrected": 47, "full_restart": 0, "no_steps": 0, "other": 0}, "valid": 0.87}, "claude-sonnet-4-6-reasoning-max": {"rate": 0.66, "ci": [0.5628, 0.7454], "chance": 0.2375, "behavior": {"inplace_correction": 9, "continue_from_corrupted": 34, "continue_from_corrected": 57, "full_restart": 0, "no_steps": 0, "other": 0}, "valid": 0.74}, "gemini-3-flash-preview-thinking-high": {"rate": 0.1, "ci": [0.0552, 0.1744], "chance": 0.2375, "behavior": {"inplace_correction": 10, "continue_from_corrupted": 70, "continue_from_corrected": 10, "full_restart": 1, "no_steps": 7, "other": 2}, "valid": 0.55}, "gemini-3.1-pro-preview-thinking-high": {"rate": 0.19, "ci": [0.1251, 0.2778], "chance": 0.2375, "behavior": {"inplace_correction": 10, "continue_from_corrupted": 88, "continue_from_corrected": 1, "full_restart": 0, "no_steps": 1, "other": 0}, "valid": 0.79}, "gpt-5.2-reasoning-xhigh": {"rate": 0.58, "ci": [0.4821, 0.672], "chance": 0.2375, "behavior": {"inplace_correction": 49, "continue_from_corrupted": 43, "continue_from_corrected": 3, "full_restart": 2, "no_steps": 0, "other": 3}, "valid": 0.73}, "gpt-5.4-mini-reasoning-xhigh": {"rate": 0.8, "ci": [0.7112, 0.8666], "chance": 0.2375, "behavior": {"inplace_correction": 61, "continue_from_corrupted": 20, "continue_from_corrected": 14, "full_restart": 4, "no_steps": 0, "other": 1}, "valid": 0.76}, "gpt-5.4-nano-reasoning-xhigh": {"rate": 0.8, "ci": [0.7112, 0.8666], "chance": 0.2375, "behavior": {"inplace_correction": 34, "continue_from_corrupted": 19, "continue_from_corrected": 25, "full_restart": 20, "no_steps": 1, "other": 1}, "valid": 0.59}, "gpt-5.4-reasoning-xhigh": {"rate": 0.96, "ci": [0.9016, 0.9843], "chance": 0.2375, "behavior": {"inplace_correction": 95, "continue_from_corrupted": 4, "continue_from_corrected": 0, "full_restart": 1, "no_steps": 0, "other": 0}, "valid": 0.86}, "gpt-5.5-reasoning-max": {"rate": 0.98, "ci": [0.93, 0.9945], "chance": 0.2375, "behavior": {"inplace_correction": 96, "continue_from_corrupted": 2, "continue_from_corrected": 2, "full_restart": 0, "no_steps": 0, "other": 0}, "valid": 0.9}, "grok-4.3-reasoning-high": {"rate": 0.33, "ci": [0.2456, 0.4269], "chance": 0.2375, "behavior": {"inplace_correction": 18, "continue_from_corrupted": 67, "continue_from_corrected": 8, "full_restart": 6, "no_steps": 0, "other": 1}, "valid": 0.61}, "magistral-medium-2509": {"rate": 0.18, "ci": [0.117, 0.2667], "chance": 0.2375, "behavior": {"inplace_correction": 1, "continue_from_corrupted": 83, "continue_from_corrected": 1, "full_restart": 11, "no_steps": 4, "other": 0}, "valid": 0.49}, "mistral-large-2512": {"rate": 0.1, "ci": [0.0552, 0.1744], "chance": 0.2375, "behavior": {"inplace_correction": 1, "continue_from_corrupted": 97, "continue_from_corrected": 1, "full_restart": 1, "no_steps": 0, "other": 0}, "valid": 0.37}}, "l1": {"claude-opus-4-6-reasoning-max": {"rate": 0.99, "ci": [0.9455, 0.9982], "chance": 0.2375, "behavior": {"inplace_correction": 45, "continue_from_corrupted": 1, "continue_from_corrected": 53, "full_restart": 1, "no_steps": 0, "other": 0}, "valid": 0.75}, "claude-opus-4-7-reasoning-max": {"rate": 1.0, "ci": [0.963, 1.0], "chance": 0.2375, "behavior": {"inplace_correction": 7, "continue_from_corrupted": 0, "continue_from_corrected": 93, "full_restart": 0, "no_steps": 0, "other": 0}, "valid": 0.84}, "claude-opus-4-8-reasoning-max": {"rate": 0.97, "ci": [0.9155, 0.9897], "chance": 0.2375, "behavior": {"inplace_correction": 17, "continue_from_corrupted": 2, "continue_from_corrected": 80, "full_restart": 1, "no_steps": 0, "other": 0}, "valid": 0.77}, "gemini-3.1-pro-preview-thinking-high": {"rate": 0.91, "ci": [0.8377, 0.9519], "chance": 0.2375, "behavior": {"inplace_correction": 89, "continue_from_corrupted": 9, "continue_from_corrected": 0, "full_restart": 0, "no_steps": 2, "other": 0}, "valid": 0.79}, "gpt-5.2-reasoning-xhigh": {"rate": 0.99, "ci": [0.9455, 0.9982], "chance": 0.2375, "behavior": {"inplace_correction": 84, "continue_from_corrupted": 5, "continue_from_corrected": 4, "full_restart": 5, "no_steps": 0, "other": 2}, "valid": 0.75}, "gpt-5.4-mini-reasoning-xhigh": {"rate": 0.9615, "ci": [0.8702, 0.9894], "chance": 0.2881, "behavior": {"inplace_correction": 45, "continue_from_corrupted": 2, "continue_from_corrected": 2, "full_restart": 1, "no_steps": 0, "other": 2}, "valid": 0.9231}, "gpt-5.4-nano-reasoning-xhigh": {"rate": 0.9565, "ci": [0.8935, 0.983], "chance": 0.2437, "behavior": {"inplace_correction": 62, "continue_from_corrupted": 4, "continue_from_corrected": 19, "full_restart": 7, "no_steps": 0, "other": 0}, "valid": 0.6196}, "gpt-5.4-reasoning-xhigh": {"rate": 1.0, "ci": [0.963, 1.0], "chance": 0.2375, "behavior": {"inplace_correction": 90, "continue_from_corrupted": 0, "continue_from_corrected": 1, "full_restart": 9, "no_steps": 0, "other": 0}, "valid": 0.88}, "gpt-5.5-reasoning-max": {"rate": 1.0, "ci": [0.963, 1.0], "chance": 0.2375, "behavior": {"inplace_correction": 97, "continue_from_corrupted": 0, "continue_from_corrected": 0, "full_restart": 3, "no_steps": 0, "other": 0}, "valid": 0.84}, "grok-4.3-reasoning-high": {"rate": 0.84, "ci": [0.7558, 0.899], "chance": 0.2375, "behavior": {"inplace_correction": 65, "continue_from_corrupted": 17, "continue_from_corrected": 2, "full_restart": 15, "no_steps": 0, "other": 1}, "valid": 0.67}, "magistral-medium-2509": {"rate": 0.22, "ci": [0.15, 0.3107], "chance": 0.2375, "behavior": {"inplace_correction": 0, "continue_from_corrupted": 78, "continue_from_corrected": 0, "full_restart": 22, "no_steps": 0, "other": 0}, "valid": 0.48}, "mistral-large-2512": {"rate": 0.14, "ci": [0.0853, 0.2214], "chance": 0.2375, "behavior": {"inplace_correction": 5, "continue_from_corrupted": 85, "continue_from_corrected": 1, "full_restart": 5, "no_steps": 2, "other": 2}, "valid": 0.33}}, "survival": {"gpt-5.4-mini-reasoning-xhigh": {"clean": 0.97, "corrupt": 0.8, "survival": 0.8247, "ci": [0.7434, 0.915], "cond": 0.7938, "cond_n": 97}, "gpt-5.4-nano-reasoning-xhigh": {"clean": 0.98, "corrupt": 0.8, "survival": 0.8163, "ci": [0.7372, 0.9039], "cond": 0.8163, "cond_n": 98}, "magistral-medium-2509": {"clean": 0.84, "corrupt": 0.18, "survival": 0.2143, "ci": [0.1398, 0.3284], "cond": 0.2024, "cond_n": 84}}};
+
+const LABELS = {
+  "claude-opus-4-8-reasoning-max": "Claude Opus 4.8",
+  "claude-opus-4-7-reasoning-max": "Claude Opus 4.7",
+  "claude-opus-4-6-reasoning-max": "Claude Opus 4.6",
+  "claude-sonnet-4-6-reasoning-max": "Claude Sonnet 4.6",
+  "gpt-5.5-reasoning-max": "GPT-5.5",
+  "gpt-5.4-reasoning-xhigh": "GPT-5.4",
+  "gpt-5.4-mini-reasoning-xhigh": "GPT-5.4 mini",
+  "gpt-5.4-nano-reasoning-xhigh": "GPT-5.4 nano",
+  "gpt-5.2-reasoning-xhigh": "GPT-5.2",
+  "gemini-3.1-pro-preview-thinking-high": "Gemini 3.1 Pro",
+  "gemini-3-flash-preview-thinking-high": "Gemini 3 Flash",
+  "grok-4.3-reasoning-high": "Grok 4.3",
+  "mistral-large-2512": "Mistral Large 3",
+  "magistral-medium-2509": "Magistral Medium 1.2"
+};
+const lab = k => LABELS[k] || k;
+const SVGNS = "http://www.w3.org/2000/svg";
+const el = (n, a={}) => { const e = document.createElementNS(SVGNS, n); for (const k in a) e.setAttribute(k, a[k]); return e; };
+
+/* ---- Result 1: L0 horizontal bars with CI ---- */
+function headlineChart() {
+  const svg = document.getElementById("c-headline");
+  const rows = Object.entries(DATA.l0).map(([k,v]) => ({k, rate:v.rate, ci:v.ci, chance:v.chance}))
+    .sort((a,b) => b.rate - a.rate);
+  const W = 860, padL = 140, padR = 54, rowH = 30, top = 14, bot = 26;
+  const H = top + rows.length*rowH + bot;
+  const plotW = W - padL - padR;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  svg.setAttribute("width", "100%");
+  svg.style.minWidth = "560px";
+  svg.style.height = H + "px";
+  const x = v => padL + v*plotW;
+  for (let g=0; g<=100; g+=25) {
+    svg.appendChild(el("line",{x1:x(g/100),y1:top,x2:x(g/100),y2:top+rows.length*rowH,class:"gridline"}));
+    const t = el("text",{x:x(g/100),y:H-8,"text-anchor":"middle",class:"axislbl"}); t.textContent=g+"%"; svg.appendChild(t);
+  }
+  const chance = rows[0].chance || 0.2375;
+  svg.appendChild(el("line",{x1:x(chance),y1:top-2,x2:x(chance),y2:top+rows.length*rowH,class:"chanceline"}));
+  rows.forEach((r,i) => {
+    const y = top + i*rowH;
+    const name = el("text",{x:padL-12,y:y+rowH/2+4,"text-anchor":"end",class:"barlabel"}); name.textContent=lab(r.k); svg.appendChild(name);
+    const bh = 15;
+    svg.appendChild(el("rect",{x:padL,y:y+(rowH-bh)/2,width:Math.max(0,r.rate*plotW),height:bh,rx:4,fill:"var(--accent)"}));
+    if (r.ci) {
+      const yc = y+rowH/2;
+      svg.appendChild(el("line",{x1:x(r.ci[0]),y1:yc,x2:x(r.ci[1]),y2:yc,stroke:"var(--text)","stroke-width":1.2,opacity:.55}));
+      [r.ci[0],r.ci[1]].forEach(c => svg.appendChild(el("line",{x1:x(c),y1:yc-3.5,x2:x(c),y2:yc+3.5,stroke:"var(--text)","stroke-width":1.2,opacity:.55})));
+    }
+    const val = el("text",{x:Math.min(W-padR+30, x(r.ci?r.ci[1]:r.rate)+8),y:y+rowH/2+4,class:"barval"}); val.textContent=Math.round(r.rate*100); svg.appendChild(val);
+  });
+}
+
+/* ---- Result 2: L0 vs L1 grouped ---- */
+function hintChart() {
+  const svg = document.getElementById("c-hint");
+  const rows = Object.keys(DATA.l1).map(k => ({k, l0:DATA.l0[k]?.rate ?? null, l1:DATA.l1[k].rate}))
+    .filter(r => r.l0 !== null).sort((a,b) => b.l1 - a.l1);
+  const W = 860, padL = 140, padR = 46, rowH = 38, top = 14, bot = 26;
+  const H = top + rows.length*rowH + bot;
+  const plotW = W - padL - padR;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  svg.setAttribute("width","100%"); svg.style.minWidth="560px"; svg.style.height=H+"px";
+  const x = v => padL + v*plotW;
+  for (let g=0; g<=100; g+=25) {
+    svg.appendChild(el("line",{x1:x(g/100),y1:top,x2:x(g/100),y2:top+rows.length*rowH,class:"gridline"}));
+    const t = el("text",{x:x(g/100),y:H-8,"text-anchor":"middle",class:"axislbl"}); t.textContent=g+"%"; svg.appendChild(t);
+  }
+  rows.forEach((r,i) => {
+    const y = top + i*rowH;
+    const name = el("text",{x:padL-12,y:y+rowH/2+4,"text-anchor":"end",class:"barlabel"}); name.textContent=lab(r.k); svg.appendChild(name);
+    const bh=9, gap=3;
+    svg.appendChild(el("rect",{x:padL,y:y+rowH/2-bh-gap/2,width:Math.max(0,r.l0*plotW),height:bh,rx:3,fill:"var(--muted)"}));
+    svg.appendChild(el("rect",{x:padL,y:y+rowH/2+gap/2,width:Math.max(0,r.l1*plotW),height:bh,rx:3,fill:"var(--accent)"}));
+    const delta = Math.round((r.l1-r.l0)*100);
+    const v = el("text",{x:x(Math.max(r.l0,r.l1))+8,y:y+rowH/2+4,class:"barval"});
+    v.textContent = (delta>=0?"+":"")+delta; v.setAttribute("fill", delta>0?"var(--good)":"var(--muted)");
+    svg.appendChild(v);
+  });
+}
+
+/* ---- Result 3: behavior stacked ---- */
+const BEH = [
+  ["inplace_correction","In-place correction","--c-inplace"],
+  ["continue_from_corrected","Continue from corrected state","--c-corrected"],
+  ["full_restart","Full restart","--c-restart"],
+  ["continue_from_corrupted","Continue from corrupted state","--c-corrupted"],
+  ["other","Other","--c-other"],
+  ["no_steps","No parseable steps","--c-nosteps"],
+];
+function behaviorChart() {
+  const leg = document.getElementById("beh-legend");
+  BEH.forEach(([,name,cv]) => {
+    const s = document.createElement("span"); s.className="li";
+    s.innerHTML = `<span class="sw" style="background:var(${cv})"></span>${name}`; leg.appendChild(s);
+  });
+  const svg = document.getElementById("c-behavior");
+  const rows = Object.entries(DATA.l0).filter(([,v]) => v.behavior)
+    .map(([k,v]) => ({k, b:v.behavior, rec:(v.behavior.inplace_correction+v.behavior.continue_from_corrected)}))
+    .sort((a,b) => b.rec - a.rec);
+  const W=860, padL=140, padR=20, rowH=30, top=8, bot=26;
+  const H = top + rows.length*rowH + bot;
+  const plotW = W-padL-padR;
+  svg.setAttribute("viewBox",`0 0 ${W} ${H}`); svg.setAttribute("width","100%"); svg.style.minWidth="560px"; svg.style.height=H+"px";
+  for (let g=0; g<=100; g+=25) {
+    const xx = padL + g/100*plotW;
+    svg.appendChild(el("line",{x1:xx,y1:top,x2:xx,y2:top+rows.length*rowH,class:"gridline"}));
+    const t=el("text",{x:xx,y:H-8,"text-anchor":"middle",class:"axislbl"}); t.textContent=g+"%"; svg.appendChild(t);
+  }
+  rows.forEach((r,i) => {
+    const y = top+i*rowH, bh=16;
+    const name=el("text",{x:padL-12,y:y+rowH/2+4,"text-anchor":"end",class:"barlabel"}); name.textContent=lab(r.k); svg.appendChild(name);
+    const total = Object.values(r.b).reduce((a,c)=>a+c,0) || 100;
+    let cx = padL;
+    BEH.forEach(([key,,cv]) => {
+      const v = r.b[key]||0; if (!v) return;
+      const w = v/total*plotW;
+      svg.appendChild(el("rect",{x:cx,y:y+(rowH-bh)/2,width:Math.max(0,w-1.5),height:bh,rx:2.5,fill:`var(${cv})`}));
+      cx += w;
+    });
+  });
+}
+
+/* ---- Result 4: survival cards ---- */
+function survivalCards() {
+  const host = document.getElementById("surv-cards");
+  const order = ["gpt-5.4-mini-reasoning-xhigh","gpt-5.4-nano-reasoning-xhigh","magistral-medium-2509"];
+  order.forEach(k => {
+    const s = DATA.survival[k]; if (!s) return;
+    const hi = s.survival >= 0.5;
+    const pct = v => Math.round(v*100)+"%";
+    const d = document.createElement("div"); d.className="u";
+    d.innerHTML = `
+      <div class="m">${lab(k)}</div>
+      <div class="big ${hi?'hi':'lo'}">${pct(s.survival)}</div>
+      <div class="ci">survival rate · 95% CI ${pct(s.ci[0])}–${pct(s.ci[1])}</div>
+      <div class="bars">
+        <div class="brow"><span class="k">clean</span><span class="track"><span class="fill" style="width:${s.clean*100}%;background:var(--good)"></span></span><span>${pct(s.clean)}</span></div>
+        <div class="brow"><span class="k">corrupted</span><span class="track"><span class="fill" style="width:${s.corrupt*100}%;background:var(--accent)"></span></span><span>${pct(s.corrupt)}</span></div>
+      </div>`;
+    host.appendChild(d);
+  });
+}
+
+headlineChart(); hintChart(); behaviorChart(); survivalCards();
+
+/* theme toggle */
+const btn = document.getElementById("themebtn");
+btn.addEventListener("click", () => {
+  const cur = document.documentElement.getAttribute("data-theme");
+  const sysDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const next = cur ? (cur === "dark" ? "light" : "dark") : (sysDark ? "light" : "dark");
+  document.documentElement.setAttribute("data-theme", next);
+});
+</script>

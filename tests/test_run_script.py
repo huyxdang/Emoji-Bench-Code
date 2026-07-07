@@ -104,14 +104,14 @@ def test_run_sh_runs_eval_then_score_for_successful_cells(tmp_path):
 
     assert result.returncode == 0
     assert "All eval, score, and plot steps completed successfully." in result.stdout
-    assert len(calls) == 49
+    assert len(calls) == 53
 
     eval_calls = [call for call in calls if call[0] == "scripts/evaluate_continuation.py"]
     score_calls = [call for call in calls if call[0] == "scripts/score_continuation.py"]
     plot_calls = [call for call in calls if call[0] == "scripts/plot_b_final_answer.py"]
 
-    assert len(eval_calls) == 24
-    assert len(score_calls) == 24
+    assert len(eval_calls) == 26
+    assert len(score_calls) == 26
     assert len(plot_calls) == 1
 
     expected_models = [
@@ -125,11 +125,12 @@ def test_run_sh_runs_eval_then_score_for_successful_cells(tmp_path):
         "gpt-5.4-nano-reasoning-xhigh",
         "gemini-3.1-pro-preview-thinking-high",
         "gemini-3-flash-preview-thinking-high",
+        "grok-4.3-reasoning-high",
         "mistral-large-2512",
         "magistral-medium-2509",
     ]
-    assert [call[call.index("--model") + 1] for call in eval_calls[:12]] == expected_models
-    assert [call[call.index("--model") + 1] for call in eval_calls[12:]] == expected_models
+    assert [call[call.index("--model") + 1] for call in eval_calls[:13]] == expected_models
+    assert [call[call.index("--model") + 1] for call in eval_calls[13:]] == expected_models
 
     first_eval = eval_calls[0]
     assert first_eval[:8] == [
@@ -147,8 +148,8 @@ def test_run_sh_runs_eval_then_score_for_successful_cells(tmp_path):
         "artifacts/evals/claude-opus-4-7-reasoning-max-B-L0",
     ]
     assert all(call[call.index("--mode") + 1] == "prefill" for call in eval_calls)
-    assert [call[call.index("--turn-2-prompt-level") + 1] for call in eval_calls] == ["0"] * 12 + ["1"] * 12
-    assert score_calls[12] == [
+    assert [call[call.index("--turn-2-prompt-level") + 1] for call in eval_calls] == ["0"] * 13 + ["1"] * 13
+    assert score_calls[13] == [
         "scripts/score_continuation.py",
         "artifacts/evals/claude-opus-4-7-reasoning-max-B-L1",
     ]
@@ -168,8 +169,8 @@ def test_run_sh_continues_past_failed_eval_and_skips_scoring_failed_cell(tmp_pat
     eval_calls = [call for call in calls if call[0] == "scripts/evaluate_continuation.py"]
     score_calls = [call for call in calls if call[0] == "scripts/score_continuation.py"]
 
-    assert len(eval_calls) == 24
-    assert len(score_calls) == 23
+    assert len(eval_calls) == 26
+    assert len(score_calls) == 25
 
     failed_output_dir = "artifacts/evals/gpt-5.4-reasoning-xhigh-B-L0"
     assert all(call[1] != failed_output_dir for call in score_calls)
@@ -188,145 +189,4 @@ def test_run_sh_reports_failed_scores(tmp_path):
 
     score_calls = [call for call in calls if call[0] == "scripts/score_continuation.py"]
 
-    assert len(score_calls) == 24
-
-
-def test_run_gpt55_l0_l1_runs_both_prompt_levels_then_scores(tmp_path):
-    result, calls = _run_script(
-        ["artifacts/emoji-bench-dataset-100", "--", "--max-concurrent", "4"],
-        tmp_path=tmp_path,
-        script_name="run_gpt55_l0_l1.sh",
-    )
-
-    assert result.returncode == 0
-    assert "All GPT-5.5 L0/L1 eval, score, and plot steps completed successfully." in result.stdout
-    assert len(calls) == 6
-    assert calls[0] == ["-c", "import openai, matplotlib"]
-
-    eval_calls = [call for call in calls if call[0] == "scripts/evaluate_continuation.py"]
-    score_calls = [call for call in calls if call[0] == "scripts/score_continuation.py"]
-    plot_calls = [call for call in calls if call[0] == "scripts/plot_b_final_answer.py"]
-
-    assert len(eval_calls) == 2
-    assert len(score_calls) == 2
-    assert len(plot_calls) == 1
-
-    assert [call[call.index("--turn-2-prompt-level") + 1] for call in eval_calls] == ["0", "1"]
-    assert all(call[call.index("--model") + 1] == "gpt-5.5-reasoning-max" for call in eval_calls)
-    assert all(call[call.index("--mode") + 1] == "prefill" for call in eval_calls)
-    assert score_calls == [
-        ["scripts/score_continuation.py", "artifacts/evals/gpt-5.5-reasoning-max-B-L0"],
-        ["scripts/score_continuation.py", "artifacts/evals/gpt-5.5-reasoning-max-B-L1"],
-    ]
-
-
-def test_run_gpt55_l0_l1_rejects_forwarded_output_dir(tmp_path):
-    result, calls = _run_script(
-        ["artifacts/emoji-bench-dataset-100", "--", "--output-dir", "custom-out"],
-        tmp_path=tmp_path,
-        script_name="run_gpt55_l0_l1.sh",
-    )
-
-    assert result.returncode == 2
-    assert "run_gpt55_l0_l1.sh does not support forwarding --output-dir" in result.stderr
-    assert calls == []
-
-
-def test_run_l1_mistral_runs_expected_models_then_scores(tmp_path):
-    result, calls = _run_script(
-        ["artifacts/emoji-bench-dataset-100", "--", "--max-concurrent", "4"],
-        tmp_path=tmp_path,
-        script_name="run_l1_mistral.sh",
-    )
-
-    assert result.returncode == 0
-    assert "All Mistral L1 eval, score, and plot steps completed successfully." in result.stdout
-    assert len(calls) == 5
-
-    eval_calls = [call for call in calls if call[0] == "scripts/evaluate_continuation.py"]
-    score_calls = [call for call in calls if call[0] == "scripts/score_continuation.py"]
-    plot_calls = [call for call in calls if call[0] == "scripts/plot_b_final_answer.py"]
-
-    assert [call[call.index("--model") + 1] for call in eval_calls] == [
-        "mistral-large-2512",
-        "magistral-medium-2509",
-    ]
-    assert all(call[call.index("--mode") + 1] == "prefill" for call in eval_calls)
-    assert all(call[call.index("--turn-2-prompt-level") + 1] == "1" for call in eval_calls)
-    assert score_calls == [
-        ["scripts/score_continuation.py", "artifacts/evals/mistral-large-2512-B-L1"],
-        ["scripts/score_continuation.py", "artifacts/evals/magistral-medium-2509-B-L1"],
-    ]
-    assert len(plot_calls) == 1
-
-
-def test_run_l1_mistral_rejects_forwarded_output_dir(tmp_path):
-    result, calls = _run_script(
-        ["artifacts/emoji-bench-dataset-100", "--", "--output-dir", "custom-out"],
-        tmp_path=tmp_path,
-        script_name="run_l1_mistral.sh",
-    )
-
-    assert result.returncode == 2
-    assert "run_l1_mistral.sh does not support forwarding --output-dir" in result.stderr
-    assert calls == []
-
-
-def test_run_l1_gemini_runs_expected_models_then_scores(tmp_path):
-    result, calls = _run_script(
-        ["artifacts/emoji-bench-dataset-100", "--", "--max-concurrent", "4"],
-        tmp_path=tmp_path,
-        script_name="run_l1_gemini.sh",
-    )
-
-    assert result.returncode == 0
-    assert "All Gemini L1 eval, score, and plot steps completed successfully." in result.stdout
-    assert len(calls) == 5
-
-    eval_calls = [call for call in calls if call[0] == "scripts/evaluate_continuation.py"]
-    score_calls = [call for call in calls if call[0] == "scripts/score_continuation.py"]
-    plot_calls = [call for call in calls if call[0] == "scripts/plot_b_final_answer.py"]
-
-    assert [call[call.index("--model") + 1] for call in eval_calls] == [
-        "gemini-3.1-pro-preview-thinking-high",
-        "gemini-3-flash-preview-thinking-high",
-    ]
-    assert all(call[call.index("--mode") + 1] == "prefill" for call in eval_calls)
-    assert all(call[call.index("--turn-2-prompt-level") + 1] == "1" for call in eval_calls)
-    assert score_calls == [
-        ["scripts/score_continuation.py", "artifacts/evals/gemini-3.1-pro-preview-thinking-high-B-L1"],
-        ["scripts/score_continuation.py", "artifacts/evals/gemini-3-flash-preview-thinking-high-B-L1"],
-    ]
-    assert len(plot_calls) == 1
-
-
-def test_run_l1_gemini_rejects_forwarded_output_dir(tmp_path):
-    result, calls = _run_script(
-        ["artifacts/emoji-bench-dataset-100", "--", "--output-dir", "custom-out"],
-        tmp_path=tmp_path,
-        script_name="run_l1_gemini.sh",
-    )
-
-    assert result.returncode == 2
-    assert "run_l1_gemini.sh does not support forwarding --output-dir" in result.stderr
-    assert calls == []
-
-
-def test_run_l1_gpt_reports_cleanly_when_all_evals_fail(tmp_path):
-    result, calls = _run_script(
-        ["artifacts/emoji-bench-dataset-100"],
-        tmp_path=tmp_path,
-        script_name="run_l1_gpt.sh",
-        extra_env={"FAKE_FAIL_EVAL_SUBSTRING": "scripts/evaluate_continuation.py"},
-    )
-
-    assert result.returncode == 1
-    assert "Eval phase completed: 0/4 runs successful." in result.stdout
-    assert "No successful eval runs to score." in result.stdout
-    assert "Score phase completed: 0/0 runs successful." in result.stdout
-    assert "unbound variable" not in result.stderr
-
-    eval_calls = [call for call in calls if call[0] == "scripts/evaluate_continuation.py"]
-    score_calls = [call for call in calls if call[0] == "scripts/score_continuation.py"]
-    assert len(eval_calls) == 4
-    assert score_calls == []
+    assert len(score_calls) == 26

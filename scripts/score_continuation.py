@@ -21,11 +21,14 @@ from emoji_bench.scoring.continuation_scorer import (
     OUTCOME_BUCKETS,
     ScoredContinuation,
     score_prediction,
+    summarize_behavior,
     summarize_final_answer_only,
 )
+from emoji_bench.scoring.stats import wilson_interval
 from emoji_bench.jsonl_io import load_jsonl_records
 from emoji_bench.eval.paths import (
     build_score_artifact_paths,
+    resolve_dataset_path as _resolve_dataset_path,
     resolve_predictions_path as _resolve_predictions_path,
 )
 
@@ -51,15 +54,19 @@ def _regex_summary(scored: list[ScoredContinuation]) -> dict[str, Any]:
     cascaded = sum(1 for s in scored if s.matches_wrong_branch)
     extraction_ok = sum(1 for s in scored if s.final_output is not None)
 
+    counts = {
+        "self_detection_loose": detected_loose,
+        "self_detection_strict": detected_strict,
+        "final_answer_recovery": recovered,
+        "blind_cascade": cascaded,
+        "extraction_ok": extraction_ok,
+    }
     return {
         "total": total,
         "outcome_buckets": {b: overall_buckets.get(b, 0) for b in OUTCOME_BUCKETS},
-        "rates": {
-            "self_detection_loose": _rate(detected_loose, total),
-            "self_detection_strict": _rate(detected_strict, total),
-            "final_answer_recovery": _rate(recovered, total),
-            "blind_cascade": _rate(cascaded, total),
-            "extraction_ok": _rate(extraction_ok, total),
+        "rates": {name: _rate(count, total) for name, count in counts.items()},
+        "rates_ci95": {
+            name: list(wilson_interval(count, total)) for name, count in counts.items()
         },
         "by_difficulty": by_difficulty,
     }
@@ -92,8 +99,10 @@ def main() -> None:
         "--dataset-path",
         default=None,
         help=(
-            "Legacy option retained for compatibility. The current scoring "
-            "headline does not use the source dataset."
+            "Source dataset (jsonl or directory containing test.jsonl) used "
+            "for AST-grounded behavior classification and derivation "
+            "validation. Defaults to the input_path recorded in the eval's "
+            "summary.json; when neither resolves, only regex scoring runs."
         ),
     )
     args = parser.parse_args()
@@ -105,8 +114,27 @@ def main() -> None:
     artifact_paths = build_score_artifact_paths(predictions_path, output_dir=args.output_dir)
     artifact_paths.output_dir.mkdir(parents=True, exist_ok=True)
 
+    dataset_path = _resolve_dataset_path(
+        explicit=args.dataset_path,
+        summary_path=artifact_paths.summary_path,
+    )
+    dataset_by_id: dict[str, dict[str, Any]] = {}
+    if dataset_path is not None and dataset_path.exists():
+        dataset_by_id = {
+            row["example_id"]: row for row in load_jsonl_records(dataset_path)
+        }
+    else:
+        print(
+            "warning: source dataset not found; scoring without behavior "
+            "classification (pass --dataset-path to enable it)",
+            file=sys.stderr,
+        )
+
     predictions = load_jsonl_records(predictions_path)
-    scored = [score_prediction(row) for row in predictions]
+    scored = [
+        score_prediction(row, dataset_row=dataset_by_id.get(row["example_id"]))
+        for row in predictions
+    ]
 
     with artifact_paths.scores_path.open("w", encoding="utf-8") as fh:
         for s in scored:
@@ -118,6 +146,7 @@ def main() -> None:
         "scores_path": str(artifact_paths.scores_path),
         "headline": summarize_final_answer_only(scored),
         "headline_kind": "final_output_only",
+        "behavior_mix": summarize_behavior(scored),
         "regex_baseline": regex_summary,
     }
 

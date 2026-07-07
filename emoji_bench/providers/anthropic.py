@@ -20,6 +20,8 @@ def request_anthropic_messages(
         "messages": messages,
         "max_tokens": max_output_tokens,
     }
+    if model_config.temperature is not None:
+        options["temperature"] = model_config.temperature
     thinking = model_config.anthropic_thinking
     if thinking is not None and thinking.enabled:
         if thinking.mode == "adaptive":

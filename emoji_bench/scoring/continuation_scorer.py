@@ -27,6 +27,14 @@ from collections import Counter
 from dataclasses import dataclass
 from typing import Any, Literal
 
+from emoji_bench.domain.continuation_validator import validate_derivation
+from emoji_bench.scoring.behavior_classifier import (
+    BEHAVIOR_MODES,
+    build_reference_states,
+    classify_behavior,
+)
+from emoji_bench.scoring.stats import wilson_interval
+
 
 OutcomeBucket = Literal[
     "detect_recover",
@@ -234,6 +242,15 @@ class ScoredContinuation:
     mode: str
     raw_continuation_text: str
 
+    # AST-grounded fields, populated only when the source dataset row is
+    # available at scoring time (None otherwise — old artifacts still score).
+    behavior_mode: str | None = None
+    first_step_number: int | None = None
+    derivation_valid: bool | None = None
+    parsed_step_count: int | None = None
+    first_invalid_step: int | None = None
+    n_symbols: int | None = None
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "example_id": self.example_id,
@@ -248,6 +265,12 @@ class ScoredContinuation:
             "outcome_bucket": self.outcome_bucket,
             "matches_ground_truth": self.matches_ground_truth,
             "matches_wrong_branch": self.matches_wrong_branch,
+            "behavior_mode": self.behavior_mode,
+            "first_step_number": self.first_step_number,
+            "derivation_valid": self.derivation_valid,
+            "parsed_step_count": self.parsed_step_count,
+            "first_invalid_step": self.first_invalid_step,
+            "n_symbols": self.n_symbols,
             "model": self.model,
             "provider": self.provider,
             "mode": self.mode,
@@ -269,8 +292,19 @@ _REQUIRED_PREDICTION_FIELDS: tuple[str, ...] = (
 )
 
 
-def score_prediction(row: dict[str, Any]) -> ScoredContinuation:
-    """Score a single prediction row from ``evaluate_continuation.py``."""
+def score_prediction(
+    row: dict[str, Any],
+    *,
+    dataset_row: dict[str, Any] | None = None,
+) -> ScoredContinuation:
+    """Score a single prediction row from ``evaluate_continuation.py``.
+
+    When ``dataset_row`` (the source dataset record for the same
+    ``example_id``) is provided, the AST-grounded diagnostics are also
+    computed: behavior classification against the reference states and the
+    step-level derivation validation. Without it, those fields are ``None``
+    and only the regex-based scoring runs.
+    """
     missing = [field for field in _REQUIRED_PREDICTION_FIELDS if field not in row]
     if missing:
         raise ValueError(
@@ -291,6 +325,23 @@ def score_prediction(row: dict[str, Any]) -> ScoredContinuation:
         wrong_branch_final_output=wb,
     )
 
+    behavior_mode: str | None = None
+    first_step_number: int | None = None
+    derivation_valid: bool | None = None
+    parsed_step_count: int | None = None
+    first_invalid_step: int | None = None
+    n_symbols: int | None = None
+    if dataset_row is not None:
+        refs = build_reference_states(dataset_row)
+        behavior = classify_behavior(text, refs)
+        behavior_mode = behavior.mode
+        first_step_number = behavior.first_step_number
+        validation = validate_derivation(text, refs.system, gt)
+        derivation_valid = validation.derivation_valid
+        parsed_step_count = validation.parsed_step_count
+        first_invalid_step = validation.first_invalid_step
+        n_symbols = len(refs.system.symbols)
+
     return ScoredContinuation(
         example_id=row["example_id"],
         difficulty=row["difficulty"],
@@ -304,6 +355,12 @@ def score_prediction(row: dict[str, Any]) -> ScoredContinuation:
         outcome_bucket=bucket,
         matches_ground_truth=(final == gt),
         matches_wrong_branch=(final == wb),
+        behavior_mode=behavior_mode,
+        first_step_number=first_step_number,
+        derivation_valid=derivation_valid,
+        parsed_step_count=parsed_step_count,
+        first_invalid_step=first_invalid_step,
+        n_symbols=n_symbols,
         model=row["model"],
         provider=row["provider"],
         mode=row["mode"],
@@ -314,7 +371,13 @@ def score_prediction(row: dict[str, Any]) -> ScoredContinuation:
 def summarize_final_answer_only(
     scored: list[ScoredContinuation],
 ) -> dict[str, Any]:
-    """Aggregate final-answer correctness overall and per difficulty."""
+    """Aggregate final-answer correctness overall and per difficulty.
+
+    Rates carry a 95% Wilson interval (``*_ci95``). When the scored rows
+    include ``n_symbols`` (AST scoring path), ``chance_rate`` reports the
+    mean random-guess accuracy — with 3-6 symbols, chance is 17-33%, so
+    raw rates should always be read against it.
+    """
     total = len(scored)
     if total == 0:
         return {
@@ -326,21 +389,77 @@ def summarize_final_answer_only(
     n_final_correct = sum(1 for s in scored if s.matches_ground_truth)
     by_difficulty: dict[str, dict[str, Any]] = {}
     diff_counts: dict[str, Counter] = {}
+    diff_chances: dict[str, list[float]] = {}
     for s in scored:
         d = s.difficulty
         diff_counts.setdefault(d, Counter())
         diff_counts[d]["_total"] += 1
         diff_counts[d]["final_correct"] += int(s.matches_ground_truth)
+        if s.n_symbols:
+            diff_chances.setdefault(d, []).append(1.0 / s.n_symbols)
 
     for d, c in diff_counts.items():
         n = c["_total"]
-        by_difficulty[d] = {
+        entry: dict[str, Any] = {
             "total": n,
             "final_answer_correct_rate": round(c["final_correct"] / n, 4) if n else 0.0,
+            "final_answer_correct_ci95": list(wilson_interval(c["final_correct"], n)),
         }
+        chances = diff_chances.get(d)
+        if chances:
+            entry["chance_rate"] = round(sum(chances) / len(chances), 4)
+        by_difficulty[d] = entry
 
-    return {
+    summary: dict[str, Any] = {
         "total": total,
         "final_answer_correct_rate": round(n_final_correct / total, 4),
+        "final_answer_correct_ci95": list(wilson_interval(n_final_correct, total)),
+        "by_difficulty": by_difficulty,
+    }
+    all_chances = [c for chances in diff_chances.values() for c in chances]
+    if all_chances:
+        summary["chance_rate"] = round(sum(all_chances) / len(all_chances), 4)
+    return summary
+
+
+def summarize_behavior(
+    scored: list[ScoredContinuation],
+) -> dict[str, Any] | None:
+    """Aggregate behavior-mode and derivation-validity diagnostics.
+
+    Returns ``None`` when no row carries a behavior classification (scoring
+    ran without the source dataset).
+    """
+    classified = [s for s in scored if s.behavior_mode is not None]
+    if not classified:
+        return None
+
+    total = len(classified)
+    mode_counts = Counter(s.behavior_mode for s in classified)
+    by_difficulty: dict[str, dict[str, int]] = {}
+    for s in classified:
+        bucket = by_difficulty.setdefault(
+            s.difficulty,
+            {mode: 0 for mode in BEHAVIOR_MODES} | {"_total": 0},
+        )
+        assert s.behavior_mode is not None
+        bucket[s.behavior_mode] += 1
+        bucket["_total"] += 1
+
+    validated = [s for s in classified if s.derivation_valid is not None]
+    n_valid = sum(1 for s in validated if s.derivation_valid)
+
+    return {
+        "total_classified": total,
+        "behavior_counts": {mode: mode_counts.get(mode, 0) for mode in BEHAVIOR_MODES},
+        "behavior_rates": {
+            mode: round(mode_counts.get(mode, 0) / total, 4) for mode in BEHAVIOR_MODES
+        },
+        "derivation_valid_rate": (
+            round(n_valid / len(validated), 4) if validated else None
+        ),
+        "derivation_valid_ci95": (
+            list(wilson_interval(n_valid, len(validated))) if validated else None
+        ),
         "by_difficulty": by_difficulty,
     }

@@ -116,6 +116,11 @@ def run_evaluation(
                     "model": model_config.key,
                     "provider": model_config.provider,
                     "api_model": model_config.api_model,
+                    # Realized sampling settings, recorded per row so saved
+                    # predictions stay interpretable as configs evolve.
+                    # temperature None = provider default (not pinned).
+                    "temperature": model_config.temperature,
+                    "max_output_tokens": options.max_output_tokens,
                 }
                 usage = response.usage
                 row["input_tokens"] = None if usage is None else usage.input_tokens
@@ -187,6 +192,7 @@ def run_evaluation(
             None if model_config.gemini_thinking is None else model_config.gemini_thinking.level
         ),
         "max_output_tokens": options.max_output_tokens,
+        "temperature": model_config.temperature,
         "turn_2_level": options.turn_2_level,
         "turn_2_user_sent": options.turn_2_user,
         "input_path": str(input_path.resolve()),

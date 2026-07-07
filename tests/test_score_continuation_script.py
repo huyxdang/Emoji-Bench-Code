@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 
+import pytest
+
 from emoji_bench.continuation_formatter import format_step
 from emoji_bench.dataset.continuation_benchmark import generate_continuation_instance
 from emoji_bench.dataset.continuation_dataset import continuation_record
@@ -68,4 +70,48 @@ def test_score_continuation_writes_final_output_only_summary(tmp_path, capsys):
     assert "regex_baseline" in summary
     assert summary["headline"]["total"] == 1
     assert summary["headline"]["final_answer_correct_rate"] == 1.0
+    assert summary["headline"]["final_answer_correct_ci95"][0] <= 1.0
+    # No dataset available: behavior classification degrades to None.
+    assert summary["behavior_mix"] is None
+    scores = [
+        json.loads(line)
+        for line in (eval_dir / "scores.jsonl").read_text(encoding="utf-8").splitlines()
+    ]
+    assert scores[0]["behavior_mode"] is None
     assert "note" not in summary
+
+
+def test_score_continuation_with_dataset_classifies_behavior(tmp_path, capsys):
+    module = load_script_module("score_continuation")
+    eval_dir = tmp_path / "eval"
+    eval_dir.mkdir()
+    record, prediction = _make_real_example()
+    write_jsonl(eval_dir / "predictions.jsonl", [prediction])
+    dataset_path = tmp_path / "test.jsonl"
+    write_jsonl(dataset_path, [record])
+
+    module.sys.argv = [
+        "score_continuation.py",
+        str(eval_dir),
+        "--dataset-path",
+        str(dataset_path),
+    ]
+    module.main()
+    capsys.readouterr()
+
+    summary = json.loads((eval_dir / "score_summary.json").read_text(encoding="utf-8"))
+    behavior = summary["behavior_mix"]
+    assert behavior is not None
+    assert behavior["total_classified"] == 1
+    # The synthesized continuation re-derives the erroneous step correctly.
+    assert behavior["behavior_counts"]["inplace_correction"] == 1
+    assert behavior["derivation_valid_rate"] == 1.0
+    assert summary["headline"]["chance_rate"] == pytest.approx(1 / 3, abs=1e-3)
+
+    scores = [
+        json.loads(line)
+        for line in (eval_dir / "scores.jsonl").read_text(encoding="utf-8").splitlines()
+    ]
+    assert scores[0]["behavior_mode"] == "inplace_correction"
+    assert scores[0]["derivation_valid"] is True
+    assert scores[0]["n_symbols"] == 3

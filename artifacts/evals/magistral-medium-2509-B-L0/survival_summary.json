@@ -1,0 +1,70 @@
+{
+  "total": 100,
+  "corrupted_correct": 18,
+  "clean_correct": 84,
+  "corrupted_rate": 0.18,
+  "clean_rate": 0.84,
+  "survival_rate": 0.2143,
+  "survival_ci95": [
+    0.1398,
+    0.3284
+  ],
+  "conditional_recovery_rate": 0.2024,
+  "conditional_recovery_ci95": [
+    0.1304,
+    0.3004
+  ],
+  "conditional_denominator": 84,
+  "by_difficulty": {
+    "easy": {
+      "total": 25,
+      "corrupted_correct": 7,
+      "clean_correct": 24,
+      "corrupted_rate": 0.28,
+      "clean_rate": 0.96,
+      "survival_rate": 0.2917,
+      "survival_ci95": [
+        0.1548,
+        0.5496
+      ]
+    },
+    "expert": {
+      "total": 25,
+      "corrupted_correct": 2,
+      "clean_correct": 13,
+      "corrupted_rate": 0.08,
+      "clean_rate": 0.52,
+      "survival_rate": 0.1538,
+      "survival_ci95": [
+        0.0386,
+        0.6125
+      ]
+    },
+    "hard": {
+      "total": 25,
+      "corrupted_correct": 1,
+      "clean_correct": 22,
+      "corrupted_rate": 0.04,
+      "clean_rate": 0.88,
+      "survival_rate": 0.0455,
+      "survival_ci95": [
+        0.0066,
+        0.3119
+      ]
+    },
+    "medium": {
+      "total": 25,
+      "corrupted_correct": 8,
+      "clean_correct": 25,
+      "corrupted_rate": 0.32,
+      "clean_rate": 1.0,
+      "survival_rate": 0.32,
+      "survival_ci95": [
+        0.1807,
+        0.5667
+      ]
+    }
+  },
+  "corrupted_dir": "artifacts/evals/magistral-medium-2509-B-L0",
+  "control_dir": "artifacts/evals-clean/magistral-medium-2509-clean-B-L0"
+}
